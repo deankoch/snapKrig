@@ -1,0 +1,27 @@
+Package: blitzKrig
+Title: Fast Kriging with Kronecker Covariance
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Dean",
+           family = "Koch",
+           role = c("aut", "cre"),
+           email = "dkoch@ualberta.ca",
+           comment = c(ORCID = "0000-0002-8849-859X"))
+Description: Functions for fitting geostatistical models and kriging with gridded data with spatially separable covariance functions (Kronecker covariance). Kronecker products are used to simplify computations for likelihood, conditional mean, and more.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.1
+Suggests: 
+    raster,
+    rgdal,
+    sf,
+    sp,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Imports: 
+    graphics,
+    stats,
+    utils,
+    grDevices

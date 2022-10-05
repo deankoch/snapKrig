@@ -7,7 +7,7 @@
 bk_sub_find(g_obs, gdim = NULL)
 }
 \arguments{
-\item{g_obs}{logical vector, or any other object accepted by \code{bk_grid}}
+\item{g_obs}{logical vector, or any other object accepted by \code{bk}}
 
 \item{gdim}{integer vector, the grid dimensions (ny, nx)}
 
@@ -36,7 +36,7 @@ from \code{g_obs}, overriding any argument to \code{gdim}.
 
 # define a grid and example data
 gdim = c(50, 53)
-g_bare = bk_grid(gdim)
+g_bare = bk(gdim)
 gval = bk_sim(g_bare, modifyList(bk_pars(g), list(eps=1e-12)))
 g_obs = modifyList(g_bare, list(gval=gval))
 bk_plot(g_obs)

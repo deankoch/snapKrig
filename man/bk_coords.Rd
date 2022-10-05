@@ -7,7 +7,7 @@
 bk_coords(g, out = "matrix", corner = FALSE, quiet = FALSE)
 }
 \arguments{
-\item{g}{any object accepted by \code{bk_grid}}
+\item{g}{any object accepted by \code{bk}}
 
 \item{out}{character indicating return value type, either 'list', 'matrix', or 'sf'}
 
@@ -18,7 +18,7 @@ a matrix, list, or sf POINT collection, in column vectorized order
 }
 \description{
 Expands a set of y and x grid line numbers in the column-vectorized order returned
-by \code{bk_grid}.
+by \code{bk}.
 }
 \details{
 This is similar to \code{base::expand.grid} but with the first dimension (y) descending
@@ -30,7 +30,7 @@ points are created, which can be slow for large grids.
 }
 \examples{
 gdim = c(5,3)
-g_example = bk_grid(list(gdim=gdim, gres=c(0.5, 0.7), gval=seq(prod(gdim))))
+g_example = bk(list(gdim=gdim, gres=c(0.5, 0.7), gval=seq(prod(gdim))))
 bk_coords(g_example)
 bk_coords(g_example, out='list')
 

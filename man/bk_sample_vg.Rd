@@ -14,7 +14,7 @@ bk_sample_vg(
 )
 }
 \arguments{
-\item{g}{any grid object accepted or returned by \code{bk_grid}, containing non-NA data}
+\item{g}{any grid object accepted or returned by \code{bk}, containing non-NA data}
 
 \item{idx}{optional integer vector indexing the points to sample}
 
@@ -46,7 +46,7 @@ variogram. This and two other robust methods are implemented in \code{bk_plot_vg
 # make example grid and reference covariance model
 gdim = c(22, 15)
 n = prod(gdim)
-g_obs = bk_grid(gdim)
+g_obs = bk(gdim)
 pars = bk_pars(g_obs, 'mat')
 
 # generate sample data and sample semi-variogram

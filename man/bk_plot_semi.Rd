@@ -47,7 +47,7 @@ for any given distance, are drawn as a ribbon plot.
 \code{add=TRUE} can only be used in combination with an earlier call to \code{bk_plot_semi}
 where \code{reset=FALSE} (which allows the function to change R's graphical parameters)
 
-\code{vg} can be a grid object (anything understood by \code{bk_grid}) rather than a
+\code{vg} can be a grid object (anything understood by \code{bk}) rather than a
 variogram data frame. When \code{add=FALSE}, the function uses it to set the distance limits
 for an initial empty plot (the model semi-variance is then drawn if \code{pars} is supplied).
 }
@@ -96,7 +96,7 @@ the desired units for distances in the plot (default for both is meters 'm')}
 
 # make example grid and reference covariance model
 gdim = c(10, 15)
-g_obs = bk_grid(gdim)
+g_obs = bk(gdim)
 pars = bk_pars(g_obs, 'mat')
 
 # plot a semivariance model

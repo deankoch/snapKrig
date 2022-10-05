@@ -15,7 +15,7 @@ bk_var(
 )
 }
 \arguments{
-\item{g_obs}{list of form returned by \code{bk_grid} (with entries 'gdim', 'gres', 'gval')}
+\item{g_obs}{list of form returned by \code{bk} (with entries 'gdim', 'gres', 'gval')}
 
 \item{pars}{list of form returned by \code{bk_pars} (with entries 'y', 'x', 'eps', 'psill')}
 
@@ -58,7 +58,7 @@ the quadratic form is not generally separable (regardless of separability in V^{
 Missing data are identified by looking for NAs in the data vector \code{g_obs$gval}. If all
 are NA (or if 'gval' is missing from \code{g_obs}), the function behaves as though all grid
 points are observed. For multi-layer input, NAs are instead determined from
-\code{g_obs$idx_grid} and 'gval' is ignored (see \code{?bk_grid}).
+\code{g_obs$idx_grid} and 'gval' is ignored (see \code{?bk}).
 
 Note: when \code{pars$eps>0}, the 'eigen' factorization method will be more robust than 'chol'
 in handling numerical precision issues with poorly conditioned covariance matrices.
@@ -69,7 +69,7 @@ gdim = c(12, 13)
 n = prod(gdim)
 n_obs = floor(n/3)
 idx_obs = sort(sample.int(n, n_obs))
-g = g_obs = bk_grid(gdim)
+g = g_obs = bk(gdim)
 g_obs$gval[idx_obs] = rnorm(n_obs)
 
 # example kernel

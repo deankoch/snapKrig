@@ -7,7 +7,7 @@
 bk_export(g, template = "terra")
 }
 \arguments{
-\item{g}{any object accepted or returned by \code{bk_grid}}
+\item{g}{any object accepted or returned by \code{bk}}
 
 \item{template}{character or RasterLayer/SpatRaster to set output type
 
@@ -27,7 +27,7 @@ if( requireNamespace('raster') ) {
 # open example file as RasterLayer
 r_path = system.file('external/rlogo.grd', package='raster')
 r = raster::raster(r_path, band=1)
-g = bk_grid(r)
+g = bk(r)
 
 # convert back to RasterLayer and compare
 r_from_g = bk_export(g, 'raster')
@@ -42,7 +42,7 @@ if( requireNamespace('terra') ) {
 
 # convert all layers
 r = terra::rast(r_path)
-g = bk_grid(r)
+g = bk(r)
 r_from_g = bk_export(g)
 
 # various metadata are lost

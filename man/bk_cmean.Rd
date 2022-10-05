@@ -15,7 +15,7 @@ bk_cmean(
 )
 }
 \arguments{
-\item{g_obs}{list of form returned by \code{bk_grid} (with entries 'gdim', 'gres', 'gval')}
+\item{g_obs}{list of form returned by \code{bk} (with entries 'gdim', 'gres', 'gval')}
 
 \item{pars}{list of form returned by \code{bk_pars} (with entries 'y', 'x', 'eps', 'psill')}
 
@@ -49,7 +49,7 @@ not change in this case and only needs to be computed once.
 # make example grid and data
 n = 25^2
 n_obs = 10
-g_obs = bk_grid(sqrt(n))
+g_obs = bk(sqrt(n))
 idx_obs = sample.int(n, n_obs)
 g_obs$gval[idx_obs] = rnorm(n_obs)
 pars = bk_pars('gau', g_obs)

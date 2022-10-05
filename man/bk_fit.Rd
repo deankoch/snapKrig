@@ -33,7 +33,7 @@ documentation unfinished
 
 # define a grid
 gdim = c(50, 53)
-g_empty = bk_grid(gdim)
+g_empty = bk(gdim)
 pars_src = bk_pars(g_empty)
 pars_src = modifyList(pars_src, list(eps=runif(1, 0, 1e1), psill=runif(1, 0, 1e2)))
 pars_src[['y']][['kp']] = pars_src[['x']][['kp']] = runif(1, 1, 50)

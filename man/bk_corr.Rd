@@ -45,7 +45,7 @@ Note that this function will not accept parameter lists \code{pars} of the form 
 # define test distances, grid, and example kernel
 n_test = 100
 d_test = seq(n_test)-1
-g_example = bk_grid(n_test)
+g_example = bk(n_test)
 pars = bk_pars(g_example, c('mat', 'gau'))
 pars_x = pars[['x']]
 

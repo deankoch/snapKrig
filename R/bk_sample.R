@@ -105,7 +105,7 @@ bk_vario_fun = function(pars, d=NULL)
 #' that if `n` is less than or equal to `interval^2`, and there are no NAs, there can be
 #' no repetition (overlap) of points in the returned sub-grids.
 #'
-#' @param g any grid object accepted or returned by `bk_grid`
+#' @param g any grid object accepted or returned by `bk`
 #' @param n integer > 0, the maximum number of center points to sample
 #' @param lag_max integer, Moore neighborhood radius (ie the maximum queen's distance)
 #' @param interval integer > 0, the down-scaling factor for sub-grids of `g`
@@ -161,7 +161,7 @@ bk_vario_fun = function(pars, d=NULL)
 #' bk_plot(as.integer(idx_overlap_compare), gdim, zlab='times sampled')
 #'
 #' # only non-NA points are eligible in initial sample of center points
-#' g = bk_grid(gdim)
+#' g = bk(gdim)
 #' g$gval = rep(NA, ng)
 #' idx_obs = sample.int(ng, ng/1e2)
 #' g$gval[idx_obs] = 'non-NA'
@@ -176,7 +176,7 @@ bk_vario_fun = function(pars, d=NULL)
 bk_sample_pt = function(g, n=1e2, lag_max=0, interval=1L, over=FALSE)
 {
   # unpack the grid object
-  g = bk_grid(g)
+  g = bk(g)
   gdim = g[['gdim']]
 
   # extract only the first layer from multi-layer objects
@@ -299,7 +299,7 @@ bk_sample_pt = function(g, n=1e2, lag_max=0, interval=1L, over=FALSE)
 #' The mean of the point pair absolute values ('dabs') is the classical estimator of the
 #' variogram. This and two other robust methods are implemented in `bk_plot_vg`.
 #'
-#' @param g any grid object accepted or returned by `bk_grid`, containing non-NA data
+#' @param g any grid object accepted or returned by `bk`, containing non-NA data
 #' @param idx optional integer vector indexing the points to sample
 #' @param n_max integer maximum number of point pairs to sample
 #' @param n_bin integer number of distance bins to assign (passed to `bk_add_bins`)
@@ -314,7 +314,7 @@ bk_sample_pt = function(g, n=1e2, lag_max=0, interval=1L, over=FALSE)
 #' # make example grid and reference covariance model
 #' gdim = c(22, 15)
 #' n = prod(gdim)
-#' g_obs = bk_grid(gdim)
+#' g_obs = bk(gdim)
 #' pars = bk_pars(g_obs, 'mat')
 #'
 #' # generate sample data and sample semi-variogram
@@ -357,7 +357,7 @@ bk_sample_pt = function(g, n=1e2, lag_max=0, interval=1L, over=FALSE)
 bk_sample_vg = function(g, n_pp=1e4, idx=NULL, n_bin=25, n_layer_max=NA, quiet=FALSE)
 {
   # unpack expected inputs
-  g = bk_grid(g)
+  g = bk(g)
   gdim = g[['gdim']]
   gres = g[['gres']]
 

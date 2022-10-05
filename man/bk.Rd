@@ -4,7 +4,7 @@
 \alias{bk}
 \title{bk.R
 Dean Koch, 2022
-S3 class and methods for bk objects (grid lists)}
+S3 class for bk objects (grid lists)}
 \usage{
 bk(g, vals = TRUE)
 }
@@ -111,8 +111,8 @@ in \code{gdim}; and if \code{gdim} is missing, it is set to the number of grid l
 
 Scalar inputs to 'gdim', 'gres' are duplicated for both dimensions, and for convenience
 'gdim' can be specified directly in \code{g} to initialize a simple grid; For example the call
-\code{bk_grid(list(gdim=c(5,5)))} can be simplified to \code{bk_grid(list(gdim=5))} or
-\code{bk_grid(5)}.
+\code{bk(list(gdim=c(5,5)))} can be simplified to \code{bk(list(gdim=5))} or
+\code{bk(5)}.
 }
 }
 \examples{
@@ -120,13 +120,9 @@ Scalar inputs to 'gdim', 'gres' are duplicated for both dimensions, and for conv
 # simple grid construction from dimensions
 gdim = c(12, 10)
 g = bk(gdim)
-g
-str(g)
+summary(g)
 
-# the same grid with empty gval
-str(bk(gdim, vals=FALSE))
-
-# pass result to bk_grid and get the same thing back
+# pass result to bk and get the same thing back
 identical(g, bk(g))
 
 # supply grid lines instead and get the same result
@@ -163,17 +159,17 @@ n_pt = prod(gdim)
 n_layer = 3
 mat_multi = matrix(rnorm(n_pt*n_layer), n_pt, n_layer)
 g_multi = bk(list(gdim=gdim, gval=mat_multi))
-str(g_multi)
+summary(g_multi)
 
 # repeat with missing data (note all columns must have consistent NA structure)
 mat_multi[sample.int(n_pt, 0.5*n_pt),] = NA
 g_multi_miss = bk(list(gdim=gdim, gval=mat_multi))
-str(g_multi_miss)
+summary(g_multi_miss)
 
 # only observed data points are stored, idx_grid maps them to the full grid vector
 max(abs( g_multi[['gval']] - g_multi_miss[['gval']][g_multi_miss[['idx_grid']],] ), na.rm=TRUE)
 
-# single bracket indexing does the mapping automatically
+# single bracket indexing magic does the mapping automatically
 max(abs( g_multi[] - g_multi_miss[] ), na.rm=TRUE)
 
 # vals=FALSE drops multi-layer information
@@ -185,34 +181,30 @@ if( requireNamespace('raster') ) {
 r_path = system.file('external/rlogo.grd', package='raster')
 r = raster::raster(r_path)
 
-# convert to blitzKrig list (notice only first layer was loaded by raster)
-g = bk_grid(r)
-str(g)
-bk_plot(g)
+# convert to bk (notice only first layer was loaded by raster)
+g = bk(r)
+summary(g)
+plot(g)
 
 # open a RasterStack - gval becomes a matrix with layers in columns
 r_multi = raster::stack(r_path)
-g_multi = bk_grid(r_multi)
-str(g_multi)
-bk_plot(g_multi, layer=1)
-bk_plot(g_multi, layer=2)
-bk_plot(g_multi, layer=3)
+g_multi = bk(r_multi)
+summary(g_multi)
+plot(g_multi, layer=1)
+plot(g_multi, layer=2)
+plot(g_multi, layer=3)
 
 # repeat with terra
 if( requireNamespace('terra') ) {
 
 # open example file as SpatRaster (all layers loaded by default)
 r_multi = terra::rast(r_path)
-g_multi = bk_grid(r_multi)
-str(g_multi)
-bk_plot(g_multi, layer=1)
-bk_plot(g_multi, layer=2)
-bk_plot(g_multi, layer=3)
+g_multi = bk(r_multi)
+summary(g_multi)
 
 # open first layer only
-g = bk_grid(r[[1]])
-str(g)
-bk_plot(g)
+g = bk(r[[1]])
+summary(g)
 
 }
 }

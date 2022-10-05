@@ -1,10 +1,10 @@
-# bk_grid.R
+# bk.R
 # Dean Koch, 2022
 # Functions for building grids out of various inputs
 
 #' Convert column-vectorized grid to SpatRaster
 #'
-#' @param g any object accepted or returned by `bk_grid`
+#' @param g any object accepted or returned by `bk`
 #' @param template character or RasterLayer/SpatRaster to set output type
 #'
 #' Converts a column-vectorized vector or matrix to a SpatRaster, or if terra is
@@ -20,7 +20,7 @@
 #' # open example file as RasterLayer
 #' r_path = system.file('external/rlogo.grd', package='raster')
 #' r = raster::raster(r_path, band=1)
-#' g = bk_grid(r)
+#' g = bk(r)
 #'
 #' # convert back to RasterLayer and compare
 #' r_from_g = bk_export(g, 'raster')
@@ -35,7 +35,7 @@
 #'
 #' # convert all layers
 #' r = terra::rast(r_path)
-#' g = bk_grid(r)
+#' g = bk(r)
 #' r_from_g = bk_export(g)
 #'
 #' # various metadata are lost
@@ -54,7 +54,7 @@ bk_export = function(g, template='terra')
   if( !any(is_loaded) ) stop(msg_dep)
 
   # load the input as blitzKrig list
-  g = bk_grid(g)
+  g = bk(g)
   g[['crs']] = ifelse(is.null(g[['crs']]), '', g[['crs']])
   n_layer = ifelse(is.null(g[['idx_grid']]), sum(!is.null(g[['gval']])), ncol(g[['gval']]))
 
@@ -65,7 +65,7 @@ bk_export = function(g, template='terra')
   if( !is.character(template) )
   {
     # check if template is a sub-grid or super-grid of `g`?
-    # g_template = bk_grid(template)
+    # g_template = bk(template)
     # TODO: implement crop?
 
     # set template class name
@@ -143,11 +143,11 @@ bk_export = function(g, template='terra')
 #' bounding box of `g`.
 #'
 #' @param from matrix, data frame, or points object from `sp` or `sf`, the source points
-#' @param g any grid object accepted or returned by `bk_grid`, the destination grid
+#' @param g any grid object accepted or returned by `bk`, the destination grid
 #' @param crop_from logical, indicating to omit points not overlying `g`.
 #' @param crop_g logical, indicating to trim `g` to the extent of `from`.
 #'
-#' @return list of form returned by `bk_grid`, defining a grid containing the snapped
+#' @return list of form returned by `bk`, defining a grid containing the snapped
 #' points. These are assigned the corresponding data value in `from`, or if  `from` has no
 #' data, an integer mapping to the points in `from`. Un-mapped grid points are set to NA.
 #' @export
@@ -161,7 +161,7 @@ bk_export = function(g, template='terra')
 #'
 #' # create a grid object
 #' gdim = c(40, 30)
-#' g = bk_grid(list(gdim=gdim, gres=1.1))
+#' g = bk(list(gdim=gdim, gres=1.1))
 #'
 #' # randomly position points within bounding box of g
 #' n_pts = 10
@@ -204,7 +204,7 @@ bk_export = function(g, template='terra')
 #' if( requireNamespace('sf') ) {
 #'
 #' # a different example, snapping mis-aligned subgrid
-#' g_pts = bk_grid(list(gdim=c(15, 8), gres=1.7), vals=FALSE)
+#' g_pts = bk(list(gdim=c(15, 8), gres=1.7), vals=FALSE)
 #' g_pts[['gyx']][['y']] = g_pts[['gyx']][['y']] + 5
 #' g_pts[['gyx']][['x']] = g_pts[['gyx']][['x']] + 5
 #' n_pts = prod(g_pts$gdim)
@@ -258,7 +258,7 @@ bk_snap = function(from, g=NULL, crop_from=FALSE, crop_g=FALSE, quiet=FALSE)
   if(auto_gdim & is.list(g) ) g = modifyList(g, list(gdim=c(y=2L, x=2L)))
 
   # unpack g as blitzKrig grid list but don't copy data values
-  g = bk_grid(g, vals=FALSE)
+  g = bk(g, vals=FALSE)
   to_crs = g[['crs']]
   vals = NULL
 
@@ -332,14 +332,14 @@ bk_snap = function(from, g=NULL, crop_from=FALSE, crop_g=FALSE, quiet=FALSE)
                 yx=from_bds[[1]], p=auto_pad, r=g[['gres']], n=g[['gdim']])
 
       # make grid object
-      g = bk_grid(list(gdim=g[['gdim']], gyx=gyx, gres=g[['gres']]))
+      g = bk(list(gdim=g[['gdim']], gyx=gyx, gres=g[['gres']]))
 
     } else {
 
       # place grid lines to coincide with bounding box edge points, then recompute gres
       gyx = Map(function(yx, n) seq(min(yx), max(yx), length.out=n), yx=from_yx, n=g[['gdim']])
       gres = sapply(gyx, function(yx) diff(yx[1:2]))
-      g = bk_grid(list(gdim=g[['gdim']], gyx=gyx, gres=gres))
+      g = bk(list(gdim=g[['gdim']], gyx=gyx, gres=gres))
 
     }
   }
@@ -363,7 +363,7 @@ bk_snap = function(from, g=NULL, crop_from=FALSE, crop_g=FALSE, quiet=FALSE)
 
   # compute new grid line locations and initialize the output grid list object
   to_yx = Map(function(a, b, r) seq(a, b, by=r), a=to_min, b=to_max, r=g[['gres']])
-  g_out = bk_grid(list(gyx=to_yx), vals=FALSE)
+  g_out = bk(list(gyx=to_yx), vals=FALSE)
   if( !is.null(to_crs) ) g_out[['crs']] = to_crs
 
   # find cross-distance matrices for point coordinates and grid lines

@@ -7,14 +7,14 @@
 bk_rescale(g, up = NULL, down = NULL)
 }
 \arguments{
-\item{g}{any object accepted or returned by \code{bk_grid}}
+\item{g}{any object accepted or returned by \code{bk}}
 
 \item{up}{integer > 0, or vector of two, the up-scaling factor(s)}
 
 \item{down}{integer > 0, or vector of two, the down-scaling factor(s)}
 }
 \value{
-a grid list of the form returned by \code{bk_grid}
+a grid list of the form returned by \code{bk}
 }
 \description{
 Changes the resolution of a grid by a factor of \code{up} or \code{down}.
@@ -41,7 +41,7 @@ with \code{bk_rescale(g_fine, up=down)}.
 
 # example data
 gdim = c(50, 53)
-g = bk_grid(gdim)
+g = bk(gdim)
 pars = modifyList(bk_pars(g), list(eps=1e-6))
 gval = bk_sim(g, pars)
 g_obs = modifyList(g, list(gval=gval))
@@ -68,7 +68,7 @@ n_pt = prod(gdim)
 n_layer = 3
 
 # generate some data and omit 50\% of it
-gval_multi = bk_sim(bk_grid(list(gdim=gdim, gval=matrix(NA, n_pt, n_layer))), pars)
+gval_multi = bk_sim(bk(list(gdim=gdim, gval=matrix(NA, n_pt, n_layer))), pars)
 idx_miss = sample.int(n_pt, round(0.5*n_pt))
 gval_multi[idx_miss,] = NA
 

@@ -7,7 +7,7 @@
 bk_pars(g, pars = "gau", fill = "initial")
 }
 \arguments{
-\item{g}{list, a blitzKrig grid definition (or object accepted by \code{bk_grid})}
+\item{g}{list, a blitzKrig grid definition (or object accepted by \code{bk})}
 
 \item{pars}{character or list defining kernels (in form understood by \code{bk_pars_make})}
 }

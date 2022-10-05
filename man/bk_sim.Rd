@@ -7,7 +7,7 @@
 bk_sim(g, pars = bk_pars(g), fac = NULL)
 }
 \arguments{
-\item{g}{any object accepted or returned by \code{bk_grid}}
+\item{g}{any object accepted or returned by \code{bk}}
 
 \item{pars}{list, covariance parameters in form returned by \code{bk_pars}}
 
@@ -34,7 +34,7 @@ of V. This can be pre-computed with \code{bk_var} and supplied in \code{fac}, or
 
 # example grid and covariance parameters
 gdim = c(100, 200)
-g = bk_grid(gdim)
+g = bk(gdim)
 pars_gau = bk_pars(g)
 
 # this example has a large nugget effect
@@ -60,7 +60,7 @@ bk_plot(g_sim_smoother)
 # multi-layer example
 n_pt = prod(gdim)
 n_layer = 3
-g_multi = bk_grid(list(gdim=gdim, gval=matrix(NA, n_pt, n_layer)))
+g_multi = bk(list(gdim=gdim, gval=matrix(NA, n_pt, n_layer)))
 gval_multi = bk_sim(g_multi, pars_smoother)
 g_sim_multi = modifyList(g, list(gval=gval_multi))
 bk_plot(g_sim_multi, layer=1)

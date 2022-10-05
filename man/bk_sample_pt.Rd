@@ -7,7 +7,7 @@
 bk_sample_pt(g, n = 100, lag_max = 0, interval = 1L, over = FALSE)
 }
 \arguments{
-\item{g}{any grid object accepted or returned by \code{bk_grid}}
+\item{g}{any grid object accepted or returned by \code{bk}}
 
 \item{n}{integer > 0, the maximum number of center points to sample}
 
@@ -87,7 +87,7 @@ idx_overlap_compare = rowSums( sapply(idx_sample_compare[-1], function(i) seq(ng
 bk_plot(as.integer(idx_overlap_compare), gdim, zlab='times sampled')
 
 # only non-NA points are eligible in initial sample of center points
-g = bk_grid(gdim)
+g = bk(gdim)
 g$gval = rep(NA, ng)
 idx_obs = sample.int(ng, ng/1e2)
 g$gval[idx_obs] = 'non-NA'

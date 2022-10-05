@@ -23,13 +23,13 @@
 #' constant mean. This replaces X in the GLS equation by a vector of 1's.
 #'
 #' `g_obs$gval` can be a matrix whose columns are multiple repetitions (layers) of the
-#' same spatial process (see `bk_grid`), in which case the covariates in `X` are recycled
+#' same spatial process (see `bk`), in which case the covariates in `X` are recycled
 #' for each layer. Layers are assumed mutually independent and the GLS equation is evaluated
 #' using the corresponding block-diagonal V. Note that this is equivalent to (but faster
 #' than) calling `bk_GLS` separately on each layer with the same `X` and averaging the
 #' estimated b's.
 #'
-#' @param g_obs list of form returned by `bk_grid` (with entries 'gdim', 'gres', 'gval')
+#' @param g_obs list of form returned by `bk` (with entries 'gdim', 'gres', 'gval')
 #' @param pars list of form returned by `bk_pars` (with entries 'y', 'x', 'eps', 'psill')
 #' @param X matrix or NA, the linear predictors (in columns) excluding intercept
 #' @param fac_method character, factorization method: 'eigen' (default) or 'chol' (see `bk_var`)
@@ -43,7 +43,7 @@
 #' # set up example grid, and covariance parameters
 #' gdim = c(45, 31)
 #' n = prod(gdim)
-#' g = bk_grid(gdim)
+#' g = bk(gdim)
 #' pars = modifyList(bk_pars(g, 'gau'), list(psill=2))
 #'
 #' # generate spatial noise
@@ -193,7 +193,7 @@ bk_GLS = function(g_obs, pars, X=NA, fac=NULL, fac_method='eigen', out='b')
 #'
 #' # define a grid
 #' gdim = c(50, 53)
-#' g_empty = bk_grid(gdim)
+#' g_empty = bk(gdim)
 #' pars_src = bk_pars(g_empty)
 #' pars_src = modifyList(pars_src, list(eps=runif(1, 0, 1e1), psill=runif(1, 0, 1e2)))
 #' pars_src[['y']][['kp']] = pars_src[['x']][['kp']] = runif(1, 1, 50)
@@ -230,7 +230,7 @@ bk_fit = function(g_obs, pars=NULL, X=NA, iso=TRUE, initial=NULL, quiet=FALSE,
                      lower=NULL, upper=NULL, n_max=1e3)
 {
   # unpack vectorized grid as list
-  g_obs = bk_grid(g_obs)
+  g_obs = bk(g_obs)
   gdim = g_obs[['gdim']]
 
   # check for missingness and count observations
@@ -377,7 +377,7 @@ bk_fit = function(g_obs, pars=NULL, X=NA, iso=TRUE, initial=NULL, quiet=FALSE,
 #'
 #' documentation unfinished
 #'
-#' @param g_obs list of form returned by `bk_grid` (with entries 'gdim', 'gres', 'gval')
+#' @param g_obs list of form returned by `bk` (with entries 'gdim', 'gres', 'gval')
 #' @param pars list of fixed kernel parameters, with NAs indicating parameters to fit
 #' @param X numeric, vector, matrix, or NA, the mean or its linear predictors, passed to `bk_LL`
 #' @param iso logical, indicating to constrain the y and x kernel parameters to be the same
@@ -390,7 +390,7 @@ bk_fit = function(g_obs, pars=NULL, X=NA, iso=TRUE, initial=NULL, quiet=FALSE,
 #'
 #' @examples
 #' # set up example grid and data
-#' g_obs = bk_grid(10)
+#' g_obs = bk(10)
 #' g_obs$gval = rnorm(10^2)
 #' bk_optim(g_obs, quiet=TRUE)
 #'
@@ -415,7 +415,7 @@ bk_optim = function(g_obs, pars='gau', X=0, iso=FALSE, control=list(), quiet=FAL
     log_scale = TRUE
   }
 
-  g_obs = bk_grid(g_obs)
+  g_obs = bk(g_obs)
 
   # standardize input to pars and set NAs for missing values
   pars_fix = bk_pars_make(pars)
@@ -535,7 +535,7 @@ bk_optim = function(g_obs, pars='gau', X=0, iso=FALSE, control=list(), quiet=FAL
 #' structure `pars`, and same NA structure in the data). Note that the kriging variance does
 #' not change in this case and only needs to be computed once.
 #'
-#' @param g_obs list of form returned by `bk_grid` (with entries 'gdim', 'gres', 'gval')
+#' @param g_obs list of form returned by `bk` (with entries 'gdim', 'gres', 'gval')
 #' @param pars list of form returned by `bk_pars` (with entries 'y', 'x', 'eps', 'psill')
 #' @param X numeric, vector, matrix, or NA: the mean, or its linear predictors
 #' @param out character, the return value, one of 'predictor', 'variance', or 'm'
@@ -549,7 +549,7 @@ bk_optim = function(g_obs, pars='gau', X=0, iso=FALSE, control=list(), quiet=FAL
 #' # make example grid and data
 #' n = 25^2
 #' n_obs = 10
-#' g_obs = bk_grid(sqrt(n))
+#' g_obs = bk(sqrt(n))
 #' idx_obs = sample.int(n, n_obs)
 #' g_obs$gval[idx_obs] = rnorm(n_obs)
 #' pars = bk_pars('gau', g_obs)

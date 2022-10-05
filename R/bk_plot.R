@@ -13,7 +13,7 @@
 #'
 #' `g` can be a vector, in which case `gdim` supplies the y, x dimensions (ie number
 #' of rows, number of columns), in that order. `g` can also can be a matrix, raster or any
-#' other object understood by `bk_grid` (in which case `gdim` can be omitted).
+#' other object understood by `bk` (in which case `gdim` can be omitted).
 #'
 #' The data in `g` can be of numeric, integer, logical, or factor class. The numeric class is
 #' plotted with a continuous color bar legend, while the others get a categorical legend.
@@ -40,7 +40,7 @@
 #' `reset=FALSE` prevents this, so that additional elements can be added to the plot later
 #' (such as by calling `sf::st_plot(.., add=TRUE)` or `graphics:lines`).
 #'
-#' @param g vector or any object understood by `bk_grid`
+#' @param g vector or any object understood by `bk`
 #' @param gdim numeric vector, (optional) grid dimensions of the data
 #' @param ... plotting parameters (see details)
 #'
@@ -106,7 +106,7 @@
 #' # example grid
 #' gdim = c(50, 100)
 #' n = prod(gdim)
-#' g = bk_grid(gdim)
+#' g = bk(gdim)
 #'
 #' # plot the grid layout as raster then as matrix
 #' bk_plot(g)
@@ -225,7 +225,7 @@ bk_plot = function(g, gdim=NULL, ...)
   reset = ifelse( is.null( list(...)[['reset']] ), FALSE, list(...)[['reset']])
 
   # convert matrix and raster to blitzKrig list
-  g = bk_grid(g)
+  g = bk(g)
 
   # slice multi-layer input
   if( !is.null(g[['idx_grid']]) )
@@ -461,7 +461,7 @@ bk_plot = function(g, gdim=NULL, ...)
 #' accepted `bk_plot` apart from `gdim`).
 #'
 #' @param pars list of the form returned by `bk_pars` with entries 'y', 'x', ('eps', 'psill')
-#' @param g any object understood by `bk_grid`
+#' @param g any object understood by `bk`
 #' @param ... additional arguments passed to `bk_plot`
 #'
 #' @return the same as `bk_plot`
@@ -474,7 +474,7 @@ bk_plot = function(g, gdim=NULL, ...)
 #' bk_plot_pars(pars, gdim)
 #'
 #' # zoom in/out by passing a grid object with suitably modified resolution
-#' g = bk_grid(gdim)
+#' g = bk(gdim)
 #' bk_plot_pars(pars, g)
 #' bk_plot_pars(pars, modifyList(g, list(gres=2*g$gres)))
 #' bk_plot_pars(pars, modifyList(g, list(gres=0.2*g$gres)))
@@ -485,7 +485,7 @@ bk_plot = function(g, gdim=NULL, ...)
 #'
 bk_plot_pars = function(pars, g, simple=FALSE, ...)
 {
-  g = bk_grid(g)
+  g = bk(g)
   gdim = g[['gdim']]
   gres = g[['gres']]
   psill = pars[['psill']]
@@ -547,7 +547,7 @@ bk_plot_pars = function(pars, g, simple=FALSE, ...)
 #' `add=TRUE` can only be used in combination with an earlier call to `bk_plot_semi`
 #' where `reset=FALSE` (which allows the function to change R's graphical parameters)
 #'
-#' `vg` can be a grid object (anything understood by `bk_grid`) rather than a
+#' `vg` can be a grid object (anything understood by `bk`) rather than a
 #' variogram data frame. When `add=FALSE`, the function uses it to set the distance limits
 #' for an initial empty plot (the model semi-variance is then drawn if `pars` is supplied).
 #'
@@ -603,7 +603,7 @@ bk_plot_pars = function(pars, g, simple=FALSE, ...)
 #'
 #' # make example grid and reference covariance model
 #' gdim = c(10, 15)
-#' g_obs = bk_grid(gdim)
+#' g_obs = bk(gdim)
 #' pars = bk_pars(g_obs, 'mat')
 #'
 #' # plot a semivariance model
@@ -727,7 +727,7 @@ bk_plot_semi = function(vg, pars=NULL, add=FALSE, fun='classical', ...)
   } else {
 
     # get distance range from grid layout and initialize semi-variance range
-    g = bk_grid(vg)
+    g = bk(vg)
     d_max = ifelse(is.null(d_max), sqrt( sum( ( g[['gdim']] * g[['gres']] )^2 ) ), d_max)
 
     # do nothing if no model was supplied in add mode

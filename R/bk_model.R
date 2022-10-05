@@ -32,7 +32,7 @@
 #'
 #'
 #' @param pars list of form returned by `bk_pars` (with entries 'y', 'x', 'eps', 'psill')
-#' @param g_obs list of form returned by `bk_grid` (with entries 'gdim', 'gres', 'gval')
+#' @param g_obs list of form returned by `bk` (with entries 'gdim', 'gres', 'gval')
 #' @param X numeric, vector, matrix, or NA, a fixed mean value, or matrix of linear predictors
 #' @param fac_method character, the factorization to use: 'chol' (default) or 'eigen'
 #' @param fac matrix or list, (optional) pre-computed covariance factorization
@@ -46,7 +46,7 @@
 #' # set up example grid, covariance parameters
 #' gdim = c(25, 12)
 #' n = prod(gdim)
-#' g_all = bk_grid(gdim)
+#' g_all = bk(gdim)
 #' pars = modifyList(bk_pars(g_all, 'gau'), list(psill=0.7, eps=5e-2))
 #'
 #' # generate some covariates and complete data
@@ -271,7 +271,7 @@ bk_LL = function(pars, g_obs, X=0, fac_method='chol', fac=NULL, quiet=TRUE, more
 #' `bk_pars_update(pars_fix, p, iso=iso, na_omit=TRUE)`.
 #'
 #' @param p numeric vector of covariance parameters accepted by `bk_pars_update`
-#' @param g_obs list of form returned by `bk_grid` (with entries 'gdim', 'gres', 'gval')
+#' @param g_obs list of form returned by `bk` (with entries 'gdim', 'gres', 'gval')
 #' @param pars_fix list of form returned by `bk_pars` (with entries 'y', 'x', 'eps', 'psill')
 #' @param X numeric, vector, matrix, or NA, the mean or its linear predictors, passed to `bk_LL`
 #' @param iso logical, indicates to use identical kernels for x and y (`pars$x` is ignored)
@@ -282,7 +282,7 @@ bk_LL = function(pars, g_obs, X=0, fac_method='chol', fac=NULL, quiet=TRUE, more
 #'
 #' @examples
 #' # set up example grid and data
-#' g_obs = bk_grid(10)
+#' g_obs = bk(10)
 #' g_obs$gval = rnorm(10^2)
 #'
 #' # get some default parameters and vectorize them
@@ -354,7 +354,7 @@ bk_nLL = function(p, g_obs, pars_fix, X=0, iso=FALSE, quiet=TRUE, log_scale=FALS
 #' of V. This can be pre-computed with `bk_var` and supplied in `fac`, or a multi-layer
 #' `g` can be supplied (see examples).
 #'
-#' @param g any object accepted or returned by `bk_grid`
+#' @param g any object accepted or returned by `bk`
 #' @param pars list, covariance parameters in form returned by `bk_pars`
 #' @param fac list, optional pre-computed factorization of component correlation matrices
 #'
@@ -365,7 +365,7 @@ bk_nLL = function(p, g_obs, pars_fix, X=0, iso=FALSE, quiet=TRUE, log_scale=FALS
 #'
 #' # example grid and covariance parameters
 #' gdim = c(100, 200)
-#' g = bk_grid(gdim)
+#' g = bk(gdim)
 #' pars_gau = bk_pars(g)
 #'
 #' # this example has a large nugget effect
@@ -391,7 +391,7 @@ bk_nLL = function(p, g_obs, pars_fix, X=0, iso=FALSE, quiet=TRUE, log_scale=FALS
 #' # multi-layer example
 #' n_pt = prod(gdim)
 #' n_layer = 3
-#' g_multi = bk_grid(list(gdim=gdim, gval=matrix(NA, n_pt, n_layer)))
+#' g_multi = bk(list(gdim=gdim, gval=matrix(NA, n_pt, n_layer)))
 #' gval_multi = bk_sim(g_multi, pars_smoother)
 #' g_sim_multi = modifyList(g, list(gval=gval_multi))
 #' bk_plot(g_sim_multi, layer=1)

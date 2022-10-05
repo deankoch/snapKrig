@@ -9,14 +9,14 @@ bk_snap(from, g = NULL, crop_from = FALSE, crop_g = FALSE, quiet = FALSE)
 \arguments{
 \item{from}{matrix, data frame, or points object from \code{sp} or \code{sf}, the source points}
 
-\item{g}{any grid object accepted or returned by \code{bk_grid}, the destination grid}
+\item{g}{any grid object accepted or returned by \code{bk}, the destination grid}
 
 \item{crop_from}{logical, indicating to omit points not overlying \code{g}.}
 
 \item{crop_g}{logical, indicating to trim \code{g} to the extent of \code{from}.}
 }
 \value{
-list of form returned by \code{bk_grid}, defining a grid containing the snapped
+list of form returned by \code{bk}, defining a grid containing the snapped
 points. These are assigned the corresponding data value in \code{from}, or if  \code{from} has no
 data, an integer mapping to the points in \code{from}. Un-mapped grid points are set to NA.
 }
@@ -58,7 +58,7 @@ my_col = function(x) my_pal(1e2)[ num_to_cent(x) ]
 
 # create a grid object
 gdim = c(40, 30)
-g = bk_grid(list(gdim=gdim, gres=1.1))
+g = bk(list(gdim=gdim, gres=1.1))
 
 # randomly position points within bounding box of g
 n_pts = 10
@@ -101,7 +101,7 @@ graphics::points(from[c('x', 'y')])
 if( requireNamespace('sf') ) {
 
 # a different example, snapping mis-aligned subgrid
-g_pts = bk_grid(list(gdim=c(15, 8), gres=1.7), vals=FALSE)
+g_pts = bk(list(gdim=c(15, 8), gres=1.7), vals=FALSE)
 g_pts[['gyx']][['y']] = g_pts[['gyx']][['y']] + 5
 g_pts[['gyx']][['x']] = g_pts[['gyx']][['x']] + 5
 n_pts = prod(g_pts$gdim)

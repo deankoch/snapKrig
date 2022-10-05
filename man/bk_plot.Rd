@@ -7,7 +7,7 @@
 bk_plot(g, gdim = NULL, ...)
 }
 \arguments{
-\item{g}{vector or any object understood by \code{bk_grid}}
+\item{g}{vector or any object understood by \code{bk}}
 
 \item{gdim}{numeric vector, (optional) grid dimensions of the data}
 
@@ -29,7 +29,7 @@ plotted with i and j axes (row and column numbers) replacing y and x.
 \details{
 \code{g} can be a vector, in which case \code{gdim} supplies the y, x dimensions (ie number
 of rows, number of columns), in that order. \code{g} can also can be a matrix, raster or any
-other object understood by \code{bk_grid} (in which case \code{gdim} can be omitted).
+other object understood by \code{bk} (in which case \code{gdim} can be omitted).
 
 The data in \code{g} can be of numeric, integer, logical, or factor class. The numeric class is
 plotted with a continuous color bar legend, while the others get a categorical legend.
@@ -112,7 +112,7 @@ top vs bottom }
 # example grid
 gdim = c(50, 100)
 n = prod(gdim)
-g = bk_grid(gdim)
+g = bk(gdim)
 
 # plot the grid layout as raster then as matrix
 bk_plot(g)

@@ -9,7 +9,7 @@ bk_nLL(p, g_obs, pars_fix, X = 0, iso = FALSE, quiet = TRUE, log_scale = FALSE)
 \arguments{
 \item{p}{numeric vector of covariance parameters accepted by \code{bk_pars_update}}
 
-\item{g_obs}{list of form returned by \code{bk_grid} (with entries 'gdim', 'gres', 'gval')}
+\item{g_obs}{list of form returned by \code{bk} (with entries 'gdim', 'gres', 'gval')}
 
 \item{pars_fix}{list of form returned by \code{bk_pars} (with entries 'y', 'x', 'eps', 'psill')}
 
@@ -38,7 +38,7 @@ the desired parameter list is being constructed correctly by testing with:
 }
 \examples{
 # set up example grid and data
-g_obs = bk_grid(10)
+g_obs = bk(10)
 g_obs$gval = rnorm(10^2)
 
 # get some default parameters and vectorize them

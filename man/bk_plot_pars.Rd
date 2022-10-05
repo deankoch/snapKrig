@@ -9,7 +9,7 @@ bk_plot_pars(pars, g, simple = FALSE, ...)
 \arguments{
 \item{pars}{list of the form returned by \code{bk_pars} with entries 'y', 'x', ('eps', 'psill')}
 
-\item{g}{any object understood by \code{bk_grid}}
+\item{g}{any object understood by \code{bk}}
 
 \item{...}{additional arguments passed to \code{bk_plot}}
 }
@@ -33,7 +33,7 @@ pars = bk_pars(gdim, 'mat')
 bk_plot_pars(pars, gdim)
 
 # zoom in/out by passing a grid object with suitably modified resolution
-g = bk_grid(gdim)
+g = bk(gdim)
 bk_plot_pars(pars, g)
 bk_plot_pars(pars, modifyList(g, list(gres=2*g$gres)))
 bk_plot_pars(pars, modifyList(g, list(gres=0.2*g$gres)))

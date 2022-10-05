@@ -12,7 +12,7 @@
 #' Swap `fill='initial'` with 'lower' and 'upper' to get default lower and upper bounds.
 #'
 #' @param pars character or list defining kernels (in form understood by `bk_pars_make`)
-#' @param g list, a blitzKrig grid definition (or object accepted by `bk_grid`)
+#' @param g list, a blitzKrig grid definition (or object accepted by `bk`)
 #'
 #' @return a list defining separable covariance parameters
 #' @export
@@ -26,7 +26,7 @@ bk_pars = function(g, pars='gau', fill='initial')
 {
   # check for valid input and set names/NAs wherever they are missing
   pars = bk_pars_make(pars)
-  g = bk_grid(g)
+  g = bk(g)
 
   # get default values in a data frame
   bds_p = bk_bds(pars, g)
@@ -59,7 +59,7 @@ bk_pars = function(g, pars='gau', fill='initial')
 #' large or small distances.
 #'
 #' @param pars list or character vector of 1-2 kernel names (see `bk_pars`)
-#' @param g list, a blitzKrig grid definition (or object accepted by `bk_grid`)
+#' @param g list, a blitzKrig grid definition (or object accepted by `bk`)
 #' @param var_obs positive numeric, the sample variance of data `g$gval`
 #' @param var_mult numeric > 1, constant to multiply by `var_obs` to get upper bounds
 #'
@@ -69,7 +69,7 @@ bk_pars = function(g, pars='gau', fill='initial')
 #' @examples
 #' gdim = c(10, 15)
 #' z = prod(gdim) |> rnorm()
-#' g = bk_grid(gdim) |> modifyList(list(gval=z))
+#' g = bk(gdim) |> modifyList(list(gval=z))
 #' bk_bds('mat', g)
 #' bk_bds('mat', g, lower=0)
 #' bk_bds('mat', g, rows=c('eps', 'psill'), lower=c(0, 0.5))

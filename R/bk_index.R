@@ -258,7 +258,7 @@ bk_sub = function(g_obs, ij=list(), mirror=FALSE, idx=FALSE)
   ij_nm = c('i', 'j')
 
   # open grid as blitzKrig list object
-  g_obs = bk_grid(g_obs)
+  g_obs = bk(g_obs)
   gdim_old = stats::setNames(g_obs[['gdim']], ij_nm)
 
   # compute grid lines to remove from keep
@@ -296,7 +296,7 @@ bk_sub = function(g_obs, ij=list(), mirror=FALSE, idx=FALSE)
     g_obs[['gval']] = g_obs[['gval']][ bk_sub_idx(gdim_old, ij_keep, nosort=TRUE) ]
     g_obs[['gyx']] = Map(function(g, i) g[i], g=g_obs[['gyx']], i=ij_keep)
     g_obs[['gdim']] = gdim_new
-    return(bk_grid(g_obs))
+    return(bk(g_obs))
   }
 
   is_NA_mat = matrix(is.na(g_obs[['gval']]), gdim_old)
@@ -362,18 +362,18 @@ bk_sub = function(g_obs, ij=list(), mirror=FALSE, idx=FALSE)
 #' and un-mapped grid lines in `g_fine` are initialized to `NA`. Recover `g` from `g_fine`
 #' with `bk_rescale(g_fine, up=down)`.
 #'
-#' @param g any object accepted or returned by `bk_grid`
+#' @param g any object accepted or returned by `bk`
 #' @param up integer > 0, or vector of two, the up-scaling factor(s)
 #' @param down integer > 0, or vector of two, the down-scaling factor(s)
 #'
-#' @return a grid list of the form returned by `bk_grid`
+#' @return a grid list of the form returned by `bk`
 #' @export
 #'
 #' @examples
 #'
 #' # example data
 #' gdim = c(50, 53)
-#' g = bk_grid(gdim)
+#' g = bk(gdim)
 #' pars = modifyList(bk_pars(g), list(eps=1e-6))
 #' gval = bk_sim(g, pars)
 #' g_obs = modifyList(g, list(gval=gval))
@@ -400,7 +400,7 @@ bk_sub = function(g_obs, ij=list(), mirror=FALSE, idx=FALSE)
 #' n_layer = 3
 #'
 #' # generate some data and omit 50% of it
-#' gval_multi = bk_sim(bk_grid(list(gdim=gdim, gval=matrix(NA, n_pt, n_layer))), pars)
+#' gval_multi = bk_sim(bk(list(gdim=gdim, gval=matrix(NA, n_pt, n_layer))), pars)
 #' idx_miss = sample.int(n_pt, round(0.5*n_pt))
 #' gval_multi[idx_miss,] = NA
 #'
@@ -419,7 +419,7 @@ bk_rescale = function(g, up=NULL, down=NULL)
   if( !(is_up | is_down) ) stop('either up or down must be specified')
 
   # unpack the grid object as list
-  g = bk_grid(g)
+  g = bk(g)
   gdim = g[['gdim']]
 
   # multi-layer support
@@ -468,7 +468,7 @@ bk_rescale = function(g, up=NULL, down=NULL)
   # set up dimensions of super-grid
   gdim_new = gdim + (down - 1L) * (gdim - 1L)
   gres_new = g[['gres']] / down
-  g_new = bk_grid(list(gdim=gdim_new, gres=gres_new), vals=!is.null(g[['gval']]))
+  g_new = bk(list(gdim=gdim_new, gres=gres_new), vals=!is.null(g[['gval']]))
   g_new[['gyx']] = Map(function(old, new) new + old[1], old=g[['gyx']], new=g_new[['gyx']])
   g_new[['crs']] = g[['crs']]
 
@@ -495,7 +495,7 @@ bk_rescale = function(g, up=NULL, down=NULL)
 #' locations in a grid with dimensions `gdim`. Otherwise, grid dimensions are extracted
 #' from `g_obs`, overriding any argument to `gdim`.
 #'
-#' @param g_obs logical vector, or any other object accepted by `bk_grid`
+#' @param g_obs logical vector, or any other object accepted by `bk`
 #' @param gdim integer vector, the grid dimensions (ny, nx)
 #' @param g_out logical, indicates to return a grid list object
 #'
@@ -507,7 +507,7 @@ bk_rescale = function(g, up=NULL, down=NULL)
 #'
 #' # define a grid and example data
 #' gdim = c(50, 53)
-#' g_bare = bk_grid(gdim)
+#' g_bare = bk(gdim)
 #' gval = bk_sim(g_bare, modifyList(bk_pars(g), list(eps=1e-12)))
 #' g_obs = modifyList(g_bare, list(gval=gval))
 #' bk_plot(g_obs)
@@ -558,7 +558,7 @@ bk_sub_find = function(g_obs, gdim=NULL)
 
     # open as blitzKrig list object
     if( is.vector(g_obs) & !is.list(g_obs) ) g_obs = list(gval=g_obs, gdim=gdim)
-    g_result = bk_grid(g_obs)
+    g_result = bk(g_obs)
 
     # process only the first column of multi-layer input
     if( is.matrix(g_result[['gval']]) ) g_result[['gval']] = as.vector(g_obs[['gval']][,1])
@@ -625,7 +625,7 @@ bk_sub_find = function(g_obs, gdim=NULL)
 #' Return coordinates of a grid of points in column-vectorized order
 #'
 #' Expands a set of y and x grid line numbers in the column-vectorized order returned
-#' by `bk_grid`.
+#' by `bk`.
 #'
 #' This is similar to `base::expand.grid` but with the first dimension (y) descending
 #' instead of ascending.
@@ -634,7 +634,7 @@ bk_sub_find = function(g_obs, gdim=NULL)
 #' with data (if any) copied from `g$gval` into column 'gval'. Note that `prod(g$gdim)`
 #' points are created, which can be slow for large grids.
 #'
-#' @param g any object accepted by `bk_grid`
+#' @param g any object accepted by `bk`
 #' @param out character indicating return value type, either 'list', 'matrix', or 'sf'
 #' @param corners logical, indicates to only return the corner points
 #'
@@ -643,7 +643,7 @@ bk_sub_find = function(g_obs, gdim=NULL)
 #'
 #' @examples
 #' gdim = c(5,3)
-#' g_example = bk_grid(list(gdim=gdim, gres=c(0.5, 0.7), gval=seq(prod(gdim))))
+#' g_example = bk(list(gdim=gdim, gres=c(0.5, 0.7), gval=seq(prod(gdim))))
 #' bk_coords(g_example)
 #' bk_coords(g_example, out='list')
 #'
@@ -665,7 +665,7 @@ bk_sub_find = function(g_obs, gdim=NULL)
 bk_coords = function(g, out='matrix', corner=FALSE, quiet=FALSE)
 {
   # unpack input and slice multi-layer input
-  g = bk_grid(g)
+  g = bk(g)
   if( !is.null(g[['idx_grid']]) )
   {
     # keep only the first layer

@@ -17,7 +17,7 @@ bk_LL(
 \arguments{
 \item{pars}{list of form returned by \code{bk_pars} (with entries 'y', 'x', 'eps', 'psill')}
 
-\item{g_obs}{list of form returned by \code{bk_grid} (with entries 'gdim', 'gres', 'gval')}
+\item{g_obs}{list of form returned by \code{bk} (with entries 'gdim', 'gres', 'gval')}
 
 \item{X}{numeric, vector, matrix, or NA, a fixed mean value, or matrix of linear predictors}
 
@@ -64,7 +64,7 @@ log-determinant \code{log_det}, and the quadratic form \code{quad_form}.
 # set up example grid, covariance parameters
 gdim = c(25, 12)
 n = prod(gdim)
-g_all = bk_grid(gdim)
+g_all = bk(gdim)
 pars = modifyList(bk_pars(g_all, 'gau'), list(psill=0.7, eps=5e-2))
 
 # generate some covariates and complete data

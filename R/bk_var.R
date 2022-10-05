@@ -39,7 +39,7 @@
 #' # define test distances, grid, and example kernel
 #' n_test = 100
 #' d_test = seq(n_test)-1
-#' g_example = bk_grid(n_test)
+#' g_example = bk(n_test)
 #' pars = bk_pars(g_example, c('mat', 'gau'))
 #' pars_x = pars[['x']]
 #'
@@ -173,7 +173,7 @@ bk_corr = function(pars, d=NA)
 #'
 #' # define test distances, grid, and example kernel
 #' n_test = 10
-#' g_example = bk_grid(n_test)
+#' g_example = bk(n_test)
 #' pars = bk_pars(g_example, c('mat', 'gau'))
 #'
 #' # compute the correlation matrices and their kronecker product
@@ -240,13 +240,13 @@ bk_corr_mat = function(pars, n, gres=1, i=seq(n), j=seq(n))
 #' Missing data are identified by looking for NAs in the data vector `g_obs$gval`. If all
 #' are NA (or if 'gval' is missing from `g_obs`), the function behaves as though all grid
 #' points are observed. For multi-layer input, NAs are instead determined from
-#' `g_obs$idx_grid` and 'gval' is ignored (see `?bk_grid`).
+#' `g_obs$idx_grid` and 'gval' is ignored (see `?bk`).
 #'
 #'
 #' Note: when `pars$eps>0`, the 'eigen' factorization method will be more robust than 'chol'
 #' in handling numerical precision issues with poorly conditioned covariance matrices.
 #'
-#' @param g_obs list of form returned by `bk_grid` (with entries 'gdim', 'gres', 'gval')
+#' @param g_obs list of form returned by `bk` (with entries 'gdim', 'gres', 'gval')
 #' @param pars list of form returned by `bk_pars` (with entries 'y', 'x', 'eps', 'psill')
 #' @param scaled logical, whether to scale by `1/pars$psill`
 #' @param fac_method character, the factorization to return, one of 'none', 'chol', 'eigen'
@@ -263,7 +263,7 @@ bk_corr_mat = function(pars, n, gres=1, i=seq(n), j=seq(n))
 #' n = prod(gdim)
 #' n_obs = floor(n/3)
 #' idx_obs = sort(sample.int(n, n_obs))
-#' g = g_obs = bk_grid(gdim)
+#' g = g_obs = bk(gdim)
 #' g_obs$gval[idx_obs] = rnorm(n_obs)
 #'
 #' # example kernel
@@ -345,8 +345,8 @@ bk_var = function(g_obs, pars=NULL, scaled=FALSE, fac_method='none', X=NULL, fac
   msg_fac_method = paste('fac_method must be one of: NA,', paste(nm_fac_method, collapse=', '))
   if( !(fac_method %in% nm_fac_method) ) stop(msg_fac_method)
 
-  # bk_grid converts 1-layer matrix input to vector
-  if(is.matrix(g_obs[['gval']])) g_obs = bk_grid(g_obs)
+  # bk converts 1-layer matrix input to vector
+  if(is.matrix(g_obs[['gval']])) g_obs = bk(g_obs)
 
   # copy the indexing vector in the multi-layer case
   if(is.matrix(g_obs[['gval']]))
@@ -468,7 +468,7 @@ bk_var = function(g_obs, pars=NULL, scaled=FALSE, fac_method='none', X=NULL, fac
 #' or matrix, containing one or more layers of observed data (with NAs omitted).
 #'
 #'
-#' @param g_obs list of form returned by `bk_grid` or numeric vector or matrix of non-NA data
+#' @param g_obs list of form returned by `bk` or numeric vector or matrix of non-NA data
 #' @param pars list of form returned by `bk_pars` (with entries 'y', 'x', 'eps', 'psill')
 #' @param fac factorization of scaled covariance matrix of z (V divided by psill)
 #' @param quad logical, if TRUE the function returns the quadratic form `t(z) %*% V_inv %*% z`
@@ -485,7 +485,7 @@ bk_var = function(g_obs, pars=NULL, scaled=FALSE, fac_method='none', X=NULL, fac
 #' gdim = c(10, 15)
 #' n = prod(gdim)
 #' z_all = rnorm(n)
-#' g_obs = modifyList(bk_grid(gdim), list(gval = z_all))
+#' g_obs = modifyList(bk(gdim), list(gval = z_all))
 #'
 #' # define covariance parameters
 #' pars = modifyList(bk_pars(g_obs, 'gau'), list(psill=2, eps=0.5))
@@ -560,7 +560,7 @@ bk_var_mult = function(g_obs, pars, fac_method='eigen', fac=NULL, quad=FALSE, p=
   if( is.list(g_obs) )
   {
     # unpack list g_obs as needed
-    g_obs = bk_grid(g_obs)
+    g_obs = bk(g_obs)
     n_layer = ifelse(is.matrix(g_obs[['idx_grid']]), ncol(g_obs[['idx_grid']]), 1L)
 
     # when there are missing data, omit from copy z

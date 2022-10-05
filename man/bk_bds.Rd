@@ -9,7 +9,7 @@ bk_bds(pars, g, var_obs = NULL, var_mult = 2)
 \arguments{
 \item{pars}{list or character vector of 1-2 kernel names (see \code{bk_pars})}
 
-\item{g}{list, a blitzKrig grid definition (or object accepted by \code{bk_grid})}
+\item{g}{list, a blitzKrig grid definition (or object accepted by \code{bk})}
 
 \item{var_obs}{positive numeric, the sample variance of data \code{g$gval}}
 
@@ -43,7 +43,7 @@ large or small distances.
 \examples{
 gdim = c(10, 15)
 z = prod(gdim) |> rnorm()
-g = bk_grid(gdim) |> modifyList(list(gval=z))
+g = bk(gdim) |> modifyList(list(gval=z))
 bk_bds('mat', g)
 bk_bds('mat', g, lower=0)
 bk_bds('mat', g, rows=c('eps', 'psill'), lower=c(0, 0.5))

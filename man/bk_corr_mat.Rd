@@ -41,7 +41,7 @@ matrix for a spatially separable process (see examples).
 
 # define test distances, grid, and example kernel
 n_test = 10
-g_example = bk_grid(n_test)
+g_example = bk(n_test)
 pars = bk_pars(g_example, c('mat', 'gau'))
 
 # compute the correlation matrices and their kronecker product

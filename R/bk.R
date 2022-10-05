@@ -92,8 +92,8 @@
 #'
 #' Scalar inputs to 'gdim', 'gres' are duplicated for both dimensions, and for convenience
 #' 'gdim' can be specified directly in `g` to initialize a simple grid; For example the call
-#' `bk_grid(list(gdim=c(5,5)))` can be simplified to `bk_grid(list(gdim=5))` or
-#' `bk_grid(5)`.
+#' `bk(list(gdim=c(5,5)))` can be simplified to `bk(list(gdim=5))` or
+#' `bk(5)`.
 #'
 #' @param g raster, matrix, numeric vector, or list (see details)
 #' @param vals logical indicating to include the data vector 'gval' in return list
@@ -108,7 +108,7 @@
 #' g = bk(gdim)
 #' summary(g)
 #'
-#' # pass result to bk_grid and get the same thing back
+#' # pass result to bk and get the same thing back
 #' identical(g, bk(g))
 #'
 #' # supply grid lines instead and get the same result

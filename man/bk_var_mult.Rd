@@ -14,7 +14,7 @@ bk_var_mult(
 )
 }
 \arguments{
-\item{g_obs}{list of form returned by \code{bk_grid} or numeric vector or matrix of non-NA data}
+\item{g_obs}{list of form returned by \code{bk} or numeric vector or matrix of non-NA data}
 
 \item{pars}{list of form returned by \code{bk_pars} (with entries 'y', 'x', 'eps', 'psill')}
 
@@ -66,7 +66,7 @@ rel_err = \(x, y) ifelse(y == 0, 0, abs( (x - y) / y ) )
 gdim = c(10, 15)
 n = prod(gdim)
 z_all = rnorm(n)
-g_obs = modifyList(bk_grid(gdim), list(gval = z_all))
+g_obs = modifyList(bk(gdim), list(gval = z_all))
 
 # define covariance parameters
 pars = modifyList(bk_pars(g_obs, 'gau'), list(psill=2, eps=0.5))

@@ -7,7 +7,7 @@
 bk_GLS(g_obs, pars, X = NA, fac = NULL, fac_method = "eigen", out = "b")
 }
 \arguments{
-\item{g_obs}{list of form returned by \code{bk_grid} (with entries 'gdim', 'gres', 'gval')}
+\item{g_obs}{list of form returned by \code{bk} (with entries 'gdim', 'gres', 'gval')}
 
 \item{pars}{list of form returned by \code{bk_pars} (with entries 'y', 'x', 'eps', 'psill')}
 
@@ -43,7 +43,7 @@ values, in order. Use \code{X=NA} to specify an intercept-only model; ie to fit 
 constant mean. This replaces X in the GLS equation by a vector of 1's.
 
 \code{g_obs$gval} can be a matrix whose columns are multiple repetitions (layers) of the
-same spatial process (see \code{bk_grid}), in which case the covariates in \code{X} are recycled
+same spatial process (see \code{bk}), in which case the covariates in \code{X} are recycled
 for each layer. Layers are assumed mutually independent and the GLS equation is evaluated
 using the corresponding block-diagonal V. Note that this is equivalent to (but faster
 than) calling \code{bk_GLS} separately on each layer with the same \code{X} and averaging the
@@ -53,7 +53,7 @@ estimated b's.
 # set up example grid, and covariance parameters
 gdim = c(45, 31)
 n = prod(gdim)
-g = bk_grid(gdim)
+g = bk(gdim)
 pars = modifyList(bk_pars(g, 'gau'), list(psill=2))
 
 # generate spatial noise

@@ -4,6 +4,8 @@
 .httr-oauth
 .DS_Store
 /rjarticle/data
+/rjarticle/blitzKrig.html
+/rjarticle/blitzKrig.pdf
 /rjarticle/rjarticle_template
 /vignettes_backup
 data

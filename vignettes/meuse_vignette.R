@@ -269,6 +269,8 @@ bk_plot(g_meuse_pred,
 
 # prediction variance
 z_var = bk_cmean(g_meuse_detrend, pars_UK, X=0, out='v', quiet=TRUE)
+
+
 g_meuse_var = modifyList(g_meuse, list(gval=z_var))
 bk_plot(g_meuse_var, main='kriging variance')
 
@@ -321,6 +323,6 @@ if(FALSE)
   unlink(path.garbage)
 
   # substitute local file paths for image files with URLs on github
-  md.github = gsub('D:/blitzKrig', 'https://github.com/deankoch/blitzKrig/blob/main', readLines(path.output))
+  md.github = gsub('D:/blitzKrig', 'https://github.com/deankoch/blitzKrig/blob/master', readLines(path.output))
   writeLines(md.github, path.output)
 }

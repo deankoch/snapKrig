@@ -712,6 +712,9 @@ bk_cmean = function(g_obs, pars, X=NA, fac=NULL, out='p', fac_method='chol', qui
       add_yx = ( pars[['psill']] * kronecker(add_x2[, idx_yx[['j']]], add_y2[, idx_yx[['i']]]) )^2
       v_add = ev[idx] * add_yx
     }
+
+    # add to total
+    v_rem = v_rem + as.vector(v_add)
   }
   if(!quiet) close(pb)
   return(pars[['psill']] + pars[['eps']] + as.numeric(v_gls) - v_rem)

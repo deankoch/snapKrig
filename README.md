@@ -2,9 +2,9 @@
 
 an R package for fast grid-based Gaussian processes models and kriging
 
-<img src="https://raw.githubusercontent.com/deankoch/blitzKrig/main/vignettes/meuse_vignette_files/figure-gfm/ordinary_kriging-1.png" width="30%"></img>
-<img src="https://raw.githubusercontent.com/deankoch/blitzKrig/main/vignettes/meuse_vignette_files/figure-gfm/predictor_plot-1.png" width="30%"></img>
-<img src="https://raw.githubusercontent.com/deankoch/blitzKrig/main/vignettes/meuse_vignette_files/figure-gfm/variance_plot-1.png" width="30%"></img>
+<img src="https://raw.githubusercontent.com/deankoch/blitzKrig/master/vignettes/meuse_vignette_files/figure-gfm/ordinary_kriging-1.png" width="30%"></img>
+<img src="https://raw.githubusercontent.com/deankoch/blitzKrig/master/vignettes/meuse_vignette_files/figure-gfm/predictor_plot-1.png" width="30%"></img>
+<img src="https://raw.githubusercontent.com/deankoch/blitzKrig/master/vignettes/meuse_vignette_files/figure-gfm/variance_plot-1.png" width="30%"></img>
 
 
 # Update October 2022
@@ -26,8 +26,9 @@ methods for `g` and will return a "bk" object directly (no more fussing with `mo
 # Coming soon
 
 A CRAN submission is forthcoming. For now you can install the package using devtools and try out
-the [Meuse River vignette](https://github.com/deankoch/blitzKrig/blob/main/vignettes/meuse_vignette.md).
+the [Meuse River vignette](https://github.com/deankoch/blitzKrig/blob/master/vignettes/meuse_vignette.md).
 An paper introducing `blitzKrig` has also been drafted for submission to the R Journal around the same time.
+
 
 # Overview
 

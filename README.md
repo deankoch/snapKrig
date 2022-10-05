@@ -14,9 +14,8 @@ name and some updates. Development on `pkern` has ended, with `blitzKrig` pickin
 
 The most important update in this version was to define an S3 class, "bk" for grid list objects (which are
 usually named `g` in examples). The base class for "bk" still a list, and square-bracket replace/access
-calls with entry names, like `g[['gdim']]` and `g[c('gdim', 'gres')]`, still behave the same way. 
-
-However, grid data values can now be accessed/assigned directly via square-bracket indexing, such as
+calls with entry names, like `g[['gdim']]` and `g[c('gdim', 'gres')]`, still behave the same way. However,
+grid data values can now be accessed/assigned directly via square-bracket indexing, such as
 with `g[i]` instead of `g[["gval"]][i]`. For numeric indices, `g` now behaves like a numeric vector.
 
 We also now have a large number of methods defined for "bk", including common generics like `summary`,
@@ -37,19 +36,21 @@ gridded data. This can be useful when working with geo-referenced data, such as 
 users often need a tool for interpolation or down-scaling.
 
 The package offers an fast and simple back-end for modeling with spatially correlated errors.
-It works much faster than alternatives like `gstat` and `fields`, at the expense of restricting the type
-of model users can select.
+It works much faster than alternatives like `gstat` and `fields` (sometimes by several orders of magnitude),
+at the expense of slightly restricting the type of model users can select, and forcing the use of gridded
+datasets (possibly requiring the data to be snapped).
 
 `blitzKrig` depends only on packages included by default in R (like `graphics` and `stats`), but supports 
-raster and geometry classes from `sf` and `terra`.
+raster and geometry classes from `sf` and `terra`. While we recommend the newest version of R, the package
+is written for compatibility with older versions of R (*eg.* we steer clear of syntax like `|>` and `\(x)`).
 
 
 # Technical Features
 
 * models anisotropic Gaussian processes on 2-dimensional regular grids for a choice of covariance kernels
-* fast computation of the likelihood function, generalized least squares, and kriging predictor/variance
-* Support for missing data problems, and highly optimized code for complete data case 
-* automated maximum likelihood model fitting with sample semi-variogram diagnostic
+* optimized computation of the likelihood function, generalized least squares, and kriging predictor/variance
+* fast computations with missing data problems, and even faster in the complete data case 
+* automated maximum likelihood model fitting and support for sample semi-variograms
 * user friendly helper functions for raster down-scaling and point interpolation
 
 # Technical Background

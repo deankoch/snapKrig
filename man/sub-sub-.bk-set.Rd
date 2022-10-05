@@ -2,7 +2,8 @@
 % Please edit documentation in R/bk.R
 \name{[[.bk<-}
 \alias{[[.bk<-}
-\title{INDEXING METHODS}
+\title{\subsection{INDEXING METHODS}{
+}}
 \usage{
 \method{[[}{`bk<-`}(x, value)
 }

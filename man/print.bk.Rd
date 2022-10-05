@@ -2,7 +2,8 @@
 % Please edit documentation in R/bk.R
 \name{print.bk}
 \alias{print.bk}
-\title{OTHER METHODS}
+\title{\subsection{OTHER METHODS}{
+}}
 \usage{
 \method{print}{bk}(x, ...)
 }

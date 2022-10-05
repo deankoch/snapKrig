@@ -19,6 +19,6 @@ This calculates the mean over all layers (if any)
 }
 \examples{
 g = bk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
-mean(g)
+mean(g) == mean(g[])
 
 }

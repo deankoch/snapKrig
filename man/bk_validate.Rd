@@ -2,7 +2,8 @@
 % Please edit documentation in R/bk.R
 \name{bk_validate}
 \alias{bk_validate}
-\title{VALIDATOR}
+\title{\subsection{VALIDATOR}{
+}}
 \usage{
 bk_validate(g)
 }

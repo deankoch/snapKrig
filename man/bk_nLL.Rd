@@ -4,15 +4,7 @@
 \alias{bk_nLL}
 \title{Negative log-likelihood for parameter vector \code{p}}
 \usage{
-bk_nLL(
-  p,
-  g_obs,
-  pars_fix,
-  X = 0,
-  iso = FALSE,
-  quiet = TRUE,
-  log_scale = FALSE
-)
+bk_nLL(p, g_obs, pars_fix, X = 0, iso = FALSE, quiet = TRUE, log_scale = FALSE)
 }
 \arguments{
 \item{p}{numeric vector of covariance parameters accepted by \code{bk_pars_update}}

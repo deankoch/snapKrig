@@ -2,7 +2,8 @@
 % Please edit documentation in R/bk.R
 \name{Math.bk}
 \alias{Math.bk}
-\title{GROUP GENERICS}
+\title{\subsection{GROUP GENERICS}{
+}}
 \usage{
 \method{Math}{bk}(x, ...)
 }

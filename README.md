@@ -24,7 +24,7 @@ methods for `g` and will return a "bk" object directly (no more fussing with `mo
 
 # Coming soon
 
-A CRAN submission is forthcoming. For now you can install the package using devtools and try out
+A CRAN submission is coming up soon. For now you can install the package using devtools and try out
 the [Meuse River vignette](https://github.com/deankoch/blitzKrig/blob/master/vignettes/meuse_vignette.md).
 An paper introducing `blitzKrig` has also been drafted for submission to the R Journal around the same time.
 

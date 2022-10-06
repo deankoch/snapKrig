@@ -7,9 +7,9 @@
 bk_plot(g, gdim = NULL, ...)
 }
 \arguments{
-\item{g}{vector or any object understood by \code{bk}}
+\item{g}{vector, matrix, or any object understood by \code{bk}}
 
-\item{gdim}{numeric vector, (optional) grid dimensions of the data}
+\item{gdim}{numeric vector, (optional) grid dimensions of the data when \code{g} is a vector}
 
 \item{...}{plotting parameters (see details)}
 }
@@ -27,6 +27,8 @@ image area on screen; and with a different layout for heat-maps of matrices, whi
 plotted with i and j axes (row and column numbers) replacing y and x.
 }
 \details{
+This method is called automatically when a "bk" object is passed to \code{plot}.
+
 \code{g} can be a vector, in which case \code{gdim} supplies the y, x dimensions (ie number
 of rows, number of columns), in that order. \code{g} can also can be a matrix, raster or any
 other object understood by \code{bk} (in which case \code{gdim} can be omitted).
@@ -73,6 +75,10 @@ the color bar legend (default TRUE)}
 
 \item{breaks}{numeric (vector) or character vector: the color break points (see details)}
 
+\item{cex, cex.main, cex.x, cex.y, cex.z}{numeric: controls the size of text elements in
+the plot (default 1), those for title, x/y labels and ticks, and legend title and ticks
+all inherit the value assigned to cex (unless otherwise specified).}
+
 \item{col_box, col_grid}{character: respectively, the colors to use for drawing a box
 around the image border and for drawing grid cell boundaries (NA to omit)}
 
@@ -115,70 +121,77 @@ n = prod(gdim)
 g = bk(gdim)
 
 # plot the grid layout as raster then as matrix
-bk_plot(g)
-bk_plot(g, ij=TRUE)
+plot(g)
+plot(g, ij=TRUE)
 
 # example data: cosine of squared distance to top left corner
 z = apply(expand.grid(g$gyx), 1, \(z) cos( 2*sum(z^2) ) )
 g_example = modifyList(g, list(gval=z))
-bk_plot(g_example)
+plot(g_example)
 
 # plot as matrix (changes default palette)
-bk_plot(g_example, ij=T)
+plot(g_example, ij=T)
 
 # alignment
-bk_plot(g_example, ij=T, main='Centered title and legend by default')
-bk_plot(g_example, ij=T, main='adj: left-right justification of title', adj=0)
-bk_plot(g_example, ij=T, main='leg_just: top-bottom justification of color bar', leg_just=0)
+plot(g_example, ij=T, main='Centered title and legend by default')
+plot(g_example, ij=T, main='adj: left-right justification of title', adj=0)
+plot(g_example, ij=T, main='leg_just: top-bottom justification of color bar', leg_just=0)
 
 # set the palette - see hcl.pals() for valid names
 pal = 'Zissou 1'
-bk_plot(g_example, pal=pal, main=pal)
-bk_plot(g_example, pal=pal, main=pal, col_invert=TRUE)
-bk_plot(g_example, pal=pal, main=pal, col_invert=TRUE, col_rev=TRUE)
+plot(g_example, pal=pal, main=pal)
+plot(g_example, pal=pal, main=pal, col_invert=TRUE)
+plot(g_example, pal=pal, main=pal, col_invert=TRUE, col_rev=TRUE)
 
 # example data: cosine of distance to top left corner
-z = apply(expand.grid(g$gyx), 1, \(z) cos( sqrt(sum(z^2))/50 ) )
-g_example = modifyList(g, list(gval=z))
-bk_plot(g_example)
+g[] = apply(expand.grid(g$gyx), 1, \(z) cos( sqrt(sum(z^2))/50 ) )
+plot(g)
 
 # specify the layer for multi-layer objects (default is first layer)
-g_example = modifyList(g, list(gval=cbind(z, z^2), idx_grid=seq(n)))
-bk_plot(g_example)
-bk_plot(g_example, layer=2)
+g_multi = bk(list(gdim=gdim, gval=cbind(z, z^2)))
+plot(g_multi)
+plot(g_multi, layer=2)
 
 # reduce number of color breaks or specify a factor for discrete value plots
-bk_plot(g_example, breaks=50)
-bk_plot(g_example, breaks=3) # not a great way to bin the data
-bk_plot(g=modifyList(g, list(gval=cut(z, 3, dig.lab=1))))
+plot(g, breaks=50)
+plot(g, breaks=3)
+g[] = cut(g[], breaks=3, dig.lab=1)
+plot(g)
 
 # pass color bar labels for discrete plots in breaks (in order low to high)
-bk_plot(modifyList(g, list(gval=cut(z, 3))), breaks=c('a', 'b', 'c'), zlab='group')
+plot(g, breaks=c('a', 'b', 'c'), zlab='group')
 
 # select some "observed" points and make a covariance matrix
 idx_obs = match(seq(n), sort(sample.int(prod(gdim), 1e2)))
-g_v_example = modifyList(g_example, list(gval=idx_obs))
-v = bk_var(g_v_example)
+g[] = idx_obs
+plot(g)
+v = bk_var(g)
 
 # matrix display mode is automatic when first argument is a matrix or vector
 bk_plot(v, zlab=expression(V[ij]))
+bk_plot(c(v), dim(v), zlab=expression(V[ij]))
+
+# or pass the matrix to `bk` first to turn it into a bk grid object
+g_v = bk(v)
+plot(g_v, zlab=expression(V[ij]))
 
 # minimal versions
-bk_plot(v, minimal=T)
-bk_plot(v, minimal=T, leg=T)
-bk_plot(v, minimal=T, col_grid='white', leg=TRUE)
+plot(g_v, minimal=T)
+plot(g_v, minimal=T, leg=T)
+plot(g_v, minimal=T, col_grid='white', leg=TRUE)
 
-# logical matrix plots are grayscale by default
-bk_plot(v > 1e-2, main='logical matrix')
+# logical matrix plots are gray-scale by default
+plot(g_v > 1e-2, main='logical matrix')
 
 # logical, integer and factor class matrices get a discrete color-bar
 interval = 1e-2 # try also 1e-3 to see behaviour with large number of bins
 v_discrete = cut(v, seq(0, ceiling(max(v)), by=interval), dig.lab=2)
-bk_plot(as.character(v_discrete), dim(v))
+g_v[] = cut(v, seq(0, ceiling(max(v)), by=interval), dig.lab=2)
+plot(g_v)
 
 # labels are preserved for character matrices
 z_char = rep(c('foo', 'bar'), n/2)
 z_char[sample.int(n, n/2)] = NA
-bk_plot(g=z_char, gdim)
+bk_plot(z_char, gdim)
 
 }

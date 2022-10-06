@@ -1,14 +1,15 @@
-# bk.R
+# bk_export.R
 # Dean Koch, 2022
-# Functions for building grids out of various inputs
+# Functions for exporting grids
 
-#' Convert column-vectorized grid to SpatRaster
+#' Convert "bk" grid to SpatRaster
 #'
 #' @param g any object accepted or returned by `bk`
 #' @param template character or RasterLayer/SpatRaster to set output type
 #'
 #' Converts a column-vectorized vector or matrix to a SpatRaster, or if terra is
-#' unavailable, a RasterLayer.
+#' unavailable, a RasterLayer. Multi-layer outputs are supported for terra but not
+#' raster.
 #'
 #' @return a RasterLayer or SpatRaster containing the data from `g` (or a sub-grid)
 #' @export
@@ -24,10 +25,10 @@
 #'
 #' # convert back to RasterLayer and compare
 #' r_from_g = bk_export(g, 'raster')
-#' print(r_from_g)
 #' print(r)
+#' print(r_from_g)
 #'
-#' # layer name, band number, and various other metadata are lost
+#' # NOTE: layer name, band number, and various other metadata are lost
 #' all.equal(r_from_g, r)
 #'
 #' # same with terra
@@ -38,7 +39,7 @@
 #' g = bk(r)
 #' r_from_g = bk_export(g)
 #'
-#' # various metadata are lost
+#' # NOTE: various metadata are lost
 #' all.equal(r_from_g, r)
 #'
 #' }
@@ -55,8 +56,8 @@ bk_export = function(g, template='terra')
 
   # load the input as blitzKrig list
   g = bk(g)
-  g[['crs']] = ifelse(is.null(g[['crs']]), '', g[['crs']])
-  n_layer = ifelse(is.null(g[['idx_grid']]), sum(!is.null(g[['gval']])), ncol(g[['gval']]))
+  is_multi = is.matrix(g[['gval']])
+  n_layer = ifelse(is_multi, ncol(g[['gval']]), 1L)
 
   # extract grid cell boundaries as defined in raster/terra
   yx_bbox = Map(\(g, s) range(g) + (c(-1,1) * s/2), g=g[['gyx']], s=g[['gres']])
@@ -64,47 +65,37 @@ bk_export = function(g, template='terra')
   # handle grid objects as templates
   if( !is.character(template) )
   {
-    # check if template is a sub-grid or super-grid of `g`?
-    # g_template = bk(template)
-    # TODO: implement crop?
+    template = class(g)[1]
 
     # set template class name
-    template = class(g)
-    if( 'SpatRaster' %in% template ) template = 'terra'
-    if( any(c('RasterLayer', 'RasterStack') %in% template ) ) template = 'raster'
-    template = paste(template, collapse=', ')
+    if( inherits(g, 'SpatRaster') ) template = 'terra'
+    if( inherits(g, 'RasterLayer') | inherits(g, 'RasterStack') ) template = 'raster'
   }
 
   # terra is preferred when available
   if( template == 'terra' )
   {
-    g_ext = terra::ext(do.call(c, rev(yx_bbox)))
-    r_out = terra::rast(extent=g_ext, resolution=rev(g[['gres']]), crs=g[['crs']], nlyr=n_layer)
-    if( n_layer == 1 ) { r_out = terra::setValues(r_out, matrix(g[['gval']], g[['gdim']])) } else {
-
-      # pad with NAs to recover full grid
-      gval = g[['gval']][ g[['idx_grid']], ]
+    r_ext = terra::ext(do.call(c, rev(yx_bbox)))
+    r_out = terra::rast(extent=r_ext, resolution=rev(g[['gres']]), crs=g[['crs']], nlyr=n_layer)
+    if( n_layer == 1 ) { r_out = terra::setValues(r_out, as.matrix(g)) } else {
 
       # multi-layer assignments require a different vectorization ordering!
-      gval_list = apply(gval, 2, function(x) t(matrix(x, g[['gdim']])), simplify=FALSE)
-      r_out = terra::setValues(r_out, do.call(cbind, gval_list))
+      idx_reorder = t(matrix(seq_along(g), dim(g)))
+      r_out = terra::setValues(r_out, g[idx_reorder,])
     }
-
     return(r_out)
   }
 
-  # check for unknown class
+  # revert to raster if requested
   if( template == 'raster' )
   {
     # attempt to use raster if terra unavailable
-    g_ext = raster::extent(do.call(c, rev(yx_bbox)))
-    r_out = raster::raster(ext=g_ext, resolution=rev(g[['gres']]), crs=g[['crs']])
-    if( !is.null(g[['gval']]) )
-    {
-      r_out = raster::setValues(r_out, matrix(g[['gval']], g[['gdim']]))
+    r_ext = raster::extent(do.call(c, rev(yx_bbox)))
+    r_out = raster::raster(ext=r_ext, resolution=rev(g[['gres']]), crs=g[['crs']])
 
-
-    }
+    # warn about lack of support for RasterStack output
+    if(n_layer > 1) warning('only the first layer was exported')
+    if( !is.null(g[['gval']]) ) r_out = raster::setValues(r_out, as.matrix(g))
     return(r_out)
   }
 
@@ -113,7 +104,7 @@ bk_export = function(g, template='terra')
 }
 
 
-#' Snap a set of points to a grid
+#' Snap a set of points to a "bk" grid
 #'
 #' Maps the input points in `from` to the closest grid points in the extension of `g`
 #' covering the bounding box of `from` (ie. the lattice of which `g` is a sub-grid).
@@ -173,7 +164,7 @@ bk_export = function(g, template='terra')
 #'
 #' # add example data values and plot
 #' from[['z']] = rnorm(length(from[['y']]))
-#' bk_plot(g, reset=FALSE)
+#' plot(g, reset=FALSE)
 #' graphics::points(from[c('x', 'y')], pch=16, col=my_col(from[['z']]))
 #' graphics::points(from[c('x', 'y')])
 #'

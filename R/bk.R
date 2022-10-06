@@ -319,7 +319,7 @@ bk_make = function(g)
   }
 
   # check for values and sparse representation index
-  any_gval = any(names(g) == 'gval')
+  any_gval = !is.null(g[['gval']])
   is_sparse = !is.null(g[['idx_grid']])
   if( is_sparse & !any_gval ) stop('g$idx_grid supplied without g$gval')
 

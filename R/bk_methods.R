@@ -88,10 +88,10 @@
     } else {
 
       # default selects all layers
-      if(is.null(j)) j = ncol(x[['gval']])
+      if(is.null(j)) j = seq(ncol(x[['gval']]))
 
       # vectorized indices mapped to rows via idx_grid in sparse representation
-      return( x[['gval']][ x[['idx_grid']][i], j] )
+      return( matrix(x[['gval']][ x[['idx_grid']][i], j], ncol=length(j)) )
     }
   }
 }
@@ -122,6 +122,9 @@
 #'
 `[<-.bk` = function(x, i=NULL, j=NULL, value, ...) {
 
+  # check if we are replacing everything
+  replace_all = is.null(i) & is.null(j)
+
   # identify multi-layer rasters
   is_multi = is.matrix(x[['gval']])
   if( !is.null(j) & !is_multi ) stop('only one index needed for single-layer grids')
@@ -138,13 +141,21 @@
       # initialize gval vector as needed
       if( is.null(x[['gval']]) ) x[['gval']] = rep(NA_real_, length(x))
 
-      # non-sparse representation is direct column-vectorization
-      x[['gval']][i] = as.vector(value)
+      # overwriting the whole object prevents unwanted coercion
+      if(replace_all) { x[['gval']] = as.vector(value) } else { x[['gval']][i] = as.vector(value) }
 
     } else {
 
-      # vectorized indices mapped to rows via idx_grid in sparse representation
-      x[['gval']][ x[['idx_grid']][i], j] = as.matrix(value)
+      # default selects all layers
+      if(is.null(j)) j = seq(ncol(x[['gval']]))
+
+      # if replacing everything we assume NAs are already removed
+      if(replace_all) {  x[['gval']] = as.matrix(value) } else {
+
+        # vectorized indices mapped to rows via idx_grid in sparse representation
+        x[['gval']][ x[['idx_grid']][i], j] = as.matrix(value)
+
+      }
     }
 
     return(bk_validate(x))
@@ -320,12 +331,12 @@ print.bk = function(x, ...)
 
   # message about completeness
   n_miss = x[['n_missing']]
-  if(is.null(n_miss)) {complete_msg = '(not validated)'} else {
+  if(is.null(n_miss)) {complete_msg = 'not validated'} else {
 
     n = prod(x[['gdim']])
-    complete_msg = '(incomplete)\n'
-    if( n_miss == n ) complete_msg = '(empty)\n'
-    if( n_miss == 0 ) complete_msg = '(complete)\n'
+    complete_msg = 'incomplete\n'
+    if( n_miss == n ) complete_msg = 'empty\n'
+    if( n_miss == 0 ) complete_msg = 'complete\n'
   }
 
   # check for matrix values
@@ -335,6 +346,12 @@ print.bk = function(x, ...)
     n_layer = ncol(x[['gval']])
     layer_msg = paste0(n_layer, ' layer', ifelse(n_layer==1, '', 's'), '\n')
     complete_msg = paste0(complete_msg, layer_msg)
+  }
+
+  # for non-numeric types, print the class instead of the range
+  if( !is.numeric(x[['gval']]) )
+  {
+    complete_msg = paste0(complete_msg, '(', class(x[['gval']])[1], ' data)\n')
   }
 
   # print messages
@@ -375,12 +392,20 @@ summary.bk = function(x, ...)
 
   # check range
   range_msg = NULL
-  if(n_obs > 0)
+  if( n_obs > 0 )
   {
-    range_obs = range(x[], na.rm=TRUE)
-    n_sig = min(max(3, round(-log(diff(range_obs), base=10))), 12)
-    range_string = paste(format(range_obs, digits=n_sig, trim=TRUE), collapse=', ')
-    range_msg = paste0('range [', range_string, ']')
+    # for non-numeric types, print the class instead of the range
+    if( !is.numeric(x[['gval']]) )
+    {
+      range_msg = paste0('(', class(x[['gval']])[1], ' data)')
+
+    } else {
+
+      range_obs = range(x, na.rm=TRUE)
+      n_sig = min(max(3, round(-log(diff(range_obs), base=10))), 12)
+      range_string = paste(format(range_obs, digits=n_sig, trim=TRUE), collapse=', ')
+      range_msg = paste0('range [', range_string, ']')
+    }
   }
 
   # report sample size and number observed in incomplete case

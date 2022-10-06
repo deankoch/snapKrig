@@ -3,13 +3,14 @@
 # graphics
 
 
-#TODO: find out why this hangs on large, integer input
 #' Plot grid data
 #'
 #' Plots a matrix or raster as a heatmap with an optional color bar legend. This is a wrapper
 #' for `graphics::image` similar to `terra::plot` but with tighter margins to increase the
 #' image area on screen; and with a different layout for heat-maps of matrices, which are
 #' plotted with i and j axes (row and column numbers) replacing y and x.
+#'
+#' This method is called automatically when a "bk" object is passed to `plot`.
 #'
 #' `g` can be a vector, in which case `gdim` supplies the y, x dimensions (ie number
 #' of rows, number of columns), in that order. `g` can also can be a matrix, raster or any
@@ -40,8 +41,8 @@
 #' `reset=FALSE` prevents this, so that additional elements can be added to the plot later
 #' (such as by calling `sf::st_plot(.., add=TRUE)` or `graphics:lines`).
 #'
-#' @param g vector or any object understood by `bk`
-#' @param gdim numeric vector, (optional) grid dimensions of the data
+#' @param g vector, matrix, or any object understood by `bk`
+#' @param gdim numeric vector, (optional) grid dimensions of the data when `g` is a vector
 #' @param ... plotting parameters (see details)
 #'
 #' @return The function returns a vector of suggested plot height and width values in units of
@@ -65,6 +66,10 @@
 #' the color bar legend (default TRUE)}
 #'
 #' \item{breaks}{numeric (vector) or character vector: the color break points (see details)}
+#'
+#' \item{cex, cex.main, cex.x, cex.y, cex.z}{numeric: controls the size of text elements in
+#' the plot (default 1), those for title, x/y labels and ticks, and legend title and ticks
+#' all inherit the value assigned to cex (unless otherwise specified).}
 #'
 #' \item{col_box, col_grid}{character: respectively, the colors to use for drawing a box
 #' around the image border and for drawing grid cell boundaries (NA to omit)}
@@ -109,85 +114,86 @@
 #' g = bk(gdim)
 #'
 #' # plot the grid layout as raster then as matrix
-#' bk_plot(g)
-#' bk_plot(g, ij=TRUE)
+#' plot(g)
+#' plot(g, ij=TRUE)
 #'
 #' # example data: cosine of squared distance to top left corner
 #' z = apply(expand.grid(g$gyx), 1, \(z) cos( 2*sum(z^2) ) )
 #' g_example = modifyList(g, list(gval=z))
-#' bk_plot(g_example)
+#' plot(g_example)
 #'
 #' # plot as matrix (changes default palette)
-#' bk_plot(g_example, ij=T)
+#' plot(g_example, ij=T)
 #'
 #' # alignment
-#' bk_plot(g_example, ij=T, main='Centered title and legend by default')
-#' bk_plot(g_example, ij=T, main='adj: left-right justification of title', adj=0)
-#' bk_plot(g_example, ij=T, main='leg_just: top-bottom justification of color bar', leg_just=0)
+#' plot(g_example, ij=T, main='Centered title and legend by default')
+#' plot(g_example, ij=T, main='adj: left-right justification of title', adj=0)
+#' plot(g_example, ij=T, main='leg_just: top-bottom justification of color bar', leg_just=0)
 #'
 #' # set the palette - see hcl.pals() for valid names
 #' pal = 'Zissou 1'
-#' bk_plot(g_example, pal=pal, main=pal)
-#' bk_plot(g_example, pal=pal, main=pal, col_invert=TRUE)
-#' bk_plot(g_example, pal=pal, main=pal, col_invert=TRUE, col_rev=TRUE)
+#' plot(g_example, pal=pal, main=pal)
+#' plot(g_example, pal=pal, main=pal, col_invert=TRUE)
+#' plot(g_example, pal=pal, main=pal, col_invert=TRUE, col_rev=TRUE)
 #'
 #' # example data: cosine of distance to top left corner
-#' z = apply(expand.grid(g$gyx), 1, \(z) cos( sqrt(sum(z^2))/50 ) )
-#' g_example = modifyList(g, list(gval=z))
-#' bk_plot(g_example)
+#' g[] = apply(expand.grid(g$gyx), 1, \(z) cos( sqrt(sum(z^2))/50 ) )
+#' plot(g)
 #'
 #' # specify the layer for multi-layer objects (default is first layer)
-#' g_example = modifyList(g, list(gval=cbind(z, z^2), idx_grid=seq(n)))
-#' bk_plot(g_example)
-#' bk_plot(g_example, layer=2)
+#' g_multi = bk(list(gdim=gdim, gval=cbind(z, z^2)))
+#' plot(g_multi)
+#' plot(g_multi, layer=2)
 #'
 #' # reduce number of color breaks or specify a factor for discrete value plots
-#' bk_plot(g_example, breaks=50)
-#' bk_plot(g_example, breaks=3) # not a great way to bin the data
-#' bk_plot(g=modifyList(g, list(gval=cut(z, 3, dig.lab=1))))
+#' plot(g, breaks=50)
+#' plot(g, breaks=3)
+#' g[] = cut(g[], breaks=3, dig.lab=1)
+#' plot(g)
 #'
 #' # pass color bar labels for discrete plots in breaks (in order low to high)
-#' bk_plot(modifyList(g, list(gval=cut(z, 3))), breaks=c('a', 'b', 'c'), zlab='group')
+#' plot(g, breaks=c('a', 'b', 'c'), zlab='group')
 #'
 #' # select some "observed" points and make a covariance matrix
 #' idx_obs = match(seq(n), sort(sample.int(prod(gdim), 1e2)))
-#' g_v_example = modifyList(g_example, list(gval=idx_obs))
-#' v = bk_var(g_v_example)
+#' g[] = idx_obs
+#' plot(g)
+#' v = bk_var(g)
 #'
 #' # matrix display mode is automatic when first argument is a matrix or vector
 #' bk_plot(v, zlab=expression(V[ij]))
+#' bk_plot(c(v), dim(v), zlab=expression(V[ij]))
+#'
+#' # or pass the matrix to `bk` first to turn it into a bk grid object
+#' g_v = bk(v)
+#' plot(g_v, zlab=expression(V[ij]))
 #'
 #' # minimal versions
-#' bk_plot(v, minimal=T)
-#' bk_plot(v, minimal=T, leg=T)
-#' bk_plot(v, minimal=T, col_grid='white', leg=TRUE)
+#' plot(g_v, minimal=T)
+#' plot(g_v, minimal=T, leg=T)
+#' plot(g_v, minimal=T, col_grid='white', leg=TRUE)
 #'
-#' # logical matrix plots are grayscale by default
-#' bk_plot(v > 1e-2, main='logical matrix')
+#' # logical matrix plots are gray-scale by default
+#' plot(g_v > 1e-2, main='logical matrix')
 #'
 #' # logical, integer and factor class matrices get a discrete color-bar
 #' interval = 1e-2 # try also 1e-3 to see behaviour with large number of bins
 #' v_discrete = cut(v, seq(0, ceiling(max(v)), by=interval), dig.lab=2)
-#' bk_plot(as.character(v_discrete), dim(v))
+#' g_v[] = cut(v, seq(0, ceiling(max(v)), by=interval), dig.lab=2)
+#' plot(g_v)
 #'
 #' # labels are preserved for character matrices
 #' z_char = rep(c('foo', 'bar'), n/2)
 #' z_char[sample.int(n, n/2)] = NA
-#' bk_plot(g=z_char, gdim)
+#' bk_plot(z_char, gdim)
 #'
 bk_plot = function(g, gdim=NULL, ...)
 {
+  ###################################################################################
+  ## set up default parameters
+
   # upper limit on dimensions to pass to graphics::image
   px_max = 2e3
-
-  # handle vector input
-  if( is.vector(g) & !is.list(g) )
-  {
-    # convert vectors to matrix
-    if( is.null(gdim) ) stop('grid dimensions gdim must be supplied when g is a vector')
-    if( length(g) != prod(gdim) ) stop('length of grid vector g was not equal to prod(gdim)')
-    g = matrix(g, gdim)
-  }
 
   # different defaults for ij and minimal modes
   ij = ifelse( is.null( list(...)[['ij']] ), is.matrix(g), list(...)[['ij']])
@@ -209,6 +215,11 @@ bk_plot = function(g, gdim=NULL, ...)
   axes = ifelse( is.null( list(...)[['axes']] ), axes, list(...)[['axes']])
   ylab = ifelse( is.null( list(...)[['ylab']] ), ylab, list(...)[['ylab']])
   xlab = ifelse( is.null( list(...)[['xlab']] ), xlab, list(...)[['xlab']])
+  cex = ifelse( is.null( list(...)[['cex']] ), 1, list(...)[['cex']])
+  cex.main = ifelse( is.null( list(...)[['cex.main']] ), cex, list(...)[['cex.main']])
+  cex.y = ifelse( is.null( list(...)[['cex.y']] ), cex, list(...)[['cex.y']])
+  cex.x = ifelse( is.null( list(...)[['cex.x']] ), cex, list(...)[['cex.x']])
+  cex.z = ifelse( is.null( list(...)[['cex.z']] ), cex, list(...)[['cex.z']])
   lwd_axis = ifelse( is.null( list(...)[['lwd_axis']] ), 1, list(...)[['lwd_axis']])
   lwd_ticks = ifelse( is.null( list(...)[['lwd_ticks']] ), 1, list(...)[['lwd_ticks']])
   col_box = ifelse( is.null( list(...)[['col_box']] ), col_box, list(...)[['col_box']])
@@ -224,26 +235,41 @@ bk_plot = function(g, gdim=NULL, ...)
   x_ontop = ifelse( is.null( list(...)[['x_ontop']] ), x_ontop, list(...)[['x_ontop']])
   reset = ifelse( is.null( list(...)[['reset']] ), FALSE, list(...)[['reset']])
 
-  # convert matrix and raster to blitzKrig list
+  ###################################################################################
+  ## process input data
+
+  # convert vector input to matrix
+  if( is.vector(g) & !is.list(g) )
+  {
+    # convert vectors to matrix
+    if( is.null(gdim) ) stop('grid dimensions gdim must be supplied when g is a vector')
+    if( length(g) != prod(gdim) ) stop('length of grid vector g was not equal to prod(gdim)')
+    g = matrix(g, gdim)
+  }
+
+  # convert matrix and raster to bk
   g = bk(g)
 
   # slice multi-layer input
-  if( !is.null(g[['idx_grid']]) )
+  is_multi = is.matrix(g[['gval']])
+  if( is_multi )
   {
     # keep only the specified layer
-    g[['gval']] = as.vector(g[['gval']][g[['idx_grid']], layer])
+    g[['gval']] = as.vector(g[, layer])
     g[['idx_grid']] = NULL
   }
 
-  # upscale as needed
-  up_fac = ceiling( g[['gdim']]/px_max )
+  # upscale as needed then copy grid dimensions
+  up_fac = ceiling( dim(g)/px_max )
   if( any( up_fac > 1 ) ) g = bk_rescale(g, up=up_fac)
-  gdim = g[['gdim']]
+  gdim = dim(g)
 
-  # coerce logical > character > factor
-  z = g[['gval']]
+  # copy the vectorized data
+  z = g[]
   z_is_na = is.na(z)
   na_image = all(z_is_na)
+
+  # coerce logical > character > factor
   if( !na_image & is.logical(z) ) z = tolower(as.character(z))
   if( is.character(z) ) z = as.factor(z)
 
@@ -251,13 +277,16 @@ bk_plot = function(g, gdim=NULL, ...)
   if( is.factor(z) )
   {
     # convert factor to integer and preserve names in `breaks`
-    bins = unique(z) |> sort()
-    z = match(as.vector(z), bins)
+    bins = sort(unique(z))
+    z = match(z, bins)
     if( is.null(breaks) ) breaks = as.character(bins)
   }
 
+  ###################################################################################
+  ## call graphics::image
+
   # vertical flip and row-first ordering expected by graphics/grDevices
-  idx_image = matrix(seq(prod(gdim)), gdim)[gdim['y']:1, ]
+  idx_image = matrix(seq_along(g), gdim)[gdim['y']:1, ]
   z_image = matrix(z[idx_image], rev(gdim), byrow=TRUE)
 
   # find limits from data if they are not all NA
@@ -337,7 +366,10 @@ bk_plot = function(g, gdim=NULL, ...)
 
   # draw the raster plot without axes or annotations
   graphics::image(g[['gyx']], z=z_image, axes=FALSE, ann=FALSE, xpd=NA,
-                   asp=asp, useRaster=TRUE, zlim=zlim, col=pal, breaks=breaks)
+                   asp=asp, useRaster=!discrete_image, zlim=zlim, col=pal, breaks=breaks)
+
+  ###################################################################################
+  ## draw annotations
 
   # compute bounding box of image
   plot_bbox = list(min=sapply(g[['gyx']], min), max=sapply(g[['gyx']], max))
@@ -368,17 +400,20 @@ bk_plot = function(g, gdim=NULL, ...)
     }
 
     # draw axes and tick marks, looping over c(y, x)
-    Map(\(s, a, lab, yx) graphics::axis(s, at=a, labels=lab, pos=yx, lwd=lwd_axis, lwd.ticks=1),
+    Map(\(s, a, lab, yx, cex) graphics::axis(s, at=a, labels=lab, pos=yx,
+                                        lwd=lwd_axis, lwd.ticks=1, cex.axis=cex),
         s = axis_s,
         a = stats::setNames(tick_pos, c('y', 'x')),
         lab = tick_lab,
-        yx = axis_xy)
+        yx = axis_xy,
+        cex = c(cex.y, cex.x))
   }
 
   # print any titles
-  graphics::mtext(main, side=3L, line=ifelse(x_ontop, x_nline-1, 1), font=2, xpd=NA, adj=adj)
-  graphics::mtext(ylab, side=axis_s['y'], line=y_nline-1.5, xpd=NA)
-  graphics::mtext(xlab, side=axis_s['x'], line=x_nline-1.5-(ij & has_main), xpd=NA)
+  title_line = ifelse(x_ontop, x_nline-1, 1)
+  graphics::mtext(main, side=3, line=title_line, font=2, xpd=NA, adj=adj, cex=cex.main)
+  graphics::mtext(ylab, side=axis_s['y'], line=y_nline-1.5, xpd=NA, cex=cex.y)
+  graphics::mtext(xlab, side=axis_s['x'], line=x_nline-1.5-(ij & has_main), xpd=NA, cex=cex.x)
 
   # finding bounding box for the image
   bmin = plot_bbox[['min']] - half_pixel
@@ -433,15 +468,19 @@ bk_plot = function(g, gdim=NULL, ...)
                    labels = z_label,
                    pos = bar_x[2],
                    lwd.ticks = lwd_ticks,
-                   las = 1L)
+                   las = 1L,
+                   cex.axis = cex.z)
 
     # draw the legend title one half-line above the color bar
-    graphics::text(bar_x[1], bar_y[2] + y_line / 2, zlab, xpd=NA, adj=c(0,0))
+    graphics::text(bar_x[1], bar_y[2] + y_line / 2, zlab, xpd=NA, adj=c(0,0), cex=cex.z)
   }
 
   # find minimal y, x lengths required for image plot plus margins in inches
   y_graphics = ( ( bmax['y'] - bmin['y'] ) + sum( mar_new[c(1,3)] ) * y_line ) / y_inch
   x_graphics = ( ( bmax['x'] - bmin['x'] ) + sum( mar_new[1+c(1,3)] ) * x_line ) / x_inch
+
+  ###################################################################################
+  ## tidy up
 
   # restore old margin settings before the user's next plot call
   if(reset) par(par_existing)

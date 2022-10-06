@@ -198,7 +198,7 @@ bk = function(g, vals=TRUE)
 {
   # handle terra and raster objects
   is_terra = inherits(g, 'SpatRaster')
-  is_raster = inherits(g, 'RasterLayer') | inherits(g, 'RasterStack')
+  is_raster = inherits(g, c('RasterLayer', 'RasterStack'))
   if( is_terra | is_raster )
   {
     # order in dimensions is y, x, like in bk

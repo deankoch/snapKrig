@@ -69,7 +69,7 @@ bk_export = function(g, template='terra')
 
     # set template class name
     if( inherits(g, 'SpatRaster') ) template = 'terra'
-    if( inherits(g, 'RasterLayer') | inherits(g, 'RasterStack') ) template = 'raster'
+    if( inherits(g, c('RasterLayer', 'RasterStack')) ) template = 'raster'
   }
 
   # terra is preferred when available
@@ -255,9 +255,8 @@ bk_snap = function(from, g=NULL, crop_from=FALSE, crop_g=FALSE, quiet=FALSE)
 
   # expected point object classes and names
   nm_yx = c('y', 'x')
-  is_sf = any( c('sf','sfc', 'sfg') %in% class(from) )
-  is_sp = any( c('SpatialPoints', 'SpatialPointsDataFrame') %in% class(from) )
-  #to_crs = NULL
+  is_sf = inherits(from, c('sf','sfc', 'sfg'))
+  is_sp = inherits(from, c('SpatialPoints', 'SpatialPointsDataFrame'))
 
   # get coordinate(s) from sf objects as matrix/vector
   if(is_sf)

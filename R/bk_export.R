@@ -7,11 +7,12 @@
 #' @param g any object accepted or returned by `bk`
 #' @param template character or RasterLayer/SpatRaster to set output type
 #'
-#' Converts a column-vectorized vector or matrix to a SpatRaster, or if terra is
-#' unavailable, a RasterLayer. Multi-layer outputs are supported for terra but not
-#' raster.
+#' Converts a vector or matrix to a SpatRaster, or RasterLayer. Multi-layer outputs are
+#' supported for terra but not raster.
 #'
 #' @return a RasterLayer or SpatRaster containing the data from `g` (or a sub-grid)
+#'
+#' @family exporting functions
 #' @export
 #'
 #' @examples
@@ -31,6 +32,8 @@
 #' # NOTE: layer name, band number, and various other metadata are lost
 #' all.equal(r_from_g, r)
 #'
+#' }
+#'
 #' # same with terra
 #' if( requireNamespace('terra') ) {
 #'
@@ -43,7 +46,7 @@
 #' all.equal(r_from_g, r)
 #'
 #' }
-#' }
+#'
 #'
 bk_export = function(g, template='terra')
 {
@@ -54,10 +57,11 @@ bk_export = function(g, template='terra')
   is_loaded = sapply(pkg_check, function(pkg) requireNamespace(pkg, quietly=TRUE))
   if( !any(is_loaded) ) stop(msg_dep)
 
-  # load the input as blitzKrig list
+  # load the input as blitzKrig list and set empty CRS if not supplied
   g = bk(g)
   is_multi = is.matrix(g[['gval']])
   n_layer = ifelse(is_multi, ncol(g[['gval']]), 1L)
+  if( is.null(g[['crs']]) ) g[['crs']] = ''
 
   # extract grid cell boundaries as defined in raster/terra
   yx_bbox = Map(\(g, s) range(g) + (c(-1,1) * s/2), g=g[['gyx']], s=g[['gres']])
@@ -106,9 +110,9 @@ bk_export = function(g, template='terra')
 
 #' Snap a set of points to a "bk" grid
 #'
-#' Maps the input points in `from` to the closest grid points in the extension of `g`
-#' covering the bounding box of `from` (ie. the lattice of which `g` is a sub-grid).
-#' In cases of duplicate mappings, the function returns the first matches only.
+#' Maps the input points in `from` to the closest grid points in the lattice of which
+#' `g` is a sub-grid. In cases of duplicate mappings, the function returns the first
+#' matches only.
 #'
 #' `from` can be a geometry collection from packages `sf` or `sp`, or a matrix or list
 #' of y and x coordinates. When `from` is a matrix, its first two columns should be the
@@ -134,14 +138,15 @@ bk_export = function(g, template='terra')
 #' bounding box of `g`.
 #'
 #' @param from matrix, data frame, or points object from `sp` or `sf`, the source points
-#' @param g any grid object accepted or returned by `bk`, the destination grid
+#' @param g any object accepted or returned by `bk`, the destination grid
 #' @param crop_from logical, indicating to omit points not overlying `g`.
 #' @param crop_g logical, indicating to trim `g` to the extent of `from`.
 #'
-#' @return list of form returned by `bk`, defining a grid containing the snapped
-#' points. These are assigned the corresponding data value in `from`, or if  `from` has no
-#' data, an integer mapping to the points in `from`. Un-mapped grid points are set to NA.
+#' @return bk object, a grid containing the snapped points. These are assigned
+#' the corresponding data value in `from`, or if  `from` has no data, an integer mapping
+#' to the points in `from`. Un-mapped grid points are set to NA.
 #' @export
+#' @family ways of creating a bk object
 #'
 #' @examples
 #'
@@ -152,7 +157,7 @@ bk_export = function(g, template='terra')
 #'
 #' # create a grid object
 #' gdim = c(40, 30)
-#' g = bk(list(gdim=gdim, gres=1.1))
+#' g = bk(gdim=gdim, gres=1.1)
 #'
 #' # randomly position points within bounding box of g
 #' n_pts = 10
@@ -170,25 +175,25 @@ bk_export = function(g, template='terra')
 #'
 #' # snap only the points overlying the input grid
 #' g_snap = bk_snap(from, g, crop_from=TRUE)
-#' bk_plot(g_snap, col_grid='black', reset=FALSE, leg=FALSE)
+#' plot(g_snap, col_grid='black', reset=FALSE, leg=FALSE)
 #' graphics::points(from[c('x', 'y')], pch=16, col=my_col(from[['z']]))
 #' graphics::points(from[c('x', 'y')])
 #'
-#' # snap points with  and plot (default settings)
+#' # snap points with and plot (default settings)
 #' g_snap = bk_snap(from, g, crop_from=FALSE, crop_g=FALSE)
-#' bk_plot(g_snap, col_grid='black', reset=FALSE)
+#' plot(g_snap, col_grid='black', reset=FALSE)
 #' graphics::points(from[c('x', 'y')], pch=16, col=my_col(from[['z']]))
 #' graphics::points(from[c('x', 'y')])
 #'
 #' # find smallest subgrid enclosing all snapped grid points
 #' g_snap = bk_snap(from, g, crop_g=TRUE)
-#' bk_plot(g_snap, col_grid='black', reset=FALSE)
+#' plot(g_snap, col_grid='black', reset=FALSE)
 #' graphics::points(from[c('x', 'y')], pch=16, col=my_col(from[['z']]))
 #' graphics::points(from[c('x', 'y')])
 #'
 #' # create a new grid of different resolution enclosing all input points
 #' g_snap = bk_snap(from, g=list(gres=c(0.5, 0.5)))
-#' bk_plot(g_snap, reset=FALSE, col_grid='black')
+#' plot(g_snap, reset=FALSE, col_grid='black')
 #' graphics::points(from[c('x', 'y')], pch=16, col=my_col(from[['z']]))
 #' graphics::points(from[c('x', 'y')])
 #'
@@ -198,40 +203,39 @@ bk_export = function(g, template='terra')
 #' g_pts = bk(list(gdim=c(15, 8), gres=1.7), vals=FALSE)
 #' g_pts[['gyx']][['y']] = g_pts[['gyx']][['y']] + 5
 #' g_pts[['gyx']][['x']] = g_pts[['gyx']][['x']] + 5
-#' n_pts = prod(g_pts$gdim)
 #' from = bk_coords(g_pts, out='list')
 #'
 #' # convert to sf
 #' eg_sfc = sf::st_geometry(bk_coords(g_pts, out='sf'))
-#' bk_plot(g, reset=FALSE)
+#' plot(g, reset=FALSE)
 #' plot(eg_sfc, add=TRUE)
 #'
 #' # generate example data and plot
-#' eg_sf = sf::st_sf(data.frame(z=rnorm(n_pts)), geometry=eg_sfc)
-#' bk_plot(g, reset=FALSE)
+#' eg_sf = sf::st_sf(data.frame(z=rnorm(length(g_pts))), geometry=eg_sfc)
+#' plot(g, reset=FALSE)
 #' plot(eg_sf, pch=16, add=TRUE, pal=my_pal)
 #' plot(eg_sfc, add=TRUE)
 #'
 #' # snap points
 #' g_snap = bk_snap(from=eg_sf, g)
-#' bk_plot(g_snap, reset=FALSE, col_grid='black')
+#' plot(g_snap, reset=FALSE, col_grid='black')
 #' plot(eg_sf, pch=16, add=TRUE, pal=my_pal)
 #' plot(eg_sfc, add=TRUE)
 #'
 #' # snapping points without data produces the mapping (non-NA values index "from")
 #' g_snap = bk_snap(from=eg_sfc, g)
-#' bk_plot(g_snap, ij=TRUE, reset=FALSE, col_grid='black')
+#' plot(g_snap, ij=TRUE, reset=FALSE, col_grid='black')
 #' plot(eg_sfc, add=TRUE)
 #'
 #' # with crop_g=TRUE)
 #' g_snap = bk_snap(from=eg_sfc, g, crop_g=TRUE)
-#' bk_plot(g_snap, reset=FALSE, col_grid='black')
+#' plot(g_snap, reset=FALSE, col_grid='black')
 #' plot(eg_sfc, add=TRUE)
 #'
 #' # test with sp class
 #' eg_sp = as(eg_sf,'Spatial')
 #' g_snap = bk_snap(from=eg_sp, g)
-#' bk_plot(g_snap, reset=FALSE, col_grid='black')
+#' plot(g_snap, reset=FALSE, col_grid='black')
 #' plot(eg_sf, pch=16, add=TRUE, pal=my_pal)
 #' plot(eg_sfc, add=TRUE)
 #'
@@ -372,17 +376,155 @@ bk_snap = function(from, g=NULL, crop_from=FALSE, crop_g=FALSE, quiet=FALSE)
   }
 
   # reflect indexing of vertical axis for blitzKrig
-  ij_min[['i']] = g_out[['gdim']]['y'] + 1L - ij_min[['i']]
-  to_idx = bk_mat2vec(ij_min, g_out[['gdim']])
+  ij_min[['i']] = dim(g_out)['y'] + 1L - ij_min[['i']]
+  to_idx = bk_mat2vec(ij_min, dim(g_out))
 
   # handle multiple points mapping to a single grid-point
   is_dupe = duplicated(to_idx)
-  if( !quiet & any(is_dupe) ) warning( paste('omitting', sum(is_dupe), 'duplicate mapping(s)') )
+  if( !quiet & any(is_dupe) ) cat( paste('omitting', sum(is_dupe), 'duplicate mapping(s)\n') )
 
   # match magic to get NAs at unassigned grid points
-  to_all = seq( prod(g_out[['gdim']]) )
-  from_idx = match(to_all, to_idx)
-  if( is.null(vals) ) { gval = from_idx } else { gval = vals[from_idx] }
-  return( c(list(gval=gval), g_out) )
+  from_idx = match(seq_along(g_out), to_idx)
+  if( is.null(vals) ) { g_out[['gval']] = from_idx } else { g_out[['gval']] = vals[from_idx] }
+  return(g_out)
 }
+
+
+#' Return coordinates of a grid of points in column-vectorized order
+#'
+#' Expands a set of y and x grid line numbers in the column-vectorized order returned
+#' by `bk`. This is similar to `base::expand.grid` but with the first dimension (y)
+#' descending instead of ascending.
+#'
+#' `out='sf'` returns an `sf` simple features object containing points in the same order,
+#' with data (if any) copied from `g[['gval']]` into column 'gval'. Note that `length(g)`
+#' points are created, which can be slow for large grids.
+#'
+#' If `na_omit` is `TRUE` the function omits points with `NA` data (in `gval`) and only
+#' returns the coordinates for observations. This argument is ignored when `corners=TRUE`
+#' (which always returns the four corner points) or when the grid contains no observations
+#' (all points returned).
+#'
+#' @param g any object accepted by `bk`
+#' @param out character indicating return value type, either 'list', 'matrix', or 'sf'
+#' @param corners logical, indicates to only return the corner points
+#' @param na_omit logical, indicates to return only locations of observed points
+#'
+#' @return a matrix, list, or sf POINT collection, in column vectorized order
+#' @export
+#' @family exporting functions
+#'
+#' @examples
+#' gdim = c(5,3)
+#' g_complete = bk(gdim=gdim, gres=c(0.5, 0.7), gval=seq(prod(gdim)))
+#' bk_coords(g_complete)
+#' bk_coords(g_complete, out='list')
+#'
+#' # missing data example
+#' idx_obs =  sort(sample.int(length(g_complete), 5))
+#' g = bk(gdim=gdim, gres=c(0.5, 0.7))
+#' g[idx_obs] = g_complete[idx_obs]
+#' all.equal(bk_coords(g, na_omit=TRUE), bk_coords(g_complete)[idx_obs,])
+#'
+#' # corner points
+#' bk_coords(g, corner=TRUE)
+#' bk_coords(g, corner=TRUE, out='list')
+#'
+#' # repeat with multi-layer example
+#' g_multi = bk(modifyList(g, list(gval = cbind(g[], 2*g[]))))
+#' all.equal(bk_coords(g_multi, na_omit=TRUE), bk_coords(g_complete)[idx_obs,])
+#' bk_coords(g_multi, corner=TRUE)
+#'
+#' # sf output type
+#' if( requireNamespace('sf') ) {
+#'
+#' # gather all points but don't copy data
+#' sf_coords_all = bk_coords(bk(g, vals=FALSE), out='sf')
+#'
+#' # extract non-NA data
+#' sf_coords = bk_coords(g, out='sf', na_omit=TRUE)
+#'
+#' # plot everything together
+#' plot(g, reset=FALSE)
+#' plot(sf_coords_all, add=TRUE)
+#' plot(sf_coords, pch=16, cex=2, add=TRUE)
+#'
+#' }
+#'
+bk_coords = function(g, out='matrix', corner=FALSE, na_omit=FALSE, quiet=FALSE)
+{
+  # unpack input and check for empty grids
+  g = bk(g)
+  is_empty = g[['n_missing']] == length(g)
+  if(is_empty) na_omit = FALSE
+
+  # take subset of corner points if requested
+  if(corner)
+  {
+    g[['gdim']] = c(y=2L, x=2L)
+    g[['gyx']] = lapply(g[['gyx']], range)
+    g[['gres']] = lapply(g[['gyx']], diff)
+    na_omit = FALSE
+  }
+
+  # create vectorized index of points to return (if all locations are NA, return all)
+  idx_get = if(na_omit) { which(!is.na(g)) } else { seq_along(g) }
+  if( length(idx_get) == 0 )
+  {
+    idx_get = seq_along(g)
+    is_empty = TRUE
+  }
+
+  # copy data values at these locations
+  values_out = NULL
+  if( !is_empty )
+  {
+   # for vector gval, get subset of values using normal extract function
+    if( !is.matrix(g[['gval']]) ) { values_out = g[idx_get] } else {
+
+      # grab first layer of matrix gval directly (it is already subsetted)
+      values_out = as.vector(g[['gval']][, 1L])
+    }
+  }
+
+  # sort grid lines positions so they match column vectorization
+  gyx = Map(function(gl, dec) sort(gl, decreasing=dec), gl=g[['gyx']], dec=c(y=TRUE, x=FALSE))
+
+  # console message
+  if( !quiet )
+  {
+    msg_get = ifelse(length(idx_get) == length(idx_get), 'all', paste(n_get, 'of'))
+    cat(paste('processing', msg_get, length(g), 'grid points...\n'))
+  }
+
+  # compute the coordinates
+  ij = bk_vec2mat(idx_get, dim(g), out='list')
+  coords_out = Map(function(gl, idx) gl[idx], gl=gyx, idx=ij)
+
+  # return as list
+  if( out == 'list' ) return(coords_out)
+
+  # return as matrix
+  coords_out_mat = do.call(cbind, coords_out)
+  if( out == 'matrix' ) return(coords_out_mat)
+
+  # handle invalid `out` arguments
+  if( !startsWith(out, 'sf') ) stop('Argument `out` must be either "list", "matrix", or "sf"')
+  sf_loaded = requireNamespace('sf', quietly=TRUE)
+  if( !sf_loaded ) stop('sf package not loaded. Try library(sf)')
+
+  # create the sf points object
+  if( is.null(g[['crs']]) ) g[['crs']] = ''
+  sf_out = sf::st_as_sf(as.data.frame(coords_out_mat), coords=c('x', 'y'), crs=g[['crs']])
+
+  # copy any data to it and return - making sure geometry column is second
+  if( !is.null(values_out) )
+  {
+    sf_out['gval'] = values_out
+    return(sf_out[2:1])
+  }
+
+  return(sf_out)
+}
+
 

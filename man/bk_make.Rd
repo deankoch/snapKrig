@@ -2,8 +2,7 @@
 % Please edit documentation in R/bk.R
 \name{bk_make}
 \alias{bk_make}
-\title{\subsection{CONSTRUCTOR}{
-}}
+\title{Make a bk grid object}
 \usage{
 bk_make(g)
 }
@@ -14,13 +13,11 @@ bk_make(g)
 a "bk" object
 }
 \description{
-Make a bk grid object
-}
-\details{
 This constructs a "bk" object from a named list containing at least the element \code{gdim}
 or \code{gyx}. Users can optionally provide other list elements \code{gres}, \code{gval}, \code{crs}, and
 \code{idx_grid}.
-
+}
+\details{
 Input classes and lengths are checked before returning. \code{gdim} and \code{gres} are length-2
 vectors (with y and x elements) but they can each be specified by a single number, as
 shorthand to use the same value for y and x. \code{gval} should be a matrix or vector of grid
@@ -32,3 +29,10 @@ data, and \code{crs} should be a character string (the WKT representation).
 bk_make(list(gdim=10, gres=0.5))
 
 }
+\seealso{
+Other bk constructors: 
+\code{\link{bk_validate}()},
+\code{\link{bk}()}
+}
+\concept{bk constructors}
+\keyword{internal}

@@ -1,105 +1,59 @@
-#' bk.R
-#' Dean Koch, 2022
-#' S3 class for bk objects (grid lists)
-#'
-#'
-#' ## INTRODUCTION
-#'
-#' A "bk" object is just a list of vectors representing a grid and its data, similar to
-#' (but much simpler than) the "raster" and "SpatRaster" classes in terra and raster.
-#'
-#' Our S3 class doesn't accomplish anything performance-wise. We use it to link blitzKrig
-#' grid methods to R's many generic functions (`print`, `plot`, etc) in a sensible way, and
-#' to point R's internal generic functions (like `[`, `[<-`, and `length`) to the contents
-#' of `bk[['gval']]`, so that "bk" objects can behave like vectors.
-#'
-#' At minimum, a "bk" object contains three entries: `gdim`, `gres`, and `gyx`, defining the
-#' grid dimensions, spacing, and extent. All are given in the order y, x. This is so that if
-#' we view observations at grid points as *matrix* data, then `gdim` will be consistent with
-#' `base::dim`.
-#'
-#' Optionally, geo-referenced data can be accompanied by metadata describing how the grid
-#' is mapped to the globe. This goes in the `crs` entry, and is copied over automatically
-#' when importing from `sf`, `terra`, and `raster`.
-#'
-#' * `crs`: character, the WKT representation of the CRS for the grid
-#'
-#' Observations at some or all of the grid points are stored in the entry `gval`
-#'
-#' * `gval`: numeric vector or matrix, the grid data
-#'
-#' In the single-layer case this is a vector with as many entries as there are grid points.
-#' We use column-vectorized ordering, which stacks the columns of the data matrix (with the
-#' left-most, or first column appearing first in the vector). This is the ordering we get
-#' when coercing a matrix to vector with `base::as.vector`, for example.
-#'
-#' In the multi-layer case we have one such vector per layer, and these are stored as
-#' columns of a matrix. For example, the column vectorization of the first layer is the
-#' vector `gval[,1]`. **It is assumed that each layer has the same NA structure**.
-#'
-#' To save memory, when `gval` is a matrix, "bk" objects use a sparse representation that
-#' omits NAs. This means the matrix `gval` only stores the observed data values, so it will
-#' have as many rows as there are observed grid points. This requires an additional
-#' indexing vector:
-#'
-#' * `idx_grid`: length-n numeric vector mapping rows of `gval` to grid points
-#'
-#' Users can supply (the shortened) `gval` matrix together with the corresponding,
-#' `idx_grid`, or just pass the complete `gval` matrix (with NAs) on its own, and `bk`
-#' will do the indexing and simplification for you.
-#'
-#' ## CREATION
-#'
-#' Typical usage is to pass a grid-like object to the helper function `bk`, which extracts
-#' the list entries discussed above and passes them to `bk_make`, the constructor, then
-#' `bk_validate` (for sanity checking, and to fill in missing entries).
+# bk.R
+# Dean Koch, 2022
+# S3 class for bk objects (grid lists)
+#
 #'
 #' Make a blitzKrig grid list object
 #'
-#' Returns a blitzKrig ("bk") class list, representing a 2-dimensional regular spatial grid
+#' Constructs blitzKrig ("bk") class list, representing a 2-dimensional regular spatial grid
 #'
 #' This function accepts 'RasterLayer' and 'RasterStack' inputs from the `raster` package,
-#' 'SpatRaster' objects from `terra`, as well as any non-complex matrix, or a list containing
-#' the vectorization of one.
-#'
-#' The function returns a list with the following 3-6 elements:
+#' 'SpatRaster' objects from `terra`, as well as any non-complex matrix, or a set of arguments
+#' defining the vectorization of one. It returns a bk class list containing at least the
+#' following three elements:
 #'
 #' * `gdim`: vector of two positive integers, the number of grid lines (n = their product)
 #' * `gres`: vector of two positive scalars, the resolution (in distance between grid lines)
 #' * `gyx`: list of two numeric vectors (lengths matching gdim), the grid line intercepts
+#'
+#' and optionally,
+#'
 #' * `crs`: character, the WKT representation of the CRS for the grid (optional)
 #' * `idx_grid`: length-n numeric vector mapping rows of `gval` to grid points
 #' * `gval`: numeric vector or matrix, the grid data
 #'
-#' The first three items are required to define a valid `blitzKrig` grid list object. Note that
-#' regular grids must have equally spaced grid lines in `gyx`.
+#' Supply some/all of these elements (including at least one of `gdim` or `gyx`) as named
+#' arguments to `...`. The function will fill in missing entries wherever possible.
 #'
-#' Empty grids (all data `NA`) can be initialized by setting `vals=FALSE`, in which case `gval`
-#' will be absent. Otherwise `gval` is the column-vectorized grid data, either as a numeric vector
-#' (single layer case only) or as a matrix with grid data in columns. A sparse representation is
-#' used for the matrix case, with `idx_grid` indicating which grid points are observed.
-#'
-#' The multi-layer case it is assumed that each layer has the same NA structure. `idx_grid` is
-#' only computed for the first layer. If a point is missing from one layer, it should be missing
-#' from all layers.
-#'
-#' The input `g` can be a list containing some/all of these elements (including at least
-#' one of `gdim` or `gyx`), and the function will fill in missing entries wherever possible:
 #' If `gres` is missing, it is computed from the first two grid lines in `gyx`; If `gyx` is
 #' missing, it is assigned the sequence `1:n` (scaled by `gres`, if available) for each `n`
 #' in `gdim`; and if `gdim` is missing, it is set to the number of grid lines specified in
-#' `gyx`.
+#' `gyx`. `gyx` should be sorted (ascending order), regularly spaced (with spacing `gres`),
+#' and have lengths matching `gdim`.
 #'
-#' Scalar inputs to 'gdim', 'gres' are duplicated for both dimensions, and for convenience
-#' 'gdim' can be specified directly in `g` to initialize a simple grid; For example the call
-#' `bk(list(gdim=c(5,5)))` can be simplified to `bk(list(gdim=5))` or
-#' `bk(5)`.
+#' Scalar inputs to `gdim`, `gres` are duplicated for both dimensions. For example the call
+#' `bk(gdim=c(5,5))` can be simplified to `bk(gdim=5)`, or `bk(5)`.
 #'
-#' @param g raster, matrix, numeric vector, or list (see details)
-#' @param vals logical indicating to include the data vector 'gval' in return list
+#' For convenience, arguments can also be supplied together in a named list passed to `...`.
+#' If a single unnamed argument is supplied (and it is not a list) the function expects it to
+#' be either a numeric vector (`gdim`), a matrix, or a raster object.
+#'
+#' Empty grids - with all data `NA` - can be initialized by setting `vals=FALSE`, in which case
+#' `gval` will be absent from the returned list). Otherwise `gval` is the column-vectorized grid
+#' data, either as a numeric vector (single layer case only) or as a matrix with grid data in
+#' columns. A sparse representation is used for the matrix case, with `idx_grid` indicating
+#' which grid points are observed.
+#'
+#' The multi-layer case it is assumed that each layer has the same NA structure. `idx_grid` is
+#' only computed for the first layer. So if a point is missing from one layer, it should be missing
+#' from all layers.
+#'
+#' @param ... raster, matrix, numeric vector, or list of named arguments (see details)
+#' @param vals logical indicating to include the data vector `gval` in return list
 #'
 #' @return a "bk" class list object
 #' @export
+#' @family bk constructors
 #'
 #' @examples
 #'
@@ -111,8 +65,8 @@
 #' # pass result to bk and get the same thing back
 #' identical(g, bk(g))
 #'
-#' # supply grid lines instead and get the same result
-#' all.equal(g, bk(g=list(gyx=lapply(gdim, function(x) seq(x)-1L))) )
+#' # supply grid lines as named argument instead and get the same result
+#' all.equal(g, bk(gyx=lapply(gdim, function(x) seq(x)-1L)))
 #'
 #' # display coordinates and grid line indices
 #' plot(g)
@@ -120,15 +74,16 @@
 #'
 #' # same dimensions, different resolution, affecting aspect ratio in plot
 #' gres_new = c(3, 4)
-#' plot(bk(g=list(gdim=gdim, gres=gres_new)))
+#' plot(bk(gdim=gdim, gres=gres_new))
 #'
-#' # shorthand for square grids
-#' all.equal(bk(2), bk(g=c(2,2)))
+#' # single argument (unnamed) can be grid dimensions, with shorthand for square grids
+#' all.equal(bk(gdim=c(2,2)), bk(c(2,2)))
+#' all.equal(bk(2), bk(gdim=c(2,2)))
 #'
 #' # example with matrix data
 #' gdim = c(25, 25)
-#' yx = as.list(expand.grid(lapply(gdim, seq)))
-#' eg_vec = as.numeric( yx[[2]] %% yx[[1]] )
+#' gyx = as.list(expand.grid(lapply(gdim, seq)))
+#' eg_vec = as.numeric( gyx[[2]] %% gyx[[1]] )
 #' eg_mat = matrix(eg_vec, gdim)
 #' g = bk(eg_mat)
 #' plot(g, ij=T, zlab='j mod i')
@@ -138,18 +93,18 @@
 #'
 #' # this is R's default matrix vectorization order
 #' all.equal(eg_vec, as.vector(eg_mat))
-#' all.equal(g, bk(list(gdim=gdim, gval=as.vector(eg_mat))))
+#' all.equal(g, bk(gdim=gdim, gval=as.vector(eg_mat)))
 #'
 #' # multi-layer example from matrix
 #' n_pt = prod(gdim)
 #' n_layer = 3
 #' mat_multi = matrix(rnorm(n_pt*n_layer), n_pt, n_layer)
-#' g_multi = bk(list(gdim=gdim, gval=mat_multi))
+#' g_multi = bk(gdim=gdim, gval=mat_multi)
 #' summary(g_multi)
 #'
 #' # repeat with missing data (note all columns must have consistent NA structure)
 #' mat_multi[sample.int(n_pt, 0.5*n_pt),] = NA
-#' g_multi_miss = bk(list(gdim=gdim, gval=mat_multi))
+#' g_multi_miss = bk(gdim=gdim, gval=mat_multi)
 #' summary(g_multi_miss)
 #'
 #' # only observed data points are stored, idx_grid maps them to the full grid vector
@@ -159,7 +114,7 @@
 #' max(abs( g_multi[] - g_multi_miss[] ), na.rm=TRUE)
 #'
 #' # vals=FALSE drops multi-layer information
-#' bk(g=list(gdim=gdim, gval=mat_multi), vals=FALSE)
+#' bk(gdim=gdim, gval=mat_multi, vals=FALSE)
 #'
 #' if( requireNamespace('raster') ) {
 #'
@@ -194,8 +149,11 @@
 #'
 #' }
 #' }
-bk = function(g, vals=TRUE)
+bk = function(..., vals=TRUE)
 {
+  # collapse the list when only one argument supplied to dots
+  if( (...length() == 1 ) & all(is.null(...names()) ) ) { g = ..1 } else { g = list(...) }
+
   # handle terra and raster objects
   is_terra = inherits(g, 'SpatRaster')
   is_raster = inherits(g, c('RasterLayer', 'RasterStack'))
@@ -256,8 +214,6 @@ bk = function(g, vals=TRUE)
 
 #'
 #'
-#' ## CONSTRUCTOR
-#'
 #' Make a bk grid object
 #'
 #' This constructs a "bk" object from a named list containing at least the element `gdim`
@@ -273,6 +229,8 @@ bk = function(g, vals=TRUE)
 #'
 #' @return a "bk" object
 #' @export
+#' @family bk constructors
+#' @keywords internal
 #'
 #' @examples
 #'
@@ -356,8 +314,6 @@ bk_make = function(g)
 }
 
 #'
-#' ## VALIDATOR
-#'
 #' Check compatibility of entries in a bk grid object, and fill in any missing ones
 #'
 #' This constructs the object and fills missing entries. It then does some sanity checks
@@ -374,10 +330,11 @@ bk_make = function(g)
 #'
 #' @return a validated "bk" object
 #' @export
-#'
+#' @family bk constructors
+#' @keywords internal
+
 #' @examples
 #'
-#' # auto-print reminds users to validate
 #' bk_validate(list(gdim=10, gres=0.5))
 #' bk_validate(list(gval=rnorm(10^2), gdim=10, gres=0.5))
 bk_validate = function(g)

@@ -2,8 +2,7 @@
 % Please edit documentation in R/bk.R
 \name{bk_validate}
 \alias{bk_validate}
-\title{\subsection{VALIDATOR}{
-}}
+\title{Check compatibility of entries in a bk grid object, and fill in any missing ones}
 \usage{
 bk_validate(g)
 }
@@ -14,12 +13,10 @@ bk_validate(g)
 a validated "bk" object
 }
 \description{
-Check compatibility of entries in a bk grid object, and fill in any missing ones
-}
-\details{
 This constructs the object and fills missing entries. It then does some sanity checks
 and computes the number of missing grid points (in list entry \code{n_missing}).
-
+}
+\details{
 The function removes/introduces \code{idx_grid} depending on whether \code{gval} is a vector
 (single-layer case) or a matrix (usually a multi-layer case). If \code{idx_grid} is missing
 and \code{gval} is a matrix, it is assumed to contain all grid-points (including NAs)
@@ -29,7 +26,13 @@ specified) for \code{gdim}, \code{gres}, and \code{gyx}.
 }
 \examples{
 
-# auto-print reminds users to validate
 bk_validate(list(gdim=10, gres=0.5))
 bk_validate(list(gval=rnorm(10^2), gdim=10, gres=0.5))
 }
+\seealso{
+Other bk constructors: 
+\code{\link{bk_make}()},
+\code{\link{bk}()}
+}
+\concept{bk constructors}
+\keyword{internal}

@@ -349,7 +349,7 @@ print.bk = function(x, ...)
   }
 
   # for non-numeric types, print the class instead of the range
-  if( !is.numeric(x[['gval']]) )
+  if( !is.numeric(x[['gval']]) & !is.null(x[['gval']]) )
   {
     complete_msg = paste0(complete_msg, '(', class(x[['gval']])[1], ' data)\n')
   }
@@ -524,6 +524,7 @@ is.na.bk = function(x)
 #'
 #' @return logical
 #' @export
+#' @rdname
 #'
 #' @examples
 #' g = bk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))

@@ -2,118 +2,64 @@
 % Please edit documentation in R/bk.R
 \name{bk}
 \alias{bk}
-\title{bk.R
-Dean Koch, 2022
-S3 class for bk objects (grid lists)}
+\title{Make a blitzKrig grid list object}
 \usage{
-bk(g, vals = TRUE)
+bk(..., vals = TRUE)
 }
 \arguments{
-\item{g}{raster, matrix, numeric vector, or list (see details)}
+\item{...}{raster, matrix, numeric vector, or list of named arguments (see details)}
 
-\item{vals}{logical indicating to include the data vector 'gval' in return list}
+\item{vals}{logical indicating to include the data vector \code{gval} in return list}
 }
 \value{
 a "bk" class list object
 }
 \description{
-\subsection{INTRODUCTION}{
-}
+Constructs blitzKrig ("bk") class list, representing a 2-dimensional regular spatial grid
 }
 \details{
-A "bk" object is just a list of vectors representing a grid and its data, similar to
-(but much simpler than) the "raster" and "SpatRaster" classes in terra and raster.
-
-Our S3 class doesn't accomplish anything performance-wise. We use it to link blitzKrig
-grid methods to R's many generic functions (\code{print}, \code{plot}, etc) in a sensible way, and
-to point R's internal generic functions (like \code{[}, \verb{[<-}, and \code{length}) to the contents
-of \code{bk[['gval']]}, so that "bk" objects can behave like vectors.
-
-At minimum, a "bk" object contains three entries: \code{gdim}, \code{gres}, and \code{gyx}, defining the
-grid dimensions, spacing, and extent. All are given in the order y, x. This is so that if
-we view observations at grid points as \emph{matrix} data, then \code{gdim} will be consistent with
-\code{base::dim}.
-
-Optionally, geo-referenced data can be accompanied by metadata describing how the grid
-is mapped to the globe. This goes in the \code{crs} entry, and is copied over automatically
-when importing from \code{sf}, \code{terra}, and \code{raster}.
-\itemize{
-\item \code{crs}: character, the WKT representation of the CRS for the grid
-}
-
-Observations at some or all of the grid points are stored in the entry \code{gval}
-\itemize{
-\item \code{gval}: numeric vector or matrix, the grid data
-}
-
-In the single-layer case this is a vector with as many entries as there are grid points.
-We use column-vectorized ordering, which stacks the columns of the data matrix (with the
-left-most, or first column appearing first in the vector). This is the ordering we get
-when coercing a matrix to vector with \code{base::as.vector}, for example.
-
-In the multi-layer case we have one such vector per layer, and these are stored as
-columns of a matrix. For example, the column vectorization of the first layer is the
-vector \code{gval[,1]}. \strong{It is assumed that each layer has the same NA structure}.
-
-To save memory, when \code{gval} is a matrix, "bk" objects use a sparse representation that
-omits NAs. This means the matrix \code{gval} only stores the observed data values, so it will
-have as many rows as there are observed grid points. This requires an additional
-indexing vector:
-\itemize{
-\item \code{idx_grid}: length-n numeric vector mapping rows of \code{gval} to grid points
-}
-
-Users can supply (the shortened) \code{gval} matrix together with the corresponding,
-\code{idx_grid}, or just pass the complete \code{gval} matrix (with NAs) on its own, and \code{bk}
-will do the indexing and simplification for you.
-\subsection{CREATION}{
-
-Typical usage is to pass a grid-like object to the helper function \code{bk}, which extracts
-the list entries discussed above and passes them to \code{bk_make}, the constructor, then
-\code{bk_validate} (for sanity checking, and to fill in missing entries).
-
-Make a blitzKrig grid list object
-
-Returns a blitzKrig ("bk") class list, representing a 2-dimensional regular spatial grid
-
 This function accepts 'RasterLayer' and 'RasterStack' inputs from the \code{raster} package,
-'SpatRaster' objects from \code{terra}, as well as any non-complex matrix, or a list containing
-the vectorization of one.
-
-The function returns a list with the following 3-6 elements:
+'SpatRaster' objects from \code{terra}, as well as any non-complex matrix, or a set of arguments
+defining the vectorization of one. It returns a bk class list containing at least the
+following three elements:
 \itemize{
 \item \code{gdim}: vector of two positive integers, the number of grid lines (n = their product)
 \item \code{gres}: vector of two positive scalars, the resolution (in distance between grid lines)
 \item \code{gyx}: list of two numeric vectors (lengths matching gdim), the grid line intercepts
+}
+
+and optionally,
+\itemize{
 \item \code{crs}: character, the WKT representation of the CRS for the grid (optional)
 \item \code{idx_grid}: length-n numeric vector mapping rows of \code{gval} to grid points
 \item \code{gval}: numeric vector or matrix, the grid data
 }
 
-The first three items are required to define a valid \code{blitzKrig} grid list object. Note that
-regular grids must have equally spaced grid lines in \code{gyx}.
+Supply some/all of these elements (including at least one of \code{gdim} or \code{gyx}) as named
+arguments to \code{...}. The function will fill in missing entries wherever possible.
 
-Empty grids (all data \code{NA}) can be initialized by setting \code{vals=FALSE}, in which case \code{gval}
-will be absent. Otherwise \code{gval} is the column-vectorized grid data, either as a numeric vector
-(single layer case only) or as a matrix with grid data in columns. A sparse representation is
-used for the matrix case, with \code{idx_grid} indicating which grid points are observed.
-
-The multi-layer case it is assumed that each layer has the same NA structure. \code{idx_grid} is
-only computed for the first layer. If a point is missing from one layer, it should be missing
-from all layers.
-
-The input \code{g} can be a list containing some/all of these elements (including at least
-one of \code{gdim} or \code{gyx}), and the function will fill in missing entries wherever possible:
 If \code{gres} is missing, it is computed from the first two grid lines in \code{gyx}; If \code{gyx} is
 missing, it is assigned the sequence \code{1:n} (scaled by \code{gres}, if available) for each \code{n}
 in \code{gdim}; and if \code{gdim} is missing, it is set to the number of grid lines specified in
-\code{gyx}.
+\code{gyx}. \code{gyx} should be sorted (ascending order), regularly spaced (with spacing \code{gres}),
+and have lengths matching \code{gdim}.
 
-Scalar inputs to 'gdim', 'gres' are duplicated for both dimensions, and for convenience
-'gdim' can be specified directly in \code{g} to initialize a simple grid; For example the call
-\code{bk(list(gdim=c(5,5)))} can be simplified to \code{bk(list(gdim=5))} or
-\code{bk(5)}.
-}
+Scalar inputs to \code{gdim}, \code{gres} are duplicated for both dimensions. For example the call
+\code{bk(gdim=c(5,5))} can be simplified to \code{bk(gdim=5)}, or \code{bk(5)}.
+
+For convenience, arguments can also be supplied together in a named list passed to \code{...}.
+If a single unnamed argument is supplied (and it is not a list) the function expects it to
+be either a numeric vector (\code{gdim}), a matrix, or a raster object.
+
+Empty grids - with all data \code{NA} - can be initialized by setting \code{vals=FALSE}, in which case
+\code{gval} will be absent from the returned list). Otherwise \code{gval} is the column-vectorized grid
+data, either as a numeric vector (single layer case only) or as a matrix with grid data in
+columns. A sparse representation is used for the matrix case, with \code{idx_grid} indicating
+which grid points are observed.
+
+The multi-layer case it is assumed that each layer has the same NA structure. \code{idx_grid} is
+only computed for the first layer. So if a point is missing from one layer, it should be missing
+from all layers.
 }
 \examples{
 
@@ -125,8 +71,8 @@ summary(g)
 # pass result to bk and get the same thing back
 identical(g, bk(g))
 
-# supply grid lines instead and get the same result
-all.equal(g, bk(g=list(gyx=lapply(gdim, function(x) seq(x)-1L))) )
+# supply grid lines as named argument instead and get the same result
+all.equal(g, bk(gyx=lapply(gdim, function(x) seq(x)-1L)))
 
 # display coordinates and grid line indices
 plot(g)
@@ -134,15 +80,16 @@ plot(g, ij=TRUE)
 
 # same dimensions, different resolution, affecting aspect ratio in plot
 gres_new = c(3, 4)
-plot(bk(g=list(gdim=gdim, gres=gres_new)))
+plot(bk(gdim=gdim, gres=gres_new))
 
-# shorthand for square grids
-all.equal(bk(2), bk(g=c(2,2)))
+# single argument (unnamed) can be grid dimensions, with shorthand for square grids
+all.equal(bk(gdim=c(2,2)), bk(c(2,2)))
+all.equal(bk(2), bk(gdim=c(2,2)))
 
 # example with matrix data
 gdim = c(25, 25)
-yx = as.list(expand.grid(lapply(gdim, seq)))
-eg_vec = as.numeric( yx[[2]] \%\% yx[[1]] )
+gyx = as.list(expand.grid(lapply(gdim, seq)))
+eg_vec = as.numeric( gyx[[2]] \%\% gyx[[1]] )
 eg_mat = matrix(eg_vec, gdim)
 g = bk(eg_mat)
 plot(g, ij=T, zlab='j mod i')
@@ -152,18 +99,18 @@ plot(g, xlab='x = j', ylab='y = 26 - i', zlab='j mod i')
 
 # this is R's default matrix vectorization order
 all.equal(eg_vec, as.vector(eg_mat))
-all.equal(g, bk(list(gdim=gdim, gval=as.vector(eg_mat))))
+all.equal(g, bk(gdim=gdim, gval=as.vector(eg_mat)))
 
 # multi-layer example from matrix
 n_pt = prod(gdim)
 n_layer = 3
 mat_multi = matrix(rnorm(n_pt*n_layer), n_pt, n_layer)
-g_multi = bk(list(gdim=gdim, gval=mat_multi))
+g_multi = bk(gdim=gdim, gval=mat_multi)
 summary(g_multi)
 
 # repeat with missing data (note all columns must have consistent NA structure)
 mat_multi[sample.int(n_pt, 0.5*n_pt),] = NA
-g_multi_miss = bk(list(gdim=gdim, gval=mat_multi))
+g_multi_miss = bk(gdim=gdim, gval=mat_multi)
 summary(g_multi_miss)
 
 # only observed data points are stored, idx_grid maps them to the full grid vector
@@ -173,7 +120,7 @@ max(abs( g_multi[['gval']] - g_multi_miss[['gval']][g_multi_miss[['idx_grid']],]
 max(abs( g_multi[] - g_multi_miss[] ), na.rm=TRUE)
 
 # vals=FALSE drops multi-layer information
-bk(g=list(gdim=gdim, gval=mat_multi), vals=FALSE)
+bk(gdim=gdim, gval=mat_multi, vals=FALSE)
 
 if( requireNamespace('raster') ) {
 
@@ -209,3 +156,9 @@ summary(g)
 }
 }
 }
+\seealso{
+Other bk constructors: 
+\code{\link{bk_make}()},
+\code{\link{bk_validate}()}
+}
+\concept{bk constructors}

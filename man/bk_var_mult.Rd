@@ -4,18 +4,9 @@
 \alias{bk_var_mult}
 \title{Multiply a vector by a power of the covariance matrix}
 \usage{
-bk_var_mult(
-  g_obs,
-  pars,
-  fac_method = "eigen",
-  fac = NULL,
-  quad = FALSE,
-  p = -1
-)
+bk_var_mult(g, pars, fac_method = "eigen", fac = NULL, quad = FALSE, p = -1)
 }
 \arguments{
-\item{g_obs}{list of form returned by \code{bk} or numeric vector or matrix of non-NA data}
-
 \item{pars}{list of form returned by \code{bk_pars} (with entries 'y', 'x', 'eps', 'psill')}
 
 \item{fac}{factorization of scaled covariance matrix of z (V divided by psill)}
@@ -23,6 +14,8 @@ bk_var_mult(
 \item{quad}{logical, if TRUE the function returns the quadratic form \code{t(z) \%*\% V_inv \%*\% z}}
 
 \item{p}{numeric, the matrix power of V^p to multiply (ignored when \code{method=='chol'})}
+
+\item{g_obs}{list of form returned by \code{bk} or numeric vector or matrix of non-NA data}
 }
 \value{
 numeric matrix
@@ -64,72 +57,80 @@ rel_err = \(x, y) ifelse(y == 0, 0, abs( (x - y) / y ) )
 
 # define example grid and data
 gdim = c(10, 15)
-n = prod(gdim)
-z_all = rnorm(n)
-g_obs = modifyList(bk(gdim), list(gval = z_all))
+g = bk(gdim)
+n = length(g)
+g[] = rnorm(n)
 
 # define covariance parameters
-pars = modifyList(bk_pars(g_obs, 'gau'), list(psill=2, eps=0.5))
+pars = modifyList(bk_pars(g, 'gau'), list(psill=2, eps=0.5))
 
 # COMPLETE CASE
 
 # compute the full covariance matrix
-V = bk_var(g_obs, pars, sep=FALSE)
+V = bk_var(g, pars, sep=FALSE)
 V_inv = chol2inv(chol(V))
-out_reference = V_inv \%*\% z_all
-out_reference_quad = t(z_all) \%*\% out_reference
-max( rel_err(bk_var_mult(g_obs, pars), out_reference) )
-rel_err(bk_var_mult(g_obs, pars, quad=TRUE), out_reference_quad)
+out_reference = V_inv \%*\% g[]
+out_reference_quad = t(g[]) \%*\% out_reference
+max( rel_err(bk_var_mult(g, pars), out_reference) )
+rel_err(bk_var_mult(g, pars, quad=TRUE), out_reference_quad)
 
 # pre-computed factorization on separable components of correlation matrix
-fac_corr = bk_var(modifyList(g_obs, list(gval=NULL)), pars, fac_method='eigen', sep=TRUE)
-max( rel_err(bk_var_mult(g_obs, pars, fac=fac_corr), out_reference) )
-rel_err(bk_var_mult(g_obs, pars, fac=fac_corr, quad=TRUE), out_reference_quad)
+fac_corr = bk_var(modifyList(g, list(gval=NULL)), pars, fac_method='eigen', sep=TRUE)
+max( rel_err(bk_var_mult(g, pars, fac=fac_corr), out_reference) )
+rel_err(bk_var_mult(g, pars, fac=fac_corr, quad=TRUE), out_reference_quad)
 
 # matrix powers
-out_reference = V \%*\% z_all
-max( rel_err(bk_var_mult(g_obs, pars, fac_method='eigen', p=1), out_reference) )
-rel_err(bk_var_mult(g_obs, pars, fac_method='eigen', p=1, quad=T), t(z_all) \%*\% out_reference)
+out_reference = V \%*\% g[]
+max( rel_err(bk_var_mult(g, pars, fac_method='eigen', p=1), out_reference) )
+rel_err(bk_var_mult(g, pars, fac_method='eigen', p=1, quad=T), t(g[]) \%*\% out_reference)
 
 # INCOMPLETE CASE
 
 n_sample = floor(n/10)
-idx_sampled = sample.int(n, n_sample) |> sort()
-z_obs = rep(NA, n)
-z_obs[idx_sampled] = z_all[idx_sampled]
-g_obs = modifyList(g_obs, list(gval = z_obs))
-V = bk_var(g_obs, pars)
+idx_sampled = sort(sample.int(n, n_sample))
+g_miss = bk(gdim)
+g_miss[idx_sampled] = g[idx_sampled]
+V = bk_var(g_miss, pars)
 bk_plot(V)
 
 # correctness check (eigen used by default)
-z = matrix(z_obs[idx_sampled], ncol=1)
+z = matrix(g[idx_sampled], ncol=1)
 V_inv = chol2inv(chol(V))
 out_reference = (V_inv \%*\% z)
 out_reference_quad = t(z) \%*\% out_reference
-max(rel_err(bk_var_mult(g_obs, pars), out_reference))
-rel_err(bk_var_mult(g_obs, pars, quad=TRUE), out_reference_quad)
+max(rel_err(bk_var_mult(g_miss, pars), out_reference))
+rel_err(bk_var_mult(g_miss, pars, quad=TRUE), out_reference_quad)
 
 # check non-default Cholesky method
-max( rel_err(bk_var_mult(g_obs, pars, fac_method='chol'), out_reference) )
-rel_err(bk_var_mult(g_obs, pars, quad=TRUE, fac_method='chol'), out_reference_quad)
+max( rel_err(bk_var_mult(g_miss, pars, fac_method='chol'), out_reference) )
+rel_err(bk_var_mult(g_miss, pars, quad=TRUE, fac_method='chol'), out_reference_quad)
 
 # supply data as a vector instead of list by pre-computing factorization
-fac_chol = bk_var(g_obs, pars, scaled=TRUE, fac_method='chol')
-fac_eigen = bk_var(g_obs, pars, scaled=TRUE, fac_method='eigen')
+fac_chol = bk_var(g_miss, pars, scaled=TRUE, fac_method='chol')
+fac_eigen = bk_var(g_miss, pars, scaled=TRUE, fac_method='eigen')
 max(rel_err(bk_var_mult(z, pars, fac=fac_chol), out_reference))
-max(rel_err(bk_var_mult(g_obs, pars, fac=fac_eigen), out_reference))
+max(rel_err(bk_var_mult(g_miss, pars, fac=fac_eigen), out_reference))
 rel_err(bk_var_mult(z, pars, fac=fac_chol, quad=TRUE), out_reference_quad)
-rel_err(bk_var_mult(g_obs, pars, fac=fac_eigen, quad=TRUE), out_reference_quad)
+rel_err(bk_var_mult(g_miss, pars, fac=fac_eigen, quad=TRUE), out_reference_quad)
 
 # matrix powers in eigen mode
 out_reference = V \%*\% z
-max(rel_err(bk_var_mult(g_obs, pars, p=1), out_reference))
-rel_err(bk_var_mult(g_obs, pars, p=1, quad=TRUE), t(z) \%*\% out_reference)
-max(rel_err(bk_var_mult(g_obs, pars, p=2), V \%*\% out_reference))
+max(rel_err(bk_var_mult(g_miss, pars, p=1), out_reference))
+rel_err(bk_var_mult(g_miss, pars, p=1, quad=TRUE), t(z) \%*\% out_reference)
+max(rel_err(bk_var_mult(g_miss, pars, p=2), V \%*\% out_reference))
 
-# multiply g_obs twice by a square root of V
-g_obs_sqrt = g_obs
-g_obs_sqrt$gval[!is.na(g_obs$gval)] = bk_var_mult(g_obs, pars, p=1/2)
-max( rel_err(bk_var_mult(g_obs_sqrt, pars, p=1/2), out_reference) )
+# verify that multiplying g_miss twice by a square root of V is same as multiplying by V
+g_miss_sqrt = g_miss
+g_miss_sqrt[!is.na(g_miss)] = bk_var_mult(g_miss, pars, p=1/2)
+max( rel_err(bk_var_mult(g_miss_sqrt, pars, p=1/2), out_reference) )
 
 }
+\seealso{
+Other variance-related functions: 
+\code{\link{bk_corr_mat}()},
+\code{\link{bk_corr}()},
+\code{\link{bk_toep_mult}()},
+\code{\link{bk_var}()}
+}
+\concept{variance-related functions}
+\keyword{internal}

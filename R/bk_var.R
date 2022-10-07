@@ -34,6 +34,9 @@
 #' @return length-n vector or a list of parameters and bounds (see details)
 #' @export
 #'
+#' @keywords internal
+#' @family variance-related functions
+#'
 #' @examples
 #'
 #' # define test distances, grid, and example kernel
@@ -61,10 +64,10 @@
 #' max(abs( variogram_example - variogram_compare ))
 #'
 #' # Toeplitz component matrices built entirely from these correlation vectors
-#' variance_matrix_example = bk_var(g_example, pars)
+#' variance_matrix_example = bk_var(g_example, pars, sep=TRUE)
+#' str(variance_matrix_example)
 #' max(abs( variance_matrix_example[['y']][,1L] - corr_y_example ))
 #' max(abs( variance_matrix_example[['x']][,1L] - corr_x_example ))
-#'
 #'
 bk_corr = function(pars, d=NA)
 {
@@ -146,8 +149,8 @@ bk_corr = function(pars, d=NA)
 #' Construct 1D stationary correlation matrices for regularly spaced data
 #'
 #' The i,jth value of the returned correlation matrix is the marginal correlation between
-#' the ith and jth points in a regularly spaced sequence of `n` (1D) points, given the
-#' correlation model with parameters defined in list `pars`.
+#' the ith and jth points in a regularly spaced sequence of `n` 1-dimensional (1D) points,
+#' given the correlation model with parameters defined in list `pars`.
 #'
 #' This matrix is symmetric and Toeplitz as a result of the assumption of stationarity
 #' of the random field and regularity of the grid.
@@ -169,6 +172,9 @@ bk_corr = function(pars, d=NA)
 #' @return the n x n correlation matrix, or its subset as specified in `i`, `j`
 #' @export
 #'
+#' @keywords internal
+#' @family variance-related functions
+#'
 #' @examples
 #'
 #' # define test distances, grid, and example kernel
@@ -181,11 +187,12 @@ bk_corr = function(pars, d=NA)
 #' cy = bk_corr_mat(pars[['y']], n=n_test)
 #' cxy = kronecker(cx, cy)
 #'
-#' # bk_var returns these two matrices in a list...
-#' max(abs( bk_var(g_example, pars)[['y']] - cy ))
-#' max(abs( bk_var(g_example, pars)[['x']] - cx ))
+#' # bk_var can return these two matrices in a list
+#' cxy_list = bk_var(g_example, pars, sep=TRUE)
+#' max(abs( cxy_list[['y']] - cy ))
+#' max(abs( cxy_list[['x']] - cx ))
 #'
-#' # ... or it can compute the full covariance matrix for model pars
+#' # ... or it can compute the full covariance matrix for model pars (default)
 #' var_matrix = bk_var(g_example, pars, sep=FALSE)
 #' var_matrix_compare = (pars$psill*cxy) + diag(pars$eps, n_test^2)
 #' max(abs( var_matrix - var_matrix_compare ))
@@ -217,7 +224,7 @@ bk_corr_mat = function(pars, n, gres=1, i=seq(n), j=seq(n))
 #' Generate a covariance matrix or its factorization
 #'
 #' Computes the covariance matrix V (or one of its factorizations) for the non-NA points
-#' in grid `g_obs`, given the model parameters list `pars`
+#' in bk grid `g`, given the model parameters list `pars`
 #'
 #' By default the output matrix is V. Alternatively, if `X` is supplied, the function
 #' returns the quadratic form X^T V^{-1} X.
@@ -231,31 +238,31 @@ bk_corr_mat = function(pars, n, gres=1, i=seq(n), j=seq(n))
 #' `1/pars$psill`, before factorization. This is the form expected by functions
 #' `bk_var_mult` and `bk_LL` in argument `fac`.
 #'
+#' Numerical precision issues with poorly conditioned covariance matrices can often be
+#' resolved by using 'eigen' factorization method (instead 'chol') and making sure that
+#' `pars$eps > 0`.
+#'
 #' If all grid points are observed, then the output V becomes separable. Setting `sep=TRUE`
-#' in this case causes the function to returns the x and y component correlation matrices (or
+#' in this case causes the function to return the x and y component correlation matrices (or
 #' their factorizations, as requested in `fac_method`) separately, in a list. `scaled` has no
-#' effect in this output mode. Note also that `sep` has no effect when `X` is supplied, as
-#' the quadratic form is not generally separable (regardless of separability in V^{-1}).
+#' effect in this output mode. Note also that `sep` has no effect when `X` is supplied.
 #'
-#' Missing data are identified by looking for NAs in the data vector `g_obs$gval`. If all
-#' are NA (or if 'gval' is missing from `g_obs`), the function behaves as though all grid
-#' points are observed. For multi-layer input, NAs are instead determined from
-#' `g_obs$idx_grid` and 'gval' is ignored (see `?bk`).
+#' If the function is passed an empty grid `g` (all points `NA`) it returns results for the
+#' complete case (no `NA`s).
 #'
 #'
-#' Note: when `pars$eps>0`, the 'eigen' factorization method will be more robust than 'chol'
-#' in handling numerical precision issues with poorly conditioned covariance matrices.
-#'
-#' @param g_obs list of form returned by `bk` (with entries 'gdim', 'gres', 'gval')
+#' @param g a bk grid object
 #' @param pars list of form returned by `bk_pars` (with entries 'y', 'x', 'eps', 'psill')
 #' @param scaled logical, whether to scale by `1/pars$psill`
 #' @param fac_method character, the factorization to return, one of 'none', 'chol', 'eigen'
-#' @param X numeric matrix, the `X` in `t(X) %*% V %*% X` (default is identity)
+#' @param X numeric matrix, the `X` in `t(X) %*% V %*% X` (default is identity, see details)
 #' @param fac matrix or list of matrices, the variance factorization (only used with X)
 #' @param sep logical, indicating to return correlation components instead of full covariance matrix
 #'
 #' @return either matrix `V`, or X^T V^{-1} X, or a factorization ('chol' or 'eigen')
 #' @export
+#'
+#' @family variance-related functions
 #'
 #' @examples
 #' # define example grid with NAs and example predictors matrix
@@ -263,82 +270,86 @@ bk_corr_mat = function(pars, n, gres=1, i=seq(n), j=seq(n))
 #' n = prod(gdim)
 #' n_obs = floor(n/3)
 #' idx_obs = sort(sample.int(n, n_obs))
-#' g = g_obs = bk(gdim)
-#' g_obs$gval[idx_obs] = rnorm(n_obs)
+#' g = g_empty = bk(gdim)
+#' g[idx_obs] = rnorm(n_obs)
+#' plot(g)
 #'
 #' # example kernel
 #' psill = 0.3
-#' pars = bk_pars(g_obs) |> modifyList(list(psill=psill))
+#' pars = modifyList(bk_pars(g_obs), list(psill=psill))
 #'
 #' # plot the covariance matrix for observed data, its cholesky factor and eigen-decomposition
-#' V_obs = bk_var(g_obs, pars)
-#' V_obs_chol = bk_var(g_obs, pars, fac_method='chol')
-#' V_obs_eigen = bk_var(g_obs, pars, fac_method='eigen')
+#' V_obs = bk_var(g, pars)
+#' V_obs_chol = bk_var(g, pars, fac_method='chol')
+#' V_obs_eigen = bk_var(g, pars, fac_method='eigen')
 #' bk_plot(V_obs)
 #' bk_plot(V_obs_chol)
 #' bk_plot(V_obs_eigen$vectors)
 #'
-#' # case when there are no NAs (or no data at all)
-#' g_nodata = modifyList(g_obs, list(gval=NULL))
+#' # empty and complete cases are treated the same
 #'
 #' # get the full covariance matrix with sep=FALSE (default)
-#' V_full = bk_var(g_nodata, pars)
+#' V_full = bk_var(g_empty, pars)
+#'
+#' # check that the correct sub-matrix is there
 #' max(abs( V_obs - V_full[idx_obs, idx_obs] ))
 #'
 #' # get 1d correlation matrices with sep=TRUE...
-#' corr_components = bk_var(g_nodata, pars, sep=TRUE)
+#' corr_components = bk_var(g_empty, pars, sep=TRUE)
 #' str(corr_components)
+#' bk_plot(corr_components[['x']])
 #'
-#' # ... these are related to the full covariance matrix by psill and eps
+#' # ... these are related to the full covariance matrix through psill and eps
 #' corr_mat = kronecker(corr_components[['x']], corr_components[['y']])
 #' V_full_compare = pars$psill * corr_mat + diag(pars$eps, n)
 #' max(abs(V_full - V_full_compare))
 #'
 #' # ... their factorizations can be returned as (nested) lists
-#' str(bk_var(g_nodata, pars, fac_method='chol', sep=TRUE))
-#' str(bk_var(g_nodata, pars, fac_method='eigen', sep=TRUE))
+#' str(bk_var(g_empty, pars, fac_method='chol', sep=TRUE))
+#' str(bk_var(g_empty, pars, fac_method='eigen', sep=TRUE))
 #'
 #' # compare to the full covariance matrix factorizations (default sep=FALSE)
-#' str(bk_var(g_nodata, pars, fac_method='chol'))
-#' str(bk_var(g_nodata, pars, fac_method='eigen'))
+#' str(bk_var(g_empty, pars, fac_method='chol'))
+#' str(bk_var(g_empty, pars, fac_method='eigen'))
 #'
 #' # test quadratic form with X
 #' nX = 3
 #' X_all = cbind(1, matrix(rnorm(nX * n), ncol=nX))
 #' cprod_all = crossprod(X_all, chol2inv(chol(V_full))) %*% X_all
-#' abs(max(bk_var(g, pars, X=X_all) - cprod_all ))
+#' abs(max(bk_var(g_empty, pars, X=X_all) - cprod_all ))
 #'
 #' # test products with inverse of quadratic form with X
-#' mult_test = rnorm(nX+1)
+#' mult_test = rnorm(nX + 1)
 #' cprod_all_inv = chol2inv(chol(cprod_all))
-#' cprod_all_inv_chol = bk_var(g, pars, X=X_all, scaled=TRUE, fac_method='eigen')
+#' cprod_all_inv_chol = bk_var(g_empty, pars, X=X_all, scaled=TRUE, fac_method='eigen')
 #' bk_var_mult(mult_test, pars, fac=cprod_all_inv_chol) - cprod_all_inv %*% mult_test
 #'
 #' # repeat with missing data
 #' X_obs = X_all[idx_obs,]
 #' cprod_obs = crossprod(X_obs, chol2inv(chol(V_obs))) %*% X_obs
-#' abs(max(bk_var(g_obs, pars, X=X_obs) - cprod_obs ))
+#'
+#' abs(max(bk_var(g, pars, X=X_obs) - cprod_obs ))
 #' cprod_obs_inv = chol2inv(chol(cprod_obs))
-#' cprod_obs_inv_chol = bk_var(g_obs, pars, X=X_obs, scaled=T, fac_method='eigen')
+#' cprod_obs_inv_chol = bk_var(g, pars, X=X_obs, scaled=T, fac_method='eigen')
 #' bk_var_mult(mult_test, pars, fac=cprod_obs_inv_chol) - cprod_obs_inv %*% mult_test
 #'
 #' # `scaled` indicates to divide matrix by psill
 #' print( pars[['eps']]/pars[['psill']] )
-#' diag(bk_var(g_obs, pars, scaled=TRUE)) # diagonal elements equal to 1 + eps/psill
-#' ( bk_var(g_obs, pars) - psill * bk_var(g_obs, pars, scaled=TRUE) ) |> abs() |> max()
-#' ( bk_var(g_obs, pars, X=X_obs, scaled=TRUE) - ( cprod_obs/psill ) ) |> abs() |> max()
+#' diag(bk_var(g, pars, scaled=TRUE)) # diagonal elements equal to 1 + eps/psill
+#' ( bk_var(g, pars) - psill * bk_var(g, pars, scaled=TRUE) ) |> abs() |> max()
+#' ( bk_var(g, pars, X=X_obs, scaled=TRUE) - ( cprod_obs/psill ) ) |> abs() |> max()
 #'
-#' # in cholesky factor this produces a scaling by square root of psill
-#' max(abs( V_obs_chol - sqrt(psill) * bk_var(g_obs, pars, fac_method='chol', scaled=TRUE) ))
+#' # in Cholesky factor this produces a scaling by square root of psill
+#' max(abs( V_obs_chol - sqrt(psill) * bk_var(g, pars, fac_method='chol', scaled=TRUE) ))
 #'
 #' # and in the eigendecomposition, a scaling of the eigenvalues
-#' vals_scaled = bk_var(g_obs, pars, fac_method='eigen', scaled=TRUE)$values
-#' max(abs( bk_var(g_obs, pars, fac_method='eigen')$values - psill*vals_scaled ))
+#' vals_scaled = bk_var(g, pars, fac_method='eigen', scaled=TRUE)$values
+#' max(abs( bk_var(g, pars, fac_method='eigen')$values - psill*vals_scaled ))
 #'
-bk_var = function(g_obs, pars=NULL, scaled=FALSE, fac_method='none', X=NULL, fac=NULL, sep=FALSE)
+bk_var = function(g, pars=NULL, scaled=FALSE, fac_method='none', X=NULL, fac=NULL, sep=FALSE)
 {
   # default Gaussian kernel
-  if(is.null(pars)) pars = bk_pars(g_obs, 'gau')
+  if(is.null(pars)) pars = bk_pars(g, 'gau')
 
   # check for unknown fac_method
   nm_fac_method = c('none', 'eigen', 'chol')
@@ -346,20 +357,16 @@ bk_var = function(g_obs, pars=NULL, scaled=FALSE, fac_method='none', X=NULL, fac
   if( !(fac_method %in% nm_fac_method) ) stop(msg_fac_method)
 
   # bk converts 1-layer matrix input to vector
-  if(is.matrix(g_obs[['gval']])) g_obs = bk(g_obs)
+  if(is.matrix(g[['gval']])) g = bk(g)
 
-  # copy the indexing vector in the multi-layer case
-  if(is.matrix(g_obs[['gval']]))
-  {
-    # only the NA structure matters here
-    g_obs = modifyList(g_obs, list(gval=g_obs[['idx_grid']], idx_grid=NULL))
-  }
+  # reduce multi-layer to single-layer case by overwrite g with its indexing vector
+  if(is.matrix(g[['gval']])) g = bk(gdim=dim(g), gres=g[['gres']], gval=g[['idx_grid']])
 
-  # identify NA grid-points and flag separable case (no missing data, or all missing)
-  n = prod(g_obs[['gdim']])
-  is_obs = !is.na(g_obs[['gval']])
-  if( !any(is_obs) | all(is_obs) ) g_obs[['gval']] = NULL
-  if( is.null(g_obs[['gval']]) ) is_obs = rep(TRUE, n)
+  # identify NA grid-points and flag separable case (empty or complete)
+  n = length(g)
+  is_obs = !is.na(g)
+  if( !any(is_obs) | all(is_obs) ) g[['gval']] = NULL
+  if( is.null(g[['gval']]) ) is_obs = rep(TRUE, n)
   n_obs = sum(is_obs)
   is_sep = n == n_obs
 
@@ -367,11 +374,11 @@ bk_var = function(g_obs, pars=NULL, scaled=FALSE, fac_method='none', X=NULL, fac
   if( !is.null(X) )
   {
     # call without X to get eigen-decomposition of variance
-    if( is.null(fac) ) fac = bk_var(g_obs, pars, scaled=TRUE, fac_method='eigen', sep=is_sep)
+    if( is.null(fac) ) fac = bk_var(g, pars, scaled=TRUE, fac_method='eigen', sep=is_sep)
 
     # check for invalid input
     msg_class = 'mu must be a matrix predictor columns'
-    msg_mismatch = 'nrow(X) must equal the number of non-NA points in g_obs$gval'
+    msg_mismatch = 'nrow(X) must equal the number of non-NA points in g$gval'
     if( !is.matrix(X) ) stop(msg_class)
     if( nrow(X) != sum(is_obs) ) stop(msg_mismatch)
 
@@ -386,8 +393,8 @@ bk_var = function(g_obs, pars=NULL, scaled=FALSE, fac_method='none', X=NULL, fac
   }
 
   # unpack grid config and covariance parameters
-  gres = g_obs[['gres']]
-  gdim = g_obs[['gdim']]
+  gres = g[['gres']]
+  gdim = dim(g)
   eps = ifelse(scaled, pars[['eps']]/pars[['psill']], pars[['eps']])
   psill = ifelse(scaled, 1, pars[['psill']])
 
@@ -418,7 +425,7 @@ bk_var = function(g_obs, pars=NULL, scaled=FALSE, fac_method='none', X=NULL, fac
   # incomplete data case
 
   # build mapping from points to rows of component matrices
-  yx_idx = which(is_obs) |> bk_vec2mat(gdim['y'], out='list')
+  yx_idx = bk_vec2mat(which(is_obs), gdim['y'], out='list')
 
   # draw a selection of rows/columns from component correlation matrices
   cy_obs = bk_corr_mat(pars[['y']], gdim[['y']], gres[['y']], i=yx_idx[['i']], j=yx_idx[['i']])
@@ -477,115 +484,114 @@ bk_var = function(g_obs, pars=NULL, scaled=FALSE, fac_method='none', X=NULL, fac
 #' @return numeric matrix
 #' @export
 #'
+#' @keywords internal
+#' @family variance-related functions
+#'
 #' @examples
 #' # relative error comparing output x to reference y
 #' rel_err = \(x, y) ifelse(y == 0, 0, abs( (x - y) / y ) )
 #'
 #' # define example grid and data
 #' gdim = c(10, 15)
-#' n = prod(gdim)
-#' z_all = rnorm(n)
-#' g_obs = modifyList(bk(gdim), list(gval = z_all))
+#' g = bk(gdim)
+#' n = length(g)
+#' g[] = rnorm(n)
 #'
 #' # define covariance parameters
-#' pars = modifyList(bk_pars(g_obs, 'gau'), list(psill=2, eps=0.5))
+#' pars = modifyList(bk_pars(g, 'gau'), list(psill=2, eps=0.5))
 #'
 #' # COMPLETE CASE
 #'
 #' # compute the full covariance matrix
-#' V = bk_var(g_obs, pars, sep=FALSE)
+#' V = bk_var(g, pars, sep=FALSE)
 #' V_inv = chol2inv(chol(V))
-#' out_reference = V_inv %*% z_all
-#' out_reference_quad = t(z_all) %*% out_reference
-#' max( rel_err(bk_var_mult(g_obs, pars), out_reference) )
-#' rel_err(bk_var_mult(g_obs, pars, quad=TRUE), out_reference_quad)
+#' out_reference = V_inv %*% g[]
+#' out_reference_quad = t(g[]) %*% out_reference
+#' max( rel_err(bk_var_mult(g, pars), out_reference) )
+#' rel_err(bk_var_mult(g, pars, quad=TRUE), out_reference_quad)
 #'
 #' # pre-computed factorization on separable components of correlation matrix
-#' fac_corr = bk_var(modifyList(g_obs, list(gval=NULL)), pars, fac_method='eigen', sep=TRUE)
-#' max( rel_err(bk_var_mult(g_obs, pars, fac=fac_corr), out_reference) )
-#' rel_err(bk_var_mult(g_obs, pars, fac=fac_corr, quad=TRUE), out_reference_quad)
+#' fac_corr = bk_var(modifyList(g, list(gval=NULL)), pars, fac_method='eigen', sep=TRUE)
+#' max( rel_err(bk_var_mult(g, pars, fac=fac_corr), out_reference) )
+#' rel_err(bk_var_mult(g, pars, fac=fac_corr, quad=TRUE), out_reference_quad)
 #'
 #' # matrix powers
-#' out_reference = V %*% z_all
-#' max( rel_err(bk_var_mult(g_obs, pars, fac_method='eigen', p=1), out_reference) )
-#' rel_err(bk_var_mult(g_obs, pars, fac_method='eigen', p=1, quad=T), t(z_all) %*% out_reference)
+#' out_reference = V %*% g[]
+#' max( rel_err(bk_var_mult(g, pars, fac_method='eigen', p=1), out_reference) )
+#' rel_err(bk_var_mult(g, pars, fac_method='eigen', p=1, quad=T), t(g[]) %*% out_reference)
 #'
 #' # INCOMPLETE CASE
 #'
 #' n_sample = floor(n/10)
-#' idx_sampled = sample.int(n, n_sample) |> sort()
-#' z_obs = rep(NA, n)
-#' z_obs[idx_sampled] = z_all[idx_sampled]
-#' g_obs = modifyList(g_obs, list(gval = z_obs))
-#' V = bk_var(g_obs, pars)
+#' idx_sampled = sort(sample.int(n, n_sample))
+#' g_miss = bk(gdim)
+#' g_miss[idx_sampled] = g[idx_sampled]
+#' V = bk_var(g_miss, pars)
 #' bk_plot(V)
 #'
 #' # correctness check (eigen used by default)
-#' z = matrix(z_obs[idx_sampled], ncol=1)
+#' z = matrix(g[idx_sampled], ncol=1)
 #' V_inv = chol2inv(chol(V))
 #' out_reference = (V_inv %*% z)
 #' out_reference_quad = t(z) %*% out_reference
-#' max(rel_err(bk_var_mult(g_obs, pars), out_reference))
-#' rel_err(bk_var_mult(g_obs, pars, quad=TRUE), out_reference_quad)
+#' max(rel_err(bk_var_mult(g_miss, pars), out_reference))
+#' rel_err(bk_var_mult(g_miss, pars, quad=TRUE), out_reference_quad)
 #'
 #' # check non-default Cholesky method
-#' max( rel_err(bk_var_mult(g_obs, pars, fac_method='chol'), out_reference) )
-#' rel_err(bk_var_mult(g_obs, pars, quad=TRUE, fac_method='chol'), out_reference_quad)
+#' max( rel_err(bk_var_mult(g_miss, pars, fac_method='chol'), out_reference) )
+#' rel_err(bk_var_mult(g_miss, pars, quad=TRUE, fac_method='chol'), out_reference_quad)
 #'
 #' # supply data as a vector instead of list by pre-computing factorization
-#' fac_chol = bk_var(g_obs, pars, scaled=TRUE, fac_method='chol')
-#' fac_eigen = bk_var(g_obs, pars, scaled=TRUE, fac_method='eigen')
+#' fac_chol = bk_var(g_miss, pars, scaled=TRUE, fac_method='chol')
+#' fac_eigen = bk_var(g_miss, pars, scaled=TRUE, fac_method='eigen')
 #' max(rel_err(bk_var_mult(z, pars, fac=fac_chol), out_reference))
-#' max(rel_err(bk_var_mult(g_obs, pars, fac=fac_eigen), out_reference))
+#' max(rel_err(bk_var_mult(g_miss, pars, fac=fac_eigen), out_reference))
 #' rel_err(bk_var_mult(z, pars, fac=fac_chol, quad=TRUE), out_reference_quad)
-#' rel_err(bk_var_mult(g_obs, pars, fac=fac_eigen, quad=TRUE), out_reference_quad)
+#' rel_err(bk_var_mult(g_miss, pars, fac=fac_eigen, quad=TRUE), out_reference_quad)
 #'
 #' # matrix powers in eigen mode
 #' out_reference = V %*% z
-#' max(rel_err(bk_var_mult(g_obs, pars, p=1), out_reference))
-#' rel_err(bk_var_mult(g_obs, pars, p=1, quad=TRUE), t(z) %*% out_reference)
-#' max(rel_err(bk_var_mult(g_obs, pars, p=2), V %*% out_reference))
+#' max(rel_err(bk_var_mult(g_miss, pars, p=1), out_reference))
+#' rel_err(bk_var_mult(g_miss, pars, p=1, quad=TRUE), t(z) %*% out_reference)
+#' max(rel_err(bk_var_mult(g_miss, pars, p=2), V %*% out_reference))
 #'
-#' # multiply g_obs twice by a square root of V
-#' g_obs_sqrt = g_obs
-#' g_obs_sqrt$gval[!is.na(g_obs$gval)] = bk_var_mult(g_obs, pars, p=1/2)
-#' max( rel_err(bk_var_mult(g_obs_sqrt, pars, p=1/2), out_reference) )
+#' # verify that multiplying g_miss twice by a square root of V is same as multiplying by V
+#' g_miss_sqrt = g_miss
+#' g_miss_sqrt[!is.na(g_miss)] = bk_var_mult(g_miss, pars, p=1/2)
+#' max( rel_err(bk_var_mult(g_miss_sqrt, pars, p=1/2), out_reference) )
 #'
-bk_var_mult = function(g_obs, pars, fac_method='eigen', fac=NULL, quad=FALSE, p=-1)
+bk_var_mult = function(g, pars, fac_method='eigen', fac=NULL, quad=FALSE, p=-1)
 {
   # check for invalid factorization method name
   if( !(fac_method %in% c('chol', 'eigen')) ) stop('fac_method unrecognized')
 
   # reshape input as matrix
-  if( is.list(g_obs) )
+  if( is.list(g) )
   {
-    # unpack list g_obs as needed
-    g_obs = bk(g_obs)
-    n_layer = ifelse(is.matrix(g_obs[['idx_grid']]), ncol(g_obs[['idx_grid']]), 1L)
-
-    # when there are missing data, omit from copy z
-    is_obs = !is.na(g_obs[['gval']])
-    z = matrix(g_obs[['gval']][is_obs], ncol=n_layer)
+    # unpack non-NA values from list g into a matrix z
+    g = bk(g)
+    n_layer = ifelse(is.matrix(g[['gval']]), ncol(g[['gval']]), 1L)
+    is_obs = !is.na(g)
+    z = matrix(g[['gval']][is_obs], ncol=n_layer)
 
     # complete and empty cases trigger separability option below
     is_sep = all(is_obs) | !any(is_obs)
 
   } else {
 
-    # coerce g_obs to matrix
-    z = matrix(g_obs, ncol=ifelse(is.vector(g_obs), 1, ncol(g_obs)))
+    # coerce g to matrix
+    z = matrix(g, ncol=ifelse(is.vector(g), 1L, ncol(g)))
 
     # check if the supplied factorization is a Kronecker product
-    if( is.null(fac) ) stop('factorization fac must be supplied if g_obs is not a list')
+    if( is.null(fac) ) stop('factorization fac must be supplied if g is not a list')
     is_sep = is.list(fac) & all(c('y', 'x') %in% names(fac))
   }
 
-  # separability property and eigen-decomposition used in no-missing case
+  # no-missing case: uses separability
   if(is_sep)
   {
-    # factorize the correlation matrix components - eigen method is forced in this case
-    g_bare = g_obs[c('gres', 'gdim')]
-    if( is.null(fac) ) fac = bk_var(g_bare, pars=pars, fac_method='eigen', sep=TRUE)
+    # factorize the correlation matrix components Cy and Cx: eigen method is forced in this case
+    if( is.null(fac) ) fac = bk_var(bk(g[c('gres', 'gdim')]), pars=pars, fac_method='eigen', sep=TRUE)
 
     # check for problems with supplied factorization type
     msg_fac = 'expected separable eigen-decomposition in fac (but got Cholesky)'
@@ -593,77 +599,96 @@ bk_var_mult = function(g_obs, pars, fac_method='eigen', fac=NULL, quad=FALSE, p=
     if( !all(c('y', 'x') %in% names(fac) ) ) stop('named entries "x" and "y" not found in fac')
     if( !all(sapply(fac, function(f) is.list(f)) ) ) stop(msg_fac)
 
-    # eigenvalues of full correlation and covariance matrices
+    # eigenvalues of full correlation matrix
     ny = length(fac[['y']][['values']])
     nx = length(fac[['x']][['values']])
     ev_corr = kronecker(fac[['x']][['values']], fac[['y']][['values']])
+
+    # eigenvalues of full covariance matrix
     ev_p = ( pars[['eps']] + pars[['psill']] * as.numeric(ev_corr) )^p
+
+    # sanity checks
     if( any( is.infinite(ev_p) ) ) stop('ill-conditioned covariance matrix (0 eigenvalue)')
     if( any( is.nan(ev_p) ) ) stop('ill-conditioned covariance matrix (eigenvalue < 0)')
     if( nrow(z) != (ny*nx) ) stop('factorization was inconsistent with dimensions of g_obs')
 
-    # left multiply data vector by square root of inverse correlation matrix
-    grid_evec = apply(z, 2, \(x) crossprod(fac[['y']][['vectors']], matrix(x, ny)), simplify=FALSE ) |>
-      lapply(\(x) tcrossprod(x, t(fac[['x']][['vectors']]) ) )
+    ## efficient multiplication using Kronecker matrix-vector product identity:
+
+    # left multiply data vector by square root of correlation eigen-decomposition (looping over layers, ie columns of z)
+    z_trans = lapply( apply(z, 2, function(v1) { crossprod(fac[['y']][['vectors']], matrix(v1, ny)) }, simplify=FALSE),
+
+                        # inner loop (apply) left-multiplies by eCy, outer loop (lapply) right-multiplies by eCx
+                        function(v2) tcrossprod(v2, t(fac[['x']][['vectors']]))
+    )
 
     # quadratic form is the scaled vector multiplied by its transpose
-    if(quad) return( crossprod(sqrt(ev_p) * sapply(grid_evec, as.numeric)) )
+    if(quad) return( crossprod(sqrt(ev_p) * sapply(z_trans, as.numeric)) )
 
-    # scale by inverse covariance eigen-values and transform back
-    grid_prod = grid_evec |>
-      lapply(\(x) tcrossprod(fac[['y']][['vectors']], t(ev_p * x))) |>
-      sapply(\(x) tcrossprod(x, fac[['x']][['vectors']]) )
+    # scale by inverse covariance eigen-values and transform back (looping over layers, ie columns of z_trans)
+    z_result = sapply( lapply(z_trans, function(v1) tcrossprod(fac[['y']][['vectors']], t(ev_p * v1))),
 
-    return( grid_prod )
+                       # inner loop (lapply) left multiples by eCy, outer loop (sapply) right-multiplies by eCx
+                       function(v2) tcrossprod(v2, fac[['x']][['vectors']])
+    )
+
+
+
+    return(z_result)
   }
 
-  # code below handles non-separable case
-  if( is.null(z) ) stop('data vector not found g_obs')
+  ## missing case: non-separable variance
 
   # set default factorization method and switch to eigen when needed, with a warning
+  if( is.null(z) ) stop('data vector not found g')
   if( is.null(fac_method) ) fac_method = ifelse(p==-1, 'chol', 'eigen')
   if( (p != -1) & (fac_method == 'chol') )
   {
-    warning('switching to fac_method="eigen" (p=-1 required for Cholesky)')
+    warning('switching to fac_method="eigen" (p=-1 required if using Cholesky)')
     fac_method = 'eigen'
   }
 
-  # factorize the variance matrix using the specified method
-  if( is.null(fac) ) fac = bk_var(g_obs, pars=pars, scaled=TRUE, fac_method=fac_method)
+  # factorize the (full) variance matrix using the specified method
+  if( is.null(fac) ) fac = bk_var(g, pars=pars, scaled=TRUE, fac_method=fac_method, sep=FALSE)
 
-  # detect supplied factorization type
+  # handle cases where user supplies a different `fac` than what is specified in `fac_method`
   fac_method = ifelse(is.matrix(fac), 'chol', 'eigen')
 
   # computation via Cholesky factor (p=-1)
   if( fac_method == 'chol' )
   {
-    # consistency check
-    if( nrow(fac) != nrow(z) ) stop('factorization was inconsistent with dimensions of g_obs')
+    # sanity check
+    if( nrow(fac) != nrow(z) ) stop('factorization was inconsistent with dimensions of g')
 
-    # solve for (t(C))(V_inv)(z) whose inner product is the quadratic form
-    g_chol = forwardsolve(fac, z/pars[['psill']] )
-    if(quad) return( pars[['psill']] * crossprod(g_chol) )
-    grid_prod = backsolve(t(fac), g_chol)
+    # standard approach for triangular systems, scaling by psill since we used scaled=TRUE in `bk_var` call
+    z_chol = forwardsolve(fac, z/pars[['psill']] )
+
+    # quadratic form is the (scaled) inner product
+    if(quad) return( pars[['psill']] * crossprod(z_chol) )
+    z_result = backsolve(t(fac), z_chol)
   }
 
-  # computation via eigen-decomposition
+  # computation via eigen-decomposition (any p)
   if( fac_method == 'eigen' )
   {
-    # eigenvalues of square root of the requested power
+    # raise (square root of) eigenvalues to the requested power and scale by psill
     ev_sqrt = ( pars[['psill']] * fac[['values']] )^(p/2)
 
-    # consistency check
+    # sanity checks
     if( length(ev_sqrt) != nrow(z) ) stop('factorization was inconsistent with dimensions of g_obs')
     if( any( is.infinite(ev_sqrt) ) ) stop('ill-conditioned covariance matrix (0 eigenvalue)')
     if( any( is.nan(ev_sqrt) ) ) stop('ill-conditioned covariance matrix (eigenvalue < 0)')
-    grid_evec = ev_sqrt * crossprod(fac[['vectors']], z)
-    if(quad) return( crossprod(grid_evec, grid_evec) )
 
-    # left-multiply by the remaining terms (transpose of the original transform)
-    grid_prod = tcrossprod(fac[['vectors']], t( ev_sqrt * grid_evec ))
+    # transform z by eigenvector matrix, then scale by square root of eigenvalues
+    z_trans = ev_sqrt * crossprod(fac[['vectors']], z)
+
+    # quadratic form is the inner product (already scaled by psill via ev_sqrt)
+    if(quad) return( crossprod(z_trans) )
+
+    # left-multiply the transpose after scaling rows to apply inverse transform
+    z_result = tcrossprod(fac[['vectors']], t( ev_sqrt * z_trans ))
   }
 
-  return( grid_prod )
+  return(z_result)
 }
 
 
@@ -698,6 +723,9 @@ bk_var_mult = function(g_obs, pars, fac_method='eigen', fac=NULL, quad=FALSE, p=
 #'
 #' @return numeric matrix, the product of yzx or yz (if x is NULL)
 #' @export
+#'
+#' @keywords internal
+#' @family variance-related functions
 #'
 #' @examples
 #' # define example matrix from 1D exponential variogram

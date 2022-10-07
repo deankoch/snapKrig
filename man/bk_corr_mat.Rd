@@ -22,8 +22,8 @@ the n x n correlation matrix, or its subset as specified in \code{i}, \code{j}
 }
 \description{
 The i,jth value of the returned correlation matrix is the marginal correlation between
-the ith and jth points in a regularly spaced sequence of \code{n} (1D) points, given the
-correlation model with parameters defined in list \code{pars}.
+the ith and jth points in a regularly spaced sequence of \code{n} 1-dimensional (1D) points,
+given the correlation model with parameters defined in list \code{pars}.
 }
 \details{
 This matrix is symmetric and Toeplitz as a result of the assumption of stationarity
@@ -49,11 +49,12 @@ cx = bk_corr_mat(pars[['x']], n=n_test)
 cy = bk_corr_mat(pars[['y']], n=n_test)
 cxy = kronecker(cx, cy)
 
-# bk_var returns these two matrices in a list...
-max(abs( bk_var(g_example, pars)[['y']] - cy ))
-max(abs( bk_var(g_example, pars)[['x']] - cx ))
+# bk_var can return these two matrices in a list
+cxy_list = bk_var(g_example, pars, sep=TRUE)
+max(abs( cxy_list[['y']] - cy ))
+max(abs( cxy_list[['x']] - cx ))
 
-# ... or it can compute the full covariance matrix for model pars
+# ... or it can compute the full covariance matrix for model pars (default)
 var_matrix = bk_var(g_example, pars, sep=FALSE)
 var_matrix_compare = (pars$psill*cxy) + diag(pars$eps, n_test^2)
 max(abs( var_matrix - var_matrix_compare ))
@@ -67,3 +68,12 @@ cx_long = bk_corr_mat(pars_x, n=n_test, gres=2*g_example$gres)
 cx_long < cx
 
 }
+\seealso{
+Other variance-related functions: 
+\code{\link{bk_corr}()},
+\code{\link{bk_toep_mult}()},
+\code{\link{bk_var_mult}()},
+\code{\link{bk_var}()}
+}
+\concept{variance-related functions}
+\keyword{internal}

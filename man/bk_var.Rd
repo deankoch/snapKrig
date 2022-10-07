@@ -5,7 +5,7 @@
 \title{Generate a covariance matrix or its factorization}
 \usage{
 bk_var(
-  g_obs,
+  g,
   pars = NULL,
   scaled = FALSE,
   fac_method = "none",
@@ -15,7 +15,7 @@ bk_var(
 )
 }
 \arguments{
-\item{g_obs}{list of form returned by \code{bk} (with entries 'gdim', 'gres', 'gval')}
+\item{g}{a bk grid object}
 
 \item{pars}{list of form returned by \code{bk_pars} (with entries 'y', 'x', 'eps', 'psill')}
 
@@ -23,7 +23,7 @@ bk_var(
 
 \item{fac_method}{character, the factorization to return, one of 'none', 'chol', 'eigen'}
 
-\item{X}{numeric matrix, the \code{X} in \code{t(X) \%*\% V \%*\% X} (default is identity)}
+\item{X}{numeric matrix, the \code{X} in \code{t(X) \%*\% V \%*\% X} (default is identity, see details)}
 
 \item{fac}{matrix or list of matrices, the variance factorization (only used with X)}
 
@@ -34,7 +34,7 @@ either matrix \code{V}, or X^T V^{-1} X, or a factorization ('chol' or 'eigen')
 }
 \description{
 Computes the covariance matrix V (or one of its factorizations) for the non-NA points
-in grid \code{g_obs}, given the model parameters list \code{pars}
+in bk grid \code{g}, given the model parameters list \code{pars}
 }
 \details{
 By default the output matrix is V. Alternatively, if \code{X} is supplied, the function
@@ -49,19 +49,17 @@ can speed up calculations. \code{fac} is ignored when \code{X} is not supplied.
 \code{1/pars$psill}, before factorization. This is the form expected by functions
 \code{bk_var_mult} and \code{bk_LL} in argument \code{fac}.
 
+Numerical precision issues with poorly conditioned covariance matrices can often be
+resolved by using 'eigen' factorization method (instead 'chol') and making sure that
+\code{pars$eps > 0}.
+
 If all grid points are observed, then the output V becomes separable. Setting \code{sep=TRUE}
-in this case causes the function to returns the x and y component correlation matrices (or
+in this case causes the function to return the x and y component correlation matrices (or
 their factorizations, as requested in \code{fac_method}) separately, in a list. \code{scaled} has no
-effect in this output mode. Note also that \code{sep} has no effect when \code{X} is supplied, as
-the quadratic form is not generally separable (regardless of separability in V^{-1}).
+effect in this output mode. Note also that \code{sep} has no effect when \code{X} is supplied.
 
-Missing data are identified by looking for NAs in the data vector \code{g_obs$gval}. If all
-are NA (or if 'gval' is missing from \code{g_obs}), the function behaves as though all grid
-points are observed. For multi-layer input, NAs are instead determined from
-\code{g_obs$idx_grid} and 'gval' is ignored (see \code{?bk}).
-
-Note: when \code{pars$eps>0}, the 'eigen' factorization method will be more robust than 'chol'
-in handling numerical precision issues with poorly conditioned covariance matrices.
+If the function is passed an empty grid \code{g} (all points \code{NA}) it returns results for the
+complete case (no \code{NA}s).
 }
 \examples{
 # define example grid with NAs and example predictors matrix
@@ -69,76 +67,88 @@ gdim = c(12, 13)
 n = prod(gdim)
 n_obs = floor(n/3)
 idx_obs = sort(sample.int(n, n_obs))
-g = g_obs = bk(gdim)
-g_obs$gval[idx_obs] = rnorm(n_obs)
+g = g_empty = bk(gdim)
+g[idx_obs] = rnorm(n_obs)
+plot(g)
 
 # example kernel
 psill = 0.3
-pars = bk_pars(g_obs) |> modifyList(list(psill=psill))
+pars = modifyList(bk_pars(g_obs), list(psill=psill))
 
 # plot the covariance matrix for observed data, its cholesky factor and eigen-decomposition
-V_obs = bk_var(g_obs, pars)
-V_obs_chol = bk_var(g_obs, pars, fac_method='chol')
-V_obs_eigen = bk_var(g_obs, pars, fac_method='eigen')
+V_obs = bk_var(g, pars)
+V_obs_chol = bk_var(g, pars, fac_method='chol')
+V_obs_eigen = bk_var(g, pars, fac_method='eigen')
 bk_plot(V_obs)
 bk_plot(V_obs_chol)
 bk_plot(V_obs_eigen$vectors)
 
-# case when there are no NAs (or no data at all)
-g_nodata = modifyList(g_obs, list(gval=NULL))
+# empty and complete cases are treated the same
 
 # get the full covariance matrix with sep=FALSE (default)
-V_full = bk_var(g_nodata, pars)
+V_full = bk_var(g_empty, pars)
+
+# check that the correct sub-matrix is there
 max(abs( V_obs - V_full[idx_obs, idx_obs] ))
 
 # get 1d correlation matrices with sep=TRUE...
-corr_components = bk_var(g_nodata, pars, sep=TRUE)
+corr_components = bk_var(g_empty, pars, sep=TRUE)
 str(corr_components)
+bk_plot(corr_components[['x']])
 
-# ... these are related to the full covariance matrix by psill and eps
+# ... these are related to the full covariance matrix through psill and eps
 corr_mat = kronecker(corr_components[['x']], corr_components[['y']])
 V_full_compare = pars$psill * corr_mat + diag(pars$eps, n)
 max(abs(V_full - V_full_compare))
 
 # ... their factorizations can be returned as (nested) lists
-str(bk_var(g_nodata, pars, fac_method='chol', sep=TRUE))
-str(bk_var(g_nodata, pars, fac_method='eigen', sep=TRUE))
+str(bk_var(g_empty, pars, fac_method='chol', sep=TRUE))
+str(bk_var(g_empty, pars, fac_method='eigen', sep=TRUE))
 
 # compare to the full covariance matrix factorizations (default sep=FALSE)
-str(bk_var(g_nodata, pars, fac_method='chol'))
-str(bk_var(g_nodata, pars, fac_method='eigen'))
+str(bk_var(g_empty, pars, fac_method='chol'))
+str(bk_var(g_empty, pars, fac_method='eigen'))
 
 # test quadratic form with X
 nX = 3
 X_all = cbind(1, matrix(rnorm(nX * n), ncol=nX))
 cprod_all = crossprod(X_all, chol2inv(chol(V_full))) \%*\% X_all
-abs(max(bk_var(g, pars, X=X_all) - cprod_all ))
+abs(max(bk_var(g_empty, pars, X=X_all) - cprod_all ))
 
 # test products with inverse of quadratic form with X
-mult_test = rnorm(nX+1)
+mult_test = rnorm(nX + 1)
 cprod_all_inv = chol2inv(chol(cprod_all))
-cprod_all_inv_chol = bk_var(g, pars, X=X_all, scaled=TRUE, fac_method='eigen')
+cprod_all_inv_chol = bk_var(g_empty, pars, X=X_all, scaled=TRUE, fac_method='eigen')
 bk_var_mult(mult_test, pars, fac=cprod_all_inv_chol) - cprod_all_inv \%*\% mult_test
 
 # repeat with missing data
 X_obs = X_all[idx_obs,]
 cprod_obs = crossprod(X_obs, chol2inv(chol(V_obs))) \%*\% X_obs
-abs(max(bk_var(g_obs, pars, X=X_obs) - cprod_obs ))
+
+abs(max(bk_var(g, pars, X=X_obs) - cprod_obs ))
 cprod_obs_inv = chol2inv(chol(cprod_obs))
-cprod_obs_inv_chol = bk_var(g_obs, pars, X=X_obs, scaled=T, fac_method='eigen')
+cprod_obs_inv_chol = bk_var(g, pars, X=X_obs, scaled=T, fac_method='eigen')
 bk_var_mult(mult_test, pars, fac=cprod_obs_inv_chol) - cprod_obs_inv \%*\% mult_test
 
 # `scaled` indicates to divide matrix by psill
 print( pars[['eps']]/pars[['psill']] )
-diag(bk_var(g_obs, pars, scaled=TRUE)) # diagonal elements equal to 1 + eps/psill
-( bk_var(g_obs, pars) - psill * bk_var(g_obs, pars, scaled=TRUE) ) |> abs() |> max()
-( bk_var(g_obs, pars, X=X_obs, scaled=TRUE) - ( cprod_obs/psill ) ) |> abs() |> max()
+diag(bk_var(g, pars, scaled=TRUE)) # diagonal elements equal to 1 + eps/psill
+( bk_var(g, pars) - psill * bk_var(g, pars, scaled=TRUE) ) |> abs() |> max()
+( bk_var(g, pars, X=X_obs, scaled=TRUE) - ( cprod_obs/psill ) ) |> abs() |> max()
 
-# in cholesky factor this produces a scaling by square root of psill
-max(abs( V_obs_chol - sqrt(psill) * bk_var(g_obs, pars, fac_method='chol', scaled=TRUE) ))
+# in Cholesky factor this produces a scaling by square root of psill
+max(abs( V_obs_chol - sqrt(psill) * bk_var(g, pars, fac_method='chol', scaled=TRUE) ))
 
 # and in the eigendecomposition, a scaling of the eigenvalues
-vals_scaled = bk_var(g_obs, pars, fac_method='eigen', scaled=TRUE)$values
-max(abs( bk_var(g_obs, pars, fac_method='eigen')$values - psill*vals_scaled ))
+vals_scaled = bk_var(g, pars, fac_method='eigen', scaled=TRUE)$values
+max(abs( bk_var(g, pars, fac_method='eigen')$values - psill*vals_scaled ))
 
 }
+\seealso{
+Other variance-related functions: 
+\code{\link{bk_corr_mat}()},
+\code{\link{bk_corr}()},
+\code{\link{bk_toep_mult}()},
+\code{\link{bk_var_mult}()}
+}
+\concept{variance-related functions}

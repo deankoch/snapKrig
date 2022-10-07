@@ -75,3 +75,12 @@ gdim = c(y=n, x=n)
 max( abs( result_default - bk_toep_mult(y, z=z[idx_obs], x, idx_obs, gdim) ) )
 
 }
+\seealso{
+Other variance-related functions: 
+\code{\link{bk_corr_mat}()},
+\code{\link{bk_corr}()},
+\code{\link{bk_var_mult}()},
+\code{\link{bk_var}()}
+}
+\concept{variance-related functions}
+\keyword{internal}

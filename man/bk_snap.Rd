@@ -80,7 +80,7 @@ plot(g_snap, col_grid='black', reset=FALSE, leg=FALSE)
 graphics::points(from[c('x', 'y')], pch=16, col=my_col(from[['z']]))
 graphics::points(from[c('x', 'y')])
 
-# snap points with and plot (default settings)
+# snap all points to grid extension (default settings)
 g_snap = bk_snap(from, g, crop_from=FALSE, crop_g=FALSE)
 plot(g_snap, col_grid='black', reset=FALSE)
 graphics::points(from[c('x', 'y')], pch=16, col=my_col(from[['z']]))

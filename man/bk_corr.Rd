@@ -67,9 +67,18 @@ variogram_compare = 2 * pars$eps + pars$psill * (1 - corr_example)
 max(abs( variogram_example - variogram_compare ))
 
 # Toeplitz component matrices built entirely from these correlation vectors
-variance_matrix_example = bk_var(g_example, pars)
+variance_matrix_example = bk_var(g_example, pars, sep=TRUE)
+str(variance_matrix_example)
 max(abs( variance_matrix_example[['y']][,1L] - corr_y_example ))
 max(abs( variance_matrix_example[['x']][,1L] - corr_x_example ))
 
-
 }
+\seealso{
+Other variance-related functions: 
+\code{\link{bk_corr_mat}()},
+\code{\link{bk_toep_mult}()},
+\code{\link{bk_var_mult}()},
+\code{\link{bk_var}()}
+}
+\concept{variance-related functions}
+\keyword{internal}

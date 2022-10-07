@@ -2,41 +2,60 @@
 % Please edit documentation in R/bk_pars.R
 \name{bk_pars_make}
 \alias{bk_pars_make}
-\title{Build a parameter list defining the 2d spatial covariance model}
+\title{Build a parameter list defining the 2d spatial Kronecker covariance model}
 \usage{
 bk_pars_make(pars = "gau")
 }
 \arguments{
-\item{pars}{character vector of kernel name(s) or list of parameters (see DETAILS)}
+\item{pars}{character vector of kernel name(s) or list of parameters (see details)}
 }
 \value{
 parameter list containing sub-lists 'y', 'x', and scalars 'psill' and 'eps'
 }
 \description{
-Constructs a nested list containing expected covariance parameters for the supplied
-kernel names in \code{pars}. If \code{pars} is already such a list, the function checks that
-parameter names and lengths are valid and returns a copy containing only the
-expected parameters, properly named, with NAs assigned to any missing parameters.
+Constructs a nested list naming the expected covariance parameters for the supplied
+correlation function names in \code{pars}. If \code{pars} is already such a list, the function
+checks that parameter names and lengths are valid and returns a copy containing only the
+expected parameters, properly named, with \code{NA}s assigned to any missing parameters.
 }
 \details{
-\code{pars} can be a kernel name ('gau', 'mat', etc), or a vector or list of two of them,
-in which case the function returns a filled-out kernel definition list indicating
-expected parameters.
+\code{pars} should be a correlation function name accepted by \code{bk_kp} ('exp', 'gau','sph', or
+'gex', 'mat'), or a vector or list of two of them in the order y, x.
 }
 \examples{
-# pass a kernel name to get 2d version with NAs for all parameters
-'mat' |> bk_pars_make()
-# pass a vector or list of kernel names - when unnamed, order y, x is assumed
-c('gau', 'mat') |> bk_pars_make()
-list('gau', 'mat') |> bk_pars_make()
-list(x='gau', y='mat') |> bk_pars_make()
-# when missing , x kernel definition is copied from y, and vice versa
-list(k='exp', kp=c(rho=1)) |> bk_pars_make()
+# pass a correlation function name to get 2d version with NAs for all parameters
+bk_pars_make('mat')
+
+# pass a vector or list of correlation function names in order y, x (or else specify)
+bk_pars_make(c('gau', 'mat'))
+bk_pars_make(list(x='gau', y='mat'))
+
+# if the the x definition is missing it is copied from y, and vice versa
+bk_pars_make(list(k='exp', kp=c(rho=1)))
+
 # when unnamed, kernel range and shape parameters are assigned expected names
-list(psill=1, x=list(k='mat', kp=c(1,2))) |> bk_pars_make()
-# incorrectly named parameters raise errors - example:
-# list(psill=1, x=list(k='exp', kp=c(foo=1))) |> bk_pars_make()
+bk_pars_make(list(psill=1, x=list(k='mat', kp=c(1,2))))
+
+# incorrectly named parameters raise errors
+\dontrun{
+bk_pars_make(list(psill=1, x=list(k='exp', kp=c(foo=1))))
+}
+
 # complete parameter definition lists are returned unchanged
 k_list = list(k='exp', kp=c(rho=1))
-list(psill=1, eps=0, x=k_list, y=k_list) |> bk_pars_make()
+pars = list(y=k_list, x=k_list, eps=0, psill=1)
+identical(pars, bk_pars_make(pars))
+
 }
+\seealso{
+bk_corr
+
+Other parameter managers: 
+\code{\link{bk_bds}()},
+\code{\link{bk_kp}()},
+\code{\link{bk_pars_update}()},
+\code{\link{bk_pars}()},
+\code{\link{bk_to_string}()}
+}
+\concept{parameter managers}
+\keyword{internal}

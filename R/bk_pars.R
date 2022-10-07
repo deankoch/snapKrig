@@ -3,19 +3,22 @@
 # Functions for managing covariance model parameters
 #
 
-#' Initialize covariance kernel parameters for grid `g`
+#' Initialize Kronecker covariance function parameters for a bk grid
 #'
-#' Returns a kernel parameter list defining the covariance model for `g`, with
+#' Returns a parameter list defining the Kronecker covariance model for `g`, with
 #' default initial values assigned to parameters based on the grid dimensions and sample
 #' variance of observed data.
 #'
 #' Swap `fill='initial'` with 'lower' and 'upper' to get default lower and upper bounds.
 #'
-#' @param pars character or list defining kernels (in form understood by `bk_pars_make`)
-#' @param g list, a blitzKrig grid definition (or object accepted by `bk`)
+#' @param g list, a bk grid list (or any other object accepted by `bk`)
+#' @param pars character or list defining kernels accepted by `bk_pars_make`
 #'
-#' @return a list defining separable covariance parameters
+#' @return a list defining the Kronecker covariance parameters
+#'
 #' @export
+#' @family parameter managers
+#' @seealso bk
 #'
 #' @examples
 #' bk_pars(g=10)
@@ -36,19 +39,20 @@ bk_pars = function(g, pars='gau', fill='initial')
 }
 
 
-#' Set default parameter covariance parameter bounds
+#' Set default parameter covariance parameter bounds for a Kronecker covariance model
 #'
 #' Returns a data-frame of initial values and upper/lower bounds on covariance
-#' parameters for the kernel names in `pars`.
+#' parameters for the Kronecker covariance model defined by the correlation function
+#' names in `pars`.
 #'
 #' Range parameters (`y.rho` and `x.rho`) are bounded by the shortest and longest
 #' inter-point distances along the corresponding dimension (y or x). This is
 #' computed by taking the element-wise product of dimensions and resolution, ie
-#' `g$gres * g$gdim`. Ranges are initialized to the geometric mean of the upper
+#' `g$gres * dim(g)`. Ranges are initialized to the geometric mean of the upper
 #' and lower bounds.
 #'
 #' Variance bounds centered around `var_obs`, which by default is set to the sample
-#' variance of the data in `g$gval`. `eps` (measurement variance) and `psill` (partial
+#' variance of the data in `g`. `eps` (measurement variance) and `psill` (partial
 #' sill) are both initialized to one half of `var_obs`, bounded above by `var_obs`
 #' times `var_mult`, and bounded below by a small positive number (`1e-6`). Note that
 #' while `eps=0` produces valid models in theory, in practice `eps>0` is often
@@ -59,20 +63,28 @@ bk_pars = function(g, pars='gau', fill='initial')
 #' large or small distances.
 #'
 #' @param pars list or character vector of 1-2 kernel names (see `bk_pars`)
-#' @param g list, a blitzKrig grid definition (or object accepted by `bk`)
+#' @param g a bk grid (or any object accepted by `bk`)
 #' @param var_obs positive numeric, the sample variance of data `g$gval`
 #' @param var_mult numeric > 1, constant to multiply by `var_obs` to get upper bounds
 #'
 #' @return a data frame of initial values and lower/upper bounds for the parameters in `pars`
+#'
 #' @export
+#' @keywords internal
+#' @family parameter managers
+#' @seealso bk
 #'
 #' @examples
 #' gdim = c(10, 15)
-#' z = prod(gdim) |> rnorm()
-#' g = bk(gdim) |> modifyList(list(gval=z))
+#' g = bk(gdim)
+#' g[] = rnorm(length(g))
 #' bk_bds('mat', g)
-#' bk_bds('mat', g, lower=0)
-#' bk_bds('mat', g, rows=c('eps', 'psill'), lower=c(0, 0.5))
+#'
+#' # same result by passing in observed variance
+#' bk_bds('mat', g, var(g[]))
+#'
+#' # a less conservative bound for variance (only eps and psill affected)
+#' bk_bds('mat', g, var_mult=1)
 bk_bds = function(pars, g, var_obs=NULL, var_mult=2)
 {
   # set up hard-coded shape parameter bounds
@@ -89,8 +101,11 @@ bk_bds = function(pars, g, var_obs=NULL, var_mult=2)
   idx_rho = sapply(idx_yx, function(x) x[1])
   idx_kap = sapply(idx_yx, function(x) x[-1])
 
+  # validate g
+  g = bk(g)
+
   # compute sample variance if not supplied, or set to default 1 when there is no data
-  if( is.null(var_obs) ) var_obs = ifelse(is.null(g[['gval']]), 1, var(c(g[['gval']]), na.rm=TRUE))
+  if( is.null(var_obs) ) var_obs = ifelse(is.null(g[['gval']]), 1, var(g[], na.rm=TRUE))
   if( is.na(var_obs) ) var_obs = 1
 
   # set up bounds for variance components
@@ -99,7 +114,7 @@ bk_bds = function(pars, g, var_obs=NULL, var_mult=2)
   bds[['eps']] = list(lower=1e-6, initial=var_obs/2, upper=var_obs*var_mult)
 
   # set up bounds for kernel ranges - initial is geometric mean of upper and lower
-  bds_kp = Map(function(r,d) list(lower=r, initial=NA, upper=r*d), r=g[['gres']], d=g[['gdim']])
+  bds_kp = Map(function(r,d) list(lower=r, initial=NA, upper=r*d), r=g[['gres']], d=dim(g))
   bds[idx_rho] = lapply(bds_kp, function(p) {
     modifyList(p, list(initial = sqrt(p[['lower']]*p[['upper']])) ) })
 
@@ -113,38 +128,49 @@ bk_bds = function(pars, g, var_obs=NULL, var_mult=2)
 }
 
 
-#' Build a parameter list defining the 2d spatial covariance model
+#' Build a parameter list defining the 2d spatial Kronecker covariance model
 #'
-#' Constructs a nested list containing expected covariance parameters for the supplied
-#' kernel names in `pars`. If `pars` is already such a list, the function checks that
-#' parameter names and lengths are valid and returns a copy containing only the
-#' expected parameters, properly named, with NAs assigned to any missing parameters.
+#' Constructs a nested list naming the expected covariance parameters for the supplied
+#' correlation function names in `pars`. If `pars` is already such a list, the function
+#' checks that parameter names and lengths are valid and returns a copy containing only the
+#' expected parameters, properly named, with `NA`s assigned to any missing parameters.
 #'
-#' `pars` can be a kernel name ('gau', 'mat', etc), or a vector or list of two of them,
-#' in which case the function returns a filled-out kernel definition list indicating
-#' expected parameters.
+#' `pars` should be a correlation function name accepted by `bk_kp` ('exp', 'gau','sph', or
+#' 'gex', 'mat'), or a vector or list of two of them in the order y, x.
 #'
-#' @param pars character vector of kernel name(s) or list of parameters (see DETAILS)
+#' @param pars character vector of kernel name(s) or list of parameters (see details)
 #'
 #' @return parameter list containing sub-lists 'y', 'x', and scalars 'psill' and 'eps'
+#'
 #' @export
+#' @keywords internal
+#' @family parameter managers
+#' @seealso bk_corr
 #'
 #' @examples
-#' # pass a kernel name to get 2d version with NAs for all parameters
-#' 'mat' |> bk_pars_make()
-#' # pass a vector or list of kernel names - when unnamed, order y, x is assumed
-#' c('gau', 'mat') |> bk_pars_make()
-#' list('gau', 'mat') |> bk_pars_make()
-#' list(x='gau', y='mat') |> bk_pars_make()
-#' # when missing , x kernel definition is copied from y, and vice versa
-#' list(k='exp', kp=c(rho=1)) |> bk_pars_make()
+#' # pass a correlation function name to get 2d version with NAs for all parameters
+#' bk_pars_make('mat')
+#'
+#' # pass a vector or list of correlation function names in order y, x (or else specify)
+#' bk_pars_make(c('gau', 'mat'))
+#' bk_pars_make(list(x='gau', y='mat'))
+#'
+#' # if the the x definition is missing it is copied from y, and vice versa
+#' bk_pars_make(list(k='exp', kp=c(rho=1)))
+#'
 #' # when unnamed, kernel range and shape parameters are assigned expected names
-#' list(psill=1, x=list(k='mat', kp=c(1,2))) |> bk_pars_make()
-#' # incorrectly named parameters raise errors - example:
-#' # list(psill=1, x=list(k='exp', kp=c(foo=1))) |> bk_pars_make()
+#' bk_pars_make(list(psill=1, x=list(k='mat', kp=c(1,2))))
+#'
+#' # incorrectly named parameters raise errors
+#' \dontrun{
+#' bk_pars_make(list(psill=1, x=list(k='exp', kp=c(foo=1))))
+#' }
+#'
 #' # complete parameter definition lists are returned unchanged
 #' k_list = list(k='exp', kp=c(rho=1))
-#' list(psill=1, eps=0, x=k_list, y=k_list) |> bk_pars_make()
+#' pars = list(y=k_list, x=k_list, eps=0, psill=1)
+#' identical(pars, bk_pars_make(pars))
+#'
 bk_pars_make = function(pars='gau')
 {
   # expected spatial kernel components (as nested list)
@@ -261,72 +287,88 @@ bk_pars_make = function(pars='gau')
 #' `p=bk_pars_update(pars, na_omit=TRUE)`, which returns non-NA entries of `pars`.
 #'
 #' @param pars list of kernel parameters (in form understood by `bk_pars_make`)
-#' @param p_vec numeric vector (optional) kernel parameters to update in `pars`
-#' @param iso logical, indicating to treat y and x kernel parameters as equal (see DETAILS)
+#' @param p numeric vector (optional) kernel parameters to update in `pars`
+#' @param iso logical, indicating to treat y and x kernel parameters as equal (see details)
 #' @param eps_scaled logical, indicates to drop partial sill from input/output
+#' @param na_omit logical, toggles handling of `NA`s (see details)
 #'
 #' @return numeric vector of parameters, or, if `p` is supplied, the updated `pars` list
+#'
 #' @export
+#' @keywords internal
+#' @family parameter managers
 #'
 #' @examples
 #'# initialize a parameter list and pass to bk_pars_update
 #' k = c('gau', 'mat')
 #' pars_empty = bk_pars_make(k)
-#' pars_empty |> bk_pars_update()
+#' bk_pars_update(pars_empty)
+#'
 #' # pars can be a character vector passed directly to bk_pars_update
 #' bk_pars_update(k)
+#'
 #' # single kernel definitions are duplicated
 #' bk_pars_update('mat')
 #'
 #' # example parameter vector to illustrate ordering
-#' p_update = 1:5
+#' p_update = seq(5)
+#'
 #' # (inverse) pass a modified vector back to the function to update pars
-#' pars_filled = pars_empty |> bk_pars_update(p_update)
-#' pars_filled |> print()
+#' pars_filled = bk_pars_update(pars_empty, p_update)
+#' print(pars_filled)
+#'
 #' # p_update is unchanged by round trip
 #' bk_pars_update(pars_filled)
 #'
 #' # NAs in pars can be filtered out with na_omit=TRUE
 #' pars_filled$eps = NA
 #' pars_filled$x$kp[1] = NA
-#' pars_filled |> bk_pars_update()
-#' pars_filled |> bk_pars_update(na_omit=TRUE)
+#' bk_pars_update(pars_filled)
+#' bk_pars_update(pars_filled, na_omit=TRUE)
+#'
 #' # when updating parameters, NAs in pars identify parameters to receive the new values
-#' p_update = rnorm(2) |> abs()
-#' pars_filled |> bk_pars_update(p_update, na_omit=TRUE)
+#' p_update = abs(rnorm(2))
+#' bk_pars_update(pars_filled, p_update, na_omit=TRUE)
+#'
 #' # when na_omit=FALSE, all parameters in pars are updated
 #' p_update = rnorm(5)
-#' pars_filled |> bk_pars_update(p_update)
+#' bk_pars_update(pars_filled, p_update)
 #'
 #' # iso=TRUE is for when x kernel parameters are assigned values from the y kernel
 #' pars_empty = bk_pars_make('mat')
-#' p_update = pars_empty |> bk_pars_update(iso=TRUE) |> length() |> seq()
-#' pars_filled = pars_empty |> bk_pars_update(p_update, iso=TRUE)
+#' p_update = seq(length(bk_pars_update(pars_empty, iso=TRUE)))
+#' pars_filled = bk_pars_update(pars_empty, p_update, iso=TRUE)
+#' print(pars_filled)
+#'
+#' # notice NA shape parameter in x ignored while NA in eps is copied
 #' pars_filled$eps = NA
 #' pars_filled$x$kp[2] = NA
-#' pars_filled |> bk_pars_update(iso=TRUE) # NA shape parameter in x ignored
-#' # update calls should omit the x kernel parameters
-#' pars_filled |> bk_pars_update(seq(4), iso=TRUE)
+#' bk_pars_update(pars_filled, iso=TRUE)
 #'
-#' # if eps_scaled=TRUE, psill is dropped from input/output (for when eps is scaled by psill)
-#' pars_filled |> bk_pars_update()
-#' pars_filled |> bk_pars_update(eps_scaled=TRUE)
-#' pars_filled |> bk_pars_update(-seq(5), eps_scaled=TRUE)
+#' # update calls with iso=TRUE should omit the x kernel parameters (p is shorter)
+#' bk_pars_update(pars_filled, seq(4), iso=TRUE)
+#'
+#' # if eps_scaled=TRUE, psill is ignored (useful for when eps is scaled by psill)
+#' bk_pars_update(pars_filled)
+#' bk_pars_update(pars_filled, eps_scaled=TRUE)
+#'
+#' # notice value of psill not updated
+#' bk_pars_update(pars_filled, -seq(5), eps_scaled=TRUE)
 #'
 #' # compare/combine with other modes
 #' pars_filled$y$kp[2] = NA
-#' pars_filled |> bk_pars_update()
-#' pars_filled |> bk_pars_update(-seq(2), iso=TRUE, na_omit=TRUE)
-#' pars_filled |> bk_pars_update(-seq(4), iso=TRUE)
-#' pars_filled |> bk_pars_update(-seq(3), iso=TRUE, eps_scaled=TRUE)
-#' pars_filled |> bk_pars_update(-seq(3), na_omit=TRUE)
+#' bk_pars_update(pars_filled)
+#' bk_pars_update(pars_filled, -seq(2), iso=TRUE, na_omit=TRUE)
+#' bk_pars_update(pars_filled, -seq(4), iso=TRUE)
+#' bk_pars_update(pars_filled, -seq(3), iso=TRUE, eps_scaled=TRUE)
+#' bk_pars_update(pars_filled, -seq(3), na_omit=TRUE)
 #'
 bk_pars_update = function(pars, p=NULL, iso=FALSE, eps_scaled=FALSE, na_omit=FALSE)
 {
   # expected list entries
   nm_yx = c('y', 'x')
   nm_var = 'eps'
-  if(!eps_scaled) nm_var = nm_var |> c('psill')
+  if(!eps_scaled) nm_var = c(nm_var, 'psill')
 
   # check for valid input and set names/NAs wherever they are missing
   pars = bk_pars_make(pars)
@@ -335,10 +377,11 @@ bk_pars_update = function(pars, p=NULL, iso=FALSE, eps_scaled=FALSE, na_omit=FAL
 
   # extract spatial parameters in order y, x (iso mode extracts only y)
   nm_extract = nm_yx[ seq(as.integer(!iso) + 1) ]
-  kp = lapply(pars[nm_extract], \(x) x[['kp']]) |> setNames(nm_extract)
+  kp = lapply(pars[nm_extract], \(x) x[['kp']])
+  names(kp) = nm_extract
 
   # convert pars to named numeric
-  p_old = do.call(c, pars[nm_var]) |> c(unlist(kp))
+  p_old = c(do.call(c, pars[nm_var]), unlist(kp))
   p_old_miss = is.na(p_old)
 
   # when there are no NAs, or if not omitting NAs, all entries of pars are to be replaced below
@@ -358,17 +401,17 @@ bk_pars_update = function(pars, p=NULL, iso=FALSE, eps_scaled=FALSE, na_omit=FAL
   p_old[which(p_old_miss)] = p
 
   # copy variance components, then remove from parameter vector
-  for(nm in nm_var) pars[[nm]] = p_old[nm] |> unname()
+  for(nm in nm_var) pars[[nm]] = unname(p_old[nm])
   p_old = p_old[-seq_along(nm_var)]
 
   # copy y, x kernel parameters to list
   for(nm_dim in nm_extract)
   {
     # get the parameter names expected in pars and p
-    nm = pars[[nm_dim]][['k']] |> bk_kp() |> names()
+    nm = names( bk_kp(pars[[nm_dim]][['k']]) )
     idx_p = seq_along( kp[[nm_dim]] )
     nm_p = names(p_old)[idx_p]
-    pars[[nm_dim]][['kp']] = p_old[nm_p] |> setNames(nm)
+    pars[[nm_dim]][['kp']] = stats::setNames(p_old[nm_p], nm)
     p_old = p_old[-idx_p]
   }
 
@@ -378,18 +421,24 @@ bk_pars_update = function(pars, p=NULL, iso=FALSE, eps_scaled=FALSE, na_omit=FAL
 }
 
 
-#' Return named vector of kernel parameters initialized to NA
+#' Return named vector of Kronecker covariance parameters initialized to NA
 #'
 #' Convenience function for looking up the number of parameters for a given
-#' kernel, and their names. Returns a vector of NAs that can be used as a
-#' placeholder in kernel definition lists.
+#' Kronecker covariance model, and their names. Returns a vector of `NA`s that
+#' can be used as a placeholder in kernel definition lists.
 #'
 #' @param k character, the kernel name, one of 'exp', 'gau', 'sph', 'gxp', 'mat'
 #'
 #' @return named vector of NAs, a placeholder for kernel parameters
+#'
 #' @export
+#' @keywords internal
+#' @family parameter managers
 #'
 #' @examples
+#'
+#' # there are only two possible return values
+#' bk_kp('gau')
 #' bk_kp('mat')
 bk_kp = function(k)
 {
@@ -407,11 +456,13 @@ bk_kp = function(k)
   if(k %in% nm_range_shape) return(kp_range_shape)
 }
 
-#' Extract kernel parameters as plot-friendly strings
+#' Extract Kronecker covariance  parameters as plot-friendly strings
 #'
-#' Generate strings describing the kernels and parameter values in `pars`
+#' Generate strings describing the model and parameter values in a Kronecker covariance
+#' parameter list `pars`. These are used to fill out titles and axis labels in calls to
+#' `bk_plot_pars`.
 #'
-#' If `pars` is a list of the form returned by `bk_pars` and `bk_optim`, the
+#' If `pars` is a parameter list (of the form returned by `bk_pars`), the
 #' function returns a list of strings: a kernel family string ('k'), dimension-wise kernel
 #' parameters (sub-list 'kp', with entries 'y' and 'x'), and a title containing the
 #' kernel family, nugget effect, and partial sill.
@@ -427,26 +478,30 @@ bk_kp = function(k)
 #' @param nsig number of significant figures to print
 #'
 #' @return a character string or list of them
+#'
 #' @export
+#' @keywords internal
+#' @family parameter managers
+#' @seealso bk_plot_pars
 #'
 #' @examples
 #' kname = 'mat'
-#' bk_toString(kname)
-#' bk_toString(rep(kname, 2))
-#' bk_toString(list(k=kname))
+#' bk_to_string(kname)
+#' bk_to_string(rep(kname, 2))
+#' bk_to_string(list(k=kname))
 #'
 #' gdim = c(10, 15)
 #' pars = bk_pars(gdim, kname)
-#' bk_toString(pars)
+#' bk_to_string(pars)
 #'
-bk_toString = function(pars, nsig=3)
+bk_to_string = function(pars, nsig=3)
 {
   # handle character input (kernel names)
   if( is.character(pars) )
   {
     # convert to expected list format for recursive call and handle unexpected input
     if( length(pars) == 1 ) return( pars )
-    if( length(pars) == 2 ) return( paste(sapply(pars, bk_toString), collapse=' x ') )
+    if( length(pars) == 2 ) return( paste(sapply(pars, bk_to_string), collapse=' x ') )
     stop('invalid argument to pars')
   }
 
@@ -458,7 +513,7 @@ bk_toString = function(pars, nsig=3)
   # single dimension case
   if( 'k' %in% names(pars) )
   {
-    k = bk_toString(pars[['k']])
+    k = bk_to_string(pars[['k']])
     if( 'kp' %in% names(pars) )
     {
       # get kernel parameter names, collapse name value pairs and parenthesize result
@@ -470,7 +525,7 @@ bk_toString = function(pars, nsig=3)
   }
 
   # 2-dimensional case: recursive call
-  kp_list = lapply(pars[c('y', 'x')], bk_toString)
+  kp_list = lapply(pars[c('y', 'x')], bk_to_string)
   k = paste(sapply(kp_list, \(xy) xy[['k']]), collapse=' x ')
   kp = sapply(kp_list, \(xy) xy[['kp']])
 

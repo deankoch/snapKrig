@@ -127,6 +127,8 @@ max( rel_err(bk_var_mult(g_miss_sqrt, pars, p=1/2), out_reference) )
 
 }
 \seealso{
+bk base::eigen base::chol
+
 Other variance-related functions: 
 \code{\link{bk_corr_mat}()},
 \code{\link{bk_corr}()},

@@ -544,7 +544,7 @@ bk_plot_pars = function(pars, g, simple=FALSE, ...)
   g_plot = modifyList(g, list(gdim=gdim, gval=cov_values, gyx=gyx, idx_grid=NULL))
 
   # make a plot title
-  titles = bk_toString(pars)
+  titles = bk_to_string(pars)
   ylab = paste('y distance', ifelse(simple, '', titles[['kp']][['y']]))
   xlab = paste('x distance', ifelse(simple, '', titles[['kp']][['x']]))
   main = ifelse(simple, paste(titles[['k']]), paste(titles[['main']]))
@@ -796,7 +796,7 @@ bk_plot_semi = function(vg, pars=NULL, add=FALSE, fun='classical', ...)
     xlim_out = units::drop_units( units::set_units(xlim_src, unit_out, mode='s') )
 
     # set up title
-    pars_out = ifelse(draw_model, paste(bk_toString(pars)[['k']], 'kernel'), '')
+    pars_out = ifelse(draw_model, paste(bk_to_string(pars)[['k']], 'kernel'), '')
     main_def = ifelse(input_vg, paste(main_def, paste0('(n = ', nrow(vg), ')')), main_def)
     if(draw_model) main_def = paste(c(main_def, pars_out), collapse=', ')
 

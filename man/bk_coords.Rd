@@ -16,7 +16,7 @@ bk_coords(g, out = "matrix", corner = FALSE, na_omit = FALSE, quiet = FALSE)
 \item{corners}{logical, indicates to only return the corner points}
 }
 \value{
-a matrix, list, or sf POINT collection, in column vectorized order
+a matrix, list, or sf point collection in column vectorized order
 }
 \description{
 Expands a set of y and x grid line numbers in the column-vectorized order returned
@@ -72,7 +72,7 @@ plot(sf_coords, pch=16, cex=2, add=TRUE)
 
 }
 \seealso{
-bk bk_snap
+bk bk_snap base::expand.grid
 
 Other exporting functions: 
 \code{\link{bk_export}()}

@@ -148,7 +148,7 @@ bk_export = function(g, template='terra')
 #' to the points in `from`. Un-mapped grid points are set to NA.
 #' @export
 #' @family bk constructors
-#' @seealso bk_coords
+#' @seealso bk bk_coords
 #'
 #' @examples
 #'
@@ -412,10 +412,10 @@ bk_snap = function(from, g=NULL, crop_from=FALSE, crop_g=FALSE, quiet=FALSE)
 #' @param corners logical, indicates to only return the corner points
 #' @param na_omit logical, indicates to return only locations of observed points
 #'
-#' @return a matrix, list, or sf POINT collection, in column vectorized order
+#' @return a matrix, list, or sf point collection in column vectorized order
 #' @export
 #' @family exporting functions
-#' @seealso bk bk_snap
+#' @seealso bk bk_snap base::expand.grid
 #'
 #' @examples
 #' gdim = c(5,3)

@@ -2,14 +2,14 @@
 % Please edit documentation in R/bk_pars.R
 \name{bk_bds}
 \alias{bk_bds}
-\title{Set default parameter covariance parameter bounds}
+\title{Set default parameter covariance parameter bounds for a Kronecker covariance model}
 \usage{
 bk_bds(pars, g, var_obs = NULL, var_mult = 2)
 }
 \arguments{
 \item{pars}{list or character vector of 1-2 kernel names (see \code{bk_pars})}
 
-\item{g}{list, a blitzKrig grid definition (or object accepted by \code{bk})}
+\item{g}{a bk grid (or any object accepted by \code{bk})}
 
 \item{var_obs}{positive numeric, the sample variance of data \code{g$gval}}
 
@@ -20,17 +20,18 @@ a data frame of initial values and lower/upper bounds for the parameters in \cod
 }
 \description{
 Returns a data-frame of initial values and upper/lower bounds on covariance
-parameters for the kernel names in \code{pars}.
+parameters for the Kronecker covariance model defined by the correlation function
+names in \code{pars}.
 }
 \details{
 Range parameters (\code{y.rho} and \code{x.rho}) are bounded by the shortest and longest
 inter-point distances along the corresponding dimension (y or x). This is
 computed by taking the element-wise product of dimensions and resolution, ie
-\code{g$gres * g$gdim}. Ranges are initialized to the geometric mean of the upper
+\code{g$gres * dim(g)}. Ranges are initialized to the geometric mean of the upper
 and lower bounds.
 
 Variance bounds centered around \code{var_obs}, which by default is set to the sample
-variance of the data in \code{g$gval}. \code{eps} (measurement variance) and \code{psill} (partial
+variance of the data in \code{g}. \code{eps} (measurement variance) and \code{psill} (partial
 sill) are both initialized to one half of \code{var_obs}, bounded above by \code{var_obs}
 times \code{var_mult}, and bounded below by a small positive number (\code{1e-6}). Note that
 while \code{eps=0} produces valid models in theory, in practice \code{eps>0} is often
@@ -42,9 +43,25 @@ large or small distances.
 }
 \examples{
 gdim = c(10, 15)
-z = prod(gdim) |> rnorm()
-g = bk(gdim) |> modifyList(list(gval=z))
+g = bk(gdim)
+g[] = rnorm(length(g))
 bk_bds('mat', g)
-bk_bds('mat', g, lower=0)
-bk_bds('mat', g, rows=c('eps', 'psill'), lower=c(0, 0.5))
+
+# same result by passing in observed variance
+bk_bds('mat', g, var(g[]))
+
+# a less conservative bound for variance (only eps and psill affected)
+bk_bds('mat', g, var_mult=1)
 }
+\seealso{
+bk
+
+Other parameter managers: 
+\code{\link{bk_kp}()},
+\code{\link{bk_pars_make}()},
+\code{\link{bk_pars_update}()},
+\code{\link{bk_pars}()},
+\code{\link{bk_to_string}()}
+}
+\concept{parameter managers}
+\keyword{internal}

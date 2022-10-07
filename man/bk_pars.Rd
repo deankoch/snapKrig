@@ -2,20 +2,20 @@
 % Please edit documentation in R/bk_pars.R
 \name{bk_pars}
 \alias{bk_pars}
-\title{Initialize covariance kernel parameters for grid \code{g}}
+\title{Initialize Kronecker covariance function parameters for a bk grid}
 \usage{
 bk_pars(g, pars = "gau", fill = "initial")
 }
 \arguments{
-\item{g}{list, a blitzKrig grid definition (or object accepted by \code{bk})}
+\item{g}{list, a bk grid list (or any other object accepted by \code{bk})}
 
-\item{pars}{character or list defining kernels (in form understood by \code{bk_pars_make})}
+\item{pars}{character or list defining kernels accepted by \code{bk_pars_make}}
 }
 \value{
-a list defining separable covariance parameters
+a list defining the Kronecker covariance parameters
 }
 \description{
-Returns a kernel parameter list defining the covariance model for \code{g}, with
+Returns a parameter list defining the Kronecker covariance model for \code{g}, with
 default initial values assigned to parameters based on the grid dimensions and sample
 variance of observed data.
 }
@@ -28,3 +28,14 @@ bk_pars(c(10,15))
 bk_pars(c(10,15), 'mat')
 bk_pars(c(10,15), 'mat', 'upper')
 }
+\seealso{
+bk
+
+Other parameter managers: 
+\code{\link{bk_bds}()},
+\code{\link{bk_kp}()},
+\code{\link{bk_pars_make}()},
+\code{\link{bk_pars_update}()},
+\code{\link{bk_to_string}()}
+}
+\concept{parameter managers}

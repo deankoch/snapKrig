@@ -15,11 +15,13 @@ bk_pars_update(
 \arguments{
 \item{pars}{list of kernel parameters (in form understood by \code{bk_pars_make})}
 
-\item{iso}{logical, indicating to treat y and x kernel parameters as equal (see DETAILS)}
+\item{p}{numeric vector (optional) kernel parameters to update in \code{pars}}
+
+\item{iso}{logical, indicating to treat y and x kernel parameters as equal (see details)}
 
 \item{eps_scaled}{logical, indicates to drop partial sill from input/output}
 
-\item{p_vec}{numeric vector (optional) kernel parameters to update in \code{pars}}
+\item{na_omit}{logical, toggles handling of \code{NA}s (see details)}
 }
 \value{
 numeric vector of parameters, or, if \code{p} is supplied, the updated \code{pars} list
@@ -58,53 +60,75 @@ kernel parameters when \code{iso=TRUE}). Note that this does NOT invert the vect
 # initialize a parameter list and pass to bk_pars_update
 k = c('gau', 'mat')
 pars_empty = bk_pars_make(k)
-pars_empty |> bk_pars_update()
+bk_pars_update(pars_empty)
+
 # pars can be a character vector passed directly to bk_pars_update
 bk_pars_update(k)
+
 # single kernel definitions are duplicated
 bk_pars_update('mat')
 
 # example parameter vector to illustrate ordering
-p_update = 1:5
+p_update = seq(5)
+
 # (inverse) pass a modified vector back to the function to update pars
-pars_filled = pars_empty |> bk_pars_update(p_update)
-pars_filled |> print()
+pars_filled = bk_pars_update(pars_empty, p_update)
+print(pars_filled)
+
 # p_update is unchanged by round trip
 bk_pars_update(pars_filled)
 
 # NAs in pars can be filtered out with na_omit=TRUE
 pars_filled$eps = NA
 pars_filled$x$kp[1] = NA
-pars_filled |> bk_pars_update()
-pars_filled |> bk_pars_update(na_omit=TRUE)
+bk_pars_update(pars_filled)
+bk_pars_update(pars_filled, na_omit=TRUE)
+
 # when updating parameters, NAs in pars identify parameters to receive the new values
-p_update = rnorm(2) |> abs()
-pars_filled |> bk_pars_update(p_update, na_omit=TRUE)
+p_update = abs(rnorm(2))
+bk_pars_update(pars_filled, p_update, na_omit=TRUE)
+
 # when na_omit=FALSE, all parameters in pars are updated
 p_update = rnorm(5)
-pars_filled |> bk_pars_update(p_update)
+bk_pars_update(pars_filled, p_update)
 
 # iso=TRUE is for when x kernel parameters are assigned values from the y kernel
 pars_empty = bk_pars_make('mat')
-p_update = pars_empty |> bk_pars_update(iso=TRUE) |> length() |> seq()
-pars_filled = pars_empty |> bk_pars_update(p_update, iso=TRUE)
+p_update = seq(length(bk_pars_update(pars_empty, iso=TRUE)))
+pars_filled = bk_pars_update(pars_empty, p_update, iso=TRUE)
+print(pars_filled)
+
+# notice NA shape parameter in x ignored while NA in eps is copied
 pars_filled$eps = NA
 pars_filled$x$kp[2] = NA
-pars_filled |> bk_pars_update(iso=TRUE) # NA shape parameter in x ignored
-# update calls should omit the x kernel parameters
-pars_filled |> bk_pars_update(seq(4), iso=TRUE)
+bk_pars_update(pars_filled, iso=TRUE)
 
-# if eps_scaled=TRUE, psill is dropped from input/output (for when eps is scaled by psill)
-pars_filled |> bk_pars_update()
-pars_filled |> bk_pars_update(eps_scaled=TRUE)
-pars_filled |> bk_pars_update(-seq(5), eps_scaled=TRUE)
+# update calls with iso=TRUE should omit the x kernel parameters (p is shorter)
+bk_pars_update(pars_filled, seq(4), iso=TRUE)
+
+# if eps_scaled=TRUE, psill is ignored (useful for when eps is scaled by psill)
+bk_pars_update(pars_filled)
+bk_pars_update(pars_filled, eps_scaled=TRUE)
+
+# notice value of psill not updated
+bk_pars_update(pars_filled, -seq(5), eps_scaled=TRUE)
 
 # compare/combine with other modes
 pars_filled$y$kp[2] = NA
-pars_filled |> bk_pars_update()
-pars_filled |> bk_pars_update(-seq(2), iso=TRUE, na_omit=TRUE)
-pars_filled |> bk_pars_update(-seq(4), iso=TRUE)
-pars_filled |> bk_pars_update(-seq(3), iso=TRUE, eps_scaled=TRUE)
-pars_filled |> bk_pars_update(-seq(3), na_omit=TRUE)
+bk_pars_update(pars_filled)
+bk_pars_update(pars_filled, -seq(2), iso=TRUE, na_omit=TRUE)
+bk_pars_update(pars_filled, -seq(4), iso=TRUE)
+bk_pars_update(pars_filled, -seq(3), iso=TRUE, eps_scaled=TRUE)
+bk_pars_update(pars_filled, -seq(3), na_omit=TRUE)
 
 }
+\seealso{
+Other parameter managers: 
+\code{\link{bk_bds}()},
+\code{\link{bk_kp}()},
+\code{\link{bk_pars_make}()},
+\code{\link{bk_pars}()},
+\code{\link{bk_to_string}()}
+}
+\concept{parameter managers}
+\keyword{internal}

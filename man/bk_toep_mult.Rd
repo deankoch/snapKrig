@@ -76,6 +76,8 @@ max( abs( result_default - bk_toep_mult(y, z=z[idx_obs], x, idx_obs, gdim) ) )
 
 }
 \seealso{
+base::toeplitz stats::fft
+
 Other variance-related functions: 
 \code{\link{bk_corr_mat}()},
 \code{\link{bk_corr}()},

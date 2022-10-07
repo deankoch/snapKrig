@@ -145,6 +145,8 @@ max(abs( bk_var(g, pars, fac_method='eigen')$values - psill*vals_scaled ))
 
 }
 \seealso{
+bk
+
 Other variance-related functions: 
 \code{\link{bk_corr_mat}()},
 \code{\link{bk_corr}()},

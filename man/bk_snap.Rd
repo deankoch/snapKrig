@@ -144,7 +144,7 @@ plot(eg_sfc, add=TRUE)
 
 }
 \seealso{
-bk_coords
+bk bk_coords
 
 Other bk constructors: 
 \code{\link{bk_rescale}()},

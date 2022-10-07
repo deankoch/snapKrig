@@ -2,7 +2,7 @@
 % Please edit documentation in R/bk_pars.R
 \name{bk_kp}
 \alias{bk_kp}
-\title{Return named vector of kernel parameters initialized to NA}
+\title{Return named vector of Kronecker covariance parameters initialized to NA}
 \usage{
 bk_kp(k)
 }
@@ -14,9 +14,22 @@ named vector of NAs, a placeholder for kernel parameters
 }
 \description{
 Convenience function for looking up the number of parameters for a given
-kernel, and their names. Returns a vector of NAs that can be used as a
-placeholder in kernel definition lists.
+Kronecker covariance model, and their names. Returns a vector of \code{NA}s that
+can be used as a placeholder in kernel definition lists.
 }
 \examples{
+
+# there are only two possible return values
+bk_kp('gau')
 bk_kp('mat')
 }
+\seealso{
+Other parameter managers: 
+\code{\link{bk_bds}()},
+\code{\link{bk_pars_make}()},
+\code{\link{bk_pars_update}()},
+\code{\link{bk_pars}()},
+\code{\link{bk_to_string}()}
+}
+\concept{parameter managers}
+\keyword{internal}

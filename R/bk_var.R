@@ -263,6 +263,7 @@ bk_corr_mat = function(pars, n, gres=1, i=seq(n), j=seq(n))
 #' @export
 #'
 #' @family variance-related functions
+#' @seealso bk
 #'
 #' @examples
 #' # define example grid with NAs and example predictors matrix
@@ -485,6 +486,7 @@ bk_var = function(g, pars=NULL, scaled=FALSE, fac_method='none', X=NULL, fac=NUL
 #'
 #' @keywords internal
 #' @family variance-related functions
+#' @seealso bk base::eigen base::chol
 #'
 #' @examples
 #' # relative error comparing output x to reference y
@@ -725,6 +727,7 @@ bk_var_mult = function(g, pars, fac_method='eigen', fac=NULL, quad=FALSE, p=-1)
 #'
 #' @keywords internal
 #' @family variance-related functions
+#' @seealso base::toeplitz stats::fft
 #'
 #' @examples
 #' # define example matrix from 1D exponential variogram

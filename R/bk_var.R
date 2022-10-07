@@ -445,10 +445,9 @@ bk_var = function(g, pars=NULL, scaled=FALSE, fac_method='none', X=NULL, fac=NUL
 
 #' Multiply a vector by a power of the covariance matrix
 #'
-#' Computes `W %*% z`, where `z` is the vector of non-NA data in `g_obs`,
+#' Computes `W %*% z`, where `z` is the vector of non-NA data in `g`,
 #' and `W` is the `p`th power of `V`, the covariance matrix for `z`. By default,
 #' `p=-1`, so the function computes products with the inverse covariance matrix.
-#'
 #' Alternatively, `out='quad'` computes the quadratic form `t(z) %*% W %*% z`.
 #'
 #' `fac_method` specifies the covariance matrix factorization to use: either 'chol'
@@ -456,13 +455,13 @@ bk_var = function(g, pars=NULL, scaled=FALSE, fac_method='none', X=NULL, fac=NUL
 #' which supports any integer or numeric power for `p`. By default, the 'eigen' method
 #' is used, unless a Cholesky decomposition (matrix) is passed in `fac`.
 #'
-#' The 'eigen' method is required when `g_obs` has complete data (ie no NA values). Note
+#' The 'eigen' method is required when `g` has complete data (ie no NA values). Note
 #' that the structure of any supplied `fac` overrules the `fac_method` argument, so if your
-#' `g_obs` is complete and you supply the Cholesky decomposition, the function will throw
-#' an error.
+#' `g` is complete and you supply the Cholesky decomposition, the function will halt with
+#' an error even if you have set `fac_method='eigen'`.
 #'
-#' As factorization is the slow part of the computations, it can be pre-computed
-#' using `bk_var(..., scaled=TRUE)` and passed to `bk_var_mult` in argument `fac`.
+#' factorization is often the slow part of the computations, so we allow it to be pre-computed
+#' using `bk_var(..., scaled=TRUE)` and passed in argument `fac`.
 #' This must be the factorization of the covariance matrix after dividing by the partial sill
 #' (see `?bk_var`); either the lower Cholesky factor (eg the transposed output of
 #' `base::chol`), or a list of eigen-vectors and eigen-values (eg. the output of `base::eigen`).
@@ -471,12 +470,12 @@ bk_var = function(g, pars=NULL, scaled=FALSE, fac_method='none', X=NULL, fac=NUL
 #' eigen-vectors and eigen-values.
 #'
 #' When a factorization is supplied, all entries in `pars`, except for `psill`, are ignored,
-#' as they are baked into the factorization already. `g_obs` can in this case be a numeric vector
-#' or matrix, containing one or more layers of observed data (with NAs omitted).
+#' as they are baked into the factorization already. `g` can in this case be a numeric vector
+#' or matrix, containing one or more layers of observed data, with `NA`s omitted.
 #'
-#'
-#' @param g_obs list of form returned by `bk` or numeric vector or matrix of non-NA data
+#' @param g a bk grid object or (if fac supplied) numeric vector or matrix of non-NA data
 #' @param pars list of form returned by `bk_pars` (with entries 'y', 'x', 'eps', 'psill')
+#' @param fac_method either 'eigen' (the default) or 'chol'
 #' @param fac factorization of scaled covariance matrix of z (V divided by psill)
 #' @param quad logical, if TRUE the function returns the quadratic form `t(z) %*% V_inv %*% z`
 #' @param p numeric, the matrix power of V^p to multiply (ignored when `method=='chol'`)
@@ -583,7 +582,7 @@ bk_var_mult = function(g, pars, fac_method='eigen', fac=NULL, quad=FALSE, p=-1)
     z = matrix(g, ncol=ifelse(is.vector(g), 1L, ncol(g)))
 
     # check if the supplied factorization is a Kronecker product
-    if( is.null(fac) ) stop('factorization fac must be supplied if g is not a list')
+    if( is.null(fac) ) stop('factorization fac must be supplied if g is not a bk object')
     is_sep = is.list(fac) & all(c('y', 'x') %in% names(fac))
   }
 

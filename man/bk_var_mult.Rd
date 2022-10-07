@@ -7,39 +7,40 @@
 bk_var_mult(g, pars, fac_method = "eigen", fac = NULL, quad = FALSE, p = -1)
 }
 \arguments{
+\item{g}{a bk grid object or (if fac supplied) numeric vector or matrix of non-NA data}
+
 \item{pars}{list of form returned by \code{bk_pars} (with entries 'y', 'x', 'eps', 'psill')}
+
+\item{fac_method}{either 'eigen' (the default) or 'chol'}
 
 \item{fac}{factorization of scaled covariance matrix of z (V divided by psill)}
 
 \item{quad}{logical, if TRUE the function returns the quadratic form \code{t(z) \%*\% V_inv \%*\% z}}
 
 \item{p}{numeric, the matrix power of V^p to multiply (ignored when \code{method=='chol'})}
-
-\item{g_obs}{list of form returned by \code{bk} or numeric vector or matrix of non-NA data}
 }
 \value{
 numeric matrix
 }
 \description{
-Computes \code{W \%*\% z}, where \code{z} is the vector of non-NA data in \code{g_obs},
+Computes \code{W \%*\% z}, where \code{z} is the vector of non-NA data in \code{g},
 and \code{W} is the \code{p}th power of \code{V}, the covariance matrix for \code{z}. By default,
 \code{p=-1}, so the function computes products with the inverse covariance matrix.
+Alternatively, \code{out='quad'} computes the quadratic form \code{t(z) \%*\% W \%*\% z}.
 }
 \details{
-Alternatively, \code{out='quad'} computes the quadratic form \code{t(z) \%*\% W \%*\% z}.
-
 \code{fac_method} specifies the covariance matrix factorization to use: either 'chol'
 (Cholesky factorization), which only supports \code{p=-1}; or 'eigen' (eigen-decomposition),
 which supports any integer or numeric power for \code{p}. By default, the 'eigen' method
 is used, unless a Cholesky decomposition (matrix) is passed in \code{fac}.
 
-The 'eigen' method is required when \code{g_obs} has complete data (ie no NA values). Note
+The 'eigen' method is required when \code{g} has complete data (ie no NA values). Note
 that the structure of any supplied \code{fac} overrules the \code{fac_method} argument, so if your
-\code{g_obs} is complete and you supply the Cholesky decomposition, the function will throw
-an error.
+\code{g} is complete and you supply the Cholesky decomposition, the function will halt with
+an error even if you have set \code{fac_method='eigen'}.
 
-As factorization is the slow part of the computations, it can be pre-computed
-using \code{bk_var(..., scaled=TRUE)} and passed to \code{bk_var_mult} in argument \code{fac}.
+factorization is often the slow part of the computations, so we allow it to be pre-computed
+using \code{bk_var(..., scaled=TRUE)} and passed in argument \code{fac}.
 This must be the factorization of the covariance matrix after dividing by the partial sill
 (see \code{?bk_var}); either the lower Cholesky factor (eg the transposed output of
 \code{base::chol}), or a list of eigen-vectors and eigen-values (eg. the output of \code{base::eigen}).
@@ -48,8 +49,8 @@ separately, and \code{fac} should be a list with elements 'x' and 'y', each one 
 eigen-vectors and eigen-values.
 
 When a factorization is supplied, all entries in \code{pars}, except for \code{psill}, are ignored,
-as they are baked into the factorization already. \code{g_obs} can in this case be a numeric vector
-or matrix, containing one or more layers of observed data (with NAs omitted).
+as they are baked into the factorization already. \code{g} can in this case be a numeric vector
+or matrix, containing one or more layers of observed data, with \code{NA}s omitted.
 }
 \examples{
 # relative error comparing output x to reference y

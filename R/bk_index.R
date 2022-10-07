@@ -1,7 +1,150 @@
 # bk_index.R
 # Dean Koch, 2022
-# Convenience functions for indexing grid points
+# Helper functions for indexing grid points
 
+#' Up or down-scale a bk grid by an integer factor
+#'
+#' Changes the resolution of a bk grid by a factor of `up` or `down`. For down-scaling, this
+#' introduces `NA`s at unobserved grid points (and does no interpolation).
+#'
+#' Users should specify a bk grid `g` to re-scale and an integer scaling factor; either `up`
+#' or `down` (and not both). This effects the scaling of resolution (`g[['gres']]`) by `up`
+#' or `1/down`.
+#'
+#' `up` (or `down`) should be a vector of two positive integers, the desired re-scaling
+#' factors in the y and x dimensions, in that order, or a single value to be used for both.
+#'
+#' When `up` is supplied, a lower resolution grid is returned comprising every `up`th grid
+#' line of `g` along each dimension. All other grid lines, and any data values lying on them,
+#' are ignored. `up` should be no greater than `dim(g) - 1`. Note that if `up` does not
+#' evenly divide this number, the bounding box will shrink slightly.
+#'
+#' When `down` is supplied, the function returns a higher resolution grid (say `g_fine`) with
+#' the same bounding box as `g`. Along each dimension, every `down`th grid line of `g_fine`
+#' coincides with a grid line of `g`. Any non-NA values found in `g[]` are copied to `g_fine`,
+#' and `g` can be recovered from `g_fine` with `bk_rescale(g_fine, up=down)`.
+#'
+#' @param g a bk grid or any grid object accepted by `bk`
+#' @param up integer > 0, or vector of two, the up-scaling factors
+#' @param down integer > 0, or vector of two, the down-scaling factors
+#'
+#' @return a bk grid of the requested resolution
+#'
+#' @export
+#' @seealso bk bk_cmean
+#' @family indexing functions
+#' @family bk constructors
+#'
+#' @examples
+#'
+#' # example data
+#' gdim = c(50, 53)
+#' g = bk(gdim)
+#' pars = modifyList(bk_pars(g), list(eps=1e-6))
+#' g[] = bk_sim(g, pars)
+#' plot(g)
+#'
+#' # upscale
+#' plot(bk_rescale(g, up=1)) # does nothing
+#' plot(bk_rescale(g, up=2))
+#'
+#' # downscale
+#' bk_plot(bk_rescale(g, down=1)) # does nothing
+#' bk_plot(bk_rescale(g, down=2))
+#'
+#' # length-2 vectors to rescale differently in x and y directions
+#' plot(bk_rescale(g, up=c(2,3)))
+#' plot(bk_rescale(g, down=c(2,3)))
+#'
+#' # invert a down-scaling
+#' g_compare = bk_rescale(bk_rescale(g, down=c(5,3)), up=c(5,3))
+#' all.equal(g, g_compare)
+#'
+#' # multi-layer example with missing data
+#' n_pt = prod(gdim)
+#' n_layer = 3
+#'
+#' # generate some more data and omit 50% of it
+#' gval_multi = bk_sim(bk(list(gdim=gdim, gval=matrix(NA, n_pt, n_layer))), pars)
+#' idx_miss = sample.int(n_pt, round(0.5*n_pt))
+#' gval_multi[idx_miss,] = NA
+#'
+#' # plot third layer, then down-scaled and up-scaled versions
+#' g_sim_multi = bk(gdim=gdim, gval=gval_multi)
+#' bk_plot(g_sim_multi, layer=3)
+#' bk_plot(bk_rescale(g=g_sim_multi, down=2), layer=3)
+#' bk_plot(bk_rescale(g=g_sim_multi, up=2), layer=3)
+#'
+bk_rescale = function(g, up=NULL, down=NULL)
+{
+  # user has to pick one or the other
+  is_up = !is.null(up)
+  is_down = !is.null(down)
+  if(is_up & is_down) stop('both up and down were specified')
+  if( !(is_up | is_down) ) stop('either up or down must be specified')
+
+  # unpack the grid object as list
+  g = bk(g)
+  gdim = dim(g)
+  is_empty = is.null(g[['gval']])
+
+  # multi-layer support
+  if( is.matrix(g[['gval']]) )
+  {
+    # make simple grid with same dimensions and mapping vector in place of data
+    g_first = bk(dim(g), vals=FALSE)
+    g_first[] = g[['idx_grid']]
+
+    # re-scale mapping vector to get new grid and mapping from the old
+    g_result = bk_rescale(g_first, up=up, down=down)
+    is_obs_first = !is.na(g_result)
+    idx_keep = g_result[is_obs_first]
+
+    # copy gval, omitting rows no longer mapped to grid (applies only to up-scaling)
+    g_result[is_obs_first] = seq_along(idx_keep)
+    g_result[['idx_grid']] = g_result[]
+    g_result[['gval']] = g[['gval']][idx_keep,]
+
+    # validate before returning
+    return(bk_validate(g_result))
+  }
+
+  # up-scaling
+  if(is_up)
+  {
+    # check for invalid up-scaling arguments
+    msg_max = paste(gdim, collapse=', ')
+    up = as.integer(up)
+    if( any(up < 1) ) stop('upscaling factors cannot be less than 1')
+    if( !any(up < gdim) ) stop( paste('upscaling factors must be less than', msg_max) )
+
+    # set up dimensions of sub-grid
+    ij_values = Map(function(d, r) seq(1, d, r), d=gdim, r=up)
+    names(ij_values) = c('i', 'j')
+
+    # build and return the bk sub-grid
+    return(bk(gdim = stats::setNames(sapply(ij_values, length), c('y', 'x')),
+              gyx = Map(function(yx, idx) yx[idx], yx=g[['gyx']], idx=ij_values),
+              gval = g[ bk_sub_idx(gdim, ij_values, idx=TRUE) ]))
+  }
+
+  # check for invalid down-scaling arguments
+  down = as.integer(down)
+  if( any(down < 1) ) stop('downscaling factors cannot be less than 1')
+
+  # set up dimensions of super-grid and copy CRS as needed
+  gdim_new = gdim + (down - 1L) * (gdim - 1L)
+  gres_new = g[['gres']] / down
+  g_new = bk(gdim=gdim_new, gres=gres_new, vals=!is_empty)
+  g_new[['gyx']] = Map(function(old, new) new + old[1], old=g[['gyx']], new=g_new[['gyx']])
+  g_new[['crs']] = g[['crs']]
+
+  # copy data to the sub-grid of the output and return
+  ij_sub = stats::setNames(Map(function(d, b) seq(1, d, b), d=gdim_new, b=down), c('i', 'j'))
+  idx_sub = bk_sub_idx(gdim_new, ij=ij_sub, idx=TRUE)
+  if( !is_empty ) g_new[idx_sub] = g[]
+  return(g_new)
+}
 
 #' Column-vectorization indices
 #'
@@ -23,7 +166,10 @@
 #' @param simplified, if FALSE, the function returns an n x 1 matrix
 #'
 #' @return integer vector, the vectorized `ij` indices
+#'
 #' @export
+#' @keywords internal
+#' @family indexing functions
 #'
 #' @examples
 #' # define matrix dimensions and look up a specific index
@@ -80,7 +226,10 @@ bk_mat2vec = function(ij, gdim, simplified=TRUE)
 #' @param out either 'matrix' or 'list'
 #'
 #' @return a two column matrix of integers (row and column numbers) with `length(k)` rows
+#'
 #' @export
+#' @keywords internal
+#' @family indexing functions
 #'
 #' @examples
 #'
@@ -134,7 +283,10 @@ bk_vec2mat = function(k, gdim, out='matrix')
 #' @param idx logical, indicates to return indices (default TRUE) versus logical vector
 #'
 #' @return integer or logical vector
+#'
 #' @export
+#' @keywords internal
+#' @family indexing functions
 #'
 #' @examples
 #'
@@ -224,95 +376,154 @@ bk_sub_idx = function(gdim, ij=NULL, idx=FALSE, nosort=FALSE)
   return(is_out)
 }
 
-#' Return a sub-grid of a blitzKrig grid object
+#' Return a sub-grid of a bk grid object
 #'
-#' Removes grid lines as specified in `ij` and returns the result as a blitzKrig grid
-#' list; If `ij` is empty, the function attempts to find a set of grid lines that forms
-#' a complete regular sub-grid of `g_obs`.
+#' Creates a "bk" object containing only the grid-lines specified in `idx_keep`. Alternatively,
+#' grid lines to remove can be specified in `idx_rem`.
 #'
-#' `ij` can be a list of integer vectors, named `i` and `j`, specifying grid line numbers to
-#' remove, in ascending order. `ij` can also be a nested list, with the grid lines
-#' to remove in element `remove`. Alternatively, users can specify the grid lines to NOT
-#' remove in element `keep`, and the function will remove the others. If both `keep` and
-#' `remove` are specified, the function ignores `keep` and uses `remove`.
+#' One of `idx_keep` or `idx_rem` (but not both) can be specified, and the grid line numbers
+#' (not intercepts) should be supplied in ascending order in list entries named "i" and "j".
 #'
-#' Default `idx=FALSE` causes the function to return the sub-grid as a blitzKrig grid object.
-#' If `idx=TRUE`, the function instead returns a list containing `keep` and `remove` as
-#' specified above. This can be passed back to bk_sub when repeatedly cropping multiple
-#' grids in the same way.
+#' If `idx_rem` is specified, `mirror=TRUE` will cause the selection in `idx_rem` to be
+#' reflected about the central grid line (useful for specifying outer grid lines). `mirror`
+#' is ignored if `idx_keep` is specified instead.
 #'
-#' `mirror=TRUE` indicates to mirror the supplied selection of grid lines in `ij`
-#' about the central grid line. For example `ij_rem=list(i=1)` removes both the first
-#' (left-most) column and the last (right-most).
+#' Default `idx=FALSE` causes the function to return the sub-grid as a bk grid object.
+#' If `idx=TRUE`, the function instead returns a list containing `idx_keep` and `idx_rem` as
+#' specified above.
 #'
-#' When `ij` is an empty `list()`, the function sets `ij` automatically using a
-#' greedy algorithm that iteratively checks all (four) outer grid lines and removes
-#' the one with the highest proportion of NAs. Ties are broken in clockwise order, starting
-#' from the left vertical. The algorithm stops when the remaining sub-grid is complete.
+#' If neither `idx_keep` nor `idx_rem` is supplied, the function removes outer grid lines
+#' iteratively (selecting the one with highest proportion of `NA`s), attempting to find a
+#' complete sub-grid (having no `NA`s) somewhere in the interior. This heuristic is designed
+#' for rasters with few `NA`s, all located around the perimeter.
 #'
+#' @param g bk grid or any grid-like object accepted by `bk`
+#' @param ij_keep list of grid line numbers ("i" and "j") forming regular sub-grid
+#' @param ij_rem list of grid line numbers ("i" and "j") whose exclusion forms regular sub-grid
+#' @param idx logical, if TRUE the function returns a list containing `ij_keep` and `ij_rem`
+#' @param mirror logical, whether to mirror the selection in `ij_rem` (see details)
 #'
+#' @export
+#' @keywords internal
+#' @family bk constructors
 #'
-bk_sub = function(g_obs, ij=list(), mirror=FALSE, idx=FALSE)
+#' @examples
+#'
+#' # make an example grid
+#' g = bk(c(50, 100))
+#' g[] = apply(expand.grid(g[['gyx']]), 1, \(z) cos( 2*sum(z^2) ) )
+#' plot(g)
+#'
+#' # subset by specifying grid lines to keep
+#' ij_keep = list(i=seq(1, 50, by=2), j=seq(1, 50, by=2))
+#' g_keep = bk_sub(g, ij_keep)
+#' plot(g_keep)
+#'
+#' # get the indices kept and removed
+#' idx = bk_sub(g, ij_keep, idx=TRUE)
+#'
+#' # equivalent call specifying grid lines to omit
+#' g_rem = bk_sub(g, ij_rem=idx[['rem']])
+#' identical(g_rem, g_keep)
+#'
+#' # remove some data around the edges of the grid
+#' idx = bk_sub(g, ij_rem=list(i=seq(10), j=seq(10)), mirror=TRUE, idx=TRUE)
+#' idx_y_pts = bk_sub_idx(dim(g), idx[['rem']]['i'], idx=TRUE)
+#' idx_x_pts = bk_sub_idx(dim(g), idx[['rem']]['j'], idx=TRUE)
+#' idx_pts = c(idx_y_pts, idx_x_pts)
+#' idx_na = sort(sample(idx_pts, 0.6*length(idx_pts)))
+#' g[idx_na] = NA
+#' plot(g)
+#'
+#' # identify the interior sub-grid that is complete
+#' g_sub = bk_sub(g)
+#' print(g_sub)
+#' plot(g_sub)
+#'
+#' # verify it is as large as expected
+#' ( dim(g) - dim(g_sub) ) == sapply(idx[['rem']], length)
+#'
+bk_sub = function(g, ij_keep=NULL, ij_rem=NULL, idx=FALSE, mirror=FALSE)
 {
   # expected names of vectors and lists in ij
   ij_nm = c('i', 'j')
 
-  # open grid as blitzKrig list object
-  g_obs = bk(g_obs)
-  gdim_old = stats::setNames(g_obs[['gdim']], ij_nm)
+  # open grid as blitzKrig list object and copy original dimensions
+  g = bk(g)
+  gdim = dim(g)
 
-  # compute grid lines to remove from keep
-  if( 'keep' %in% names(ij) ) ij_rem = Map(function(g, i) seq(g)[!(seq(g) %in% i)],
-                                           g = gdim_old, i = ij[['keep']])
-
-  # copy remove list or set it to NA when not supplied
-  if( any(ij_nm %in% names(ij) ) ) ij = list(remove=ij)
-  if( 'remove' %in% names(ij) ) ij_rem = ij[['remove']]
-  if( !any(c('remove', 'keep') %in% names(ij)) ) ij_rem = NA
-
-  # ij_rem is specified
-  if( !anyNA(ij_rem) )
+  # sort out the supplied arguments, preferring ij_keep when both supplied
+  has_keep = !is.null(ij_keep)
+  has_rem = !is.null(ij_rem)
+  if(has_keep & has_rem)
   {
-    # validate and fill in missing ij_rem arguments
-    ij_supplied = stats::setNames(ij_nm %in% names(ij_rem), nm=ij_nm)
-    msg_ij = 'ij_rem must be a list with named element(s) i and/or j'
-    if( !is.list(ij_rem) | !any(ij_supplied) ) stop(msg_ij)
-    if( !ij_supplied['i'] ) ij_rem[['i']] = integer()
-    if( !ij_supplied['j'] ) ij_rem[['j']] = integer()
-
-    # mirror the grid lines if requested, and another validity check
-    if(mirror) ij_rem = Map(function(g, i) c(i, g - i + 1L), g=gdim_old, i=ij_rem)
-    ij_ok = Map(function(g, i) !any( (i < 1) | (i > g) ), g=gdim_old, i=ij_rem)
-    if( any(!unlist(ij_ok)) ) stop('ij_rem contained indices less than 1 or greater than gdim')
-
-    # identify the grid lines to keep
-    ij_keep = Map(function(i, g) seq(g)[!(seq(g) %in% i)], g=gdim_old, i=ij_rem)
-    gdim_new = sapply(ij_keep, length)
-    if( any( gdim_new < 1 ) ) stop('the supplied ij_rem resulted in an empty sub-grid')
-    ij_keep = stats::setNames(ij_keep, ij_nm)
-    if(idx) return( list(remove=ij_rem, keep=ij_keep) )
-
-    # modify and return the list object
-    g_obs[['gval']] = g_obs[['gval']][ bk_sub_idx(gdim_old, ij_keep, nosort=TRUE) ]
-    g_obs[['gyx']] = Map(function(g, i) g[i], g=g_obs[['gyx']], i=ij_keep)
-    g_obs[['gdim']] = gdim_new
-    return(bk(g_obs))
+    warning('ignoring ij_rem')
+    ij_rem = NULL
+    has_rem = FALSE
   }
 
-  is_NA_mat = matrix(is.na(g_obs[['gval']]), gdim_old)
-
-  # initialize indexing variables
-  has_NA = any(is_NA_mat)
-  ij_count = stats::setNames(lapply(gdim_old, function(g) c(1L, g)), ij_nm)
-  i_seq = seq(gdim_old[[1]])
-  j_seq = seq(gdim_old[[2]])
-
-  # loop while there are NAs in the sub-grid
-  while( has_NA )
+  # construct ij_rem if it wasn't supplied but ij_keep was
+  ij_keep = ij_keep[ij_nm]
+  if(has_keep & !has_rem)
   {
-    # check edge grid lines for missing data
+    #ij_keep[[i]]
+    ij_rem = Map(function(d, i) seq(d)[!(seq(d) %in% i)], d=gdim, i=ij_keep)
+    names(ij_rem) = ij_nm
+  }
+
+  # handle case where user supplied either ij_keep or ij_rem
+  if( !is.null(ij_rem) )
+  {
+    # mirror the grid lines if requested (only when idx_keep not specified)
+    if(mirror & has_rem) ij_rem = Map(function(d, i) c(i, d - i + 1L), d=gdim, i=ij_rem)
+    ij_ok = Map(function(d, i) !any( (i < 1) | (i > d) ), d=gdim, i=ij_rem)
+
+    # a validity check
+    if( any(!unlist(ij_ok)) ) stop('ij_rem contained indices less than 1 or greater than gdim')
+
+    # update list of grid lines to keep
+    ij_keep = Map(function(d, i) seq(d)[!(seq(d) %in% i)], d=gdim, i=ij_rem)
+    gdim_new = sapply(ij_keep, length)
+
+    # another validity check
+    if( any( gdim_new < 1 ) ) stop('request resulted in an empty sub-grid')
+
+    # assign names lost in the `Map` calls and sort the removed grid lines
+    names(ij_keep) = ij_nm
+    names(ij_rem) = ij_nm
+    ij_rem = lapply(ij_rem, sort)
+
+    # identify points to include in the sub-grid
+    is_sub = bk_sub_idx(gdim, ij_keep, nosort=TRUE, idx=FALSE)
+
+    # verify that the result will be a regular sub-grid
+    sub_result = bk_sub_find(is_sub, gdim)
+    if(is.null(sub_result)) stop('request resulted in an irregular sub-grid')
+
+    # return either the grid line indices or the sub-grid itself as a bk object
+    if(idx) return( list(rem=ij_rem, keep=ij_keep) )
+    gyx_new = Map(function(gl, i) gl[i], gl=g[['gyx']], i=sub_result[['ij']])
+    return(bk(gdim=gdim_new, gyx=gyx_new, gval=g[is_sub]))
+  }
+
+  # indicator for NA's as a matrix representation of the grid data
+  is_NA_mat = matrix(is.na(g), gdim)
+  has_NA = any(is_NA_mat)
+
+  # initialize lists of grid line numbers that we may examine
+  i_seq = seq(gdim[['y']])
+  j_seq = seq(gdim[['x']])
+
+  # initialize indexing variables for the grid lines to count (start with outer ones)
+  ij_count = lapply(gdim, function(d) c(1L, d))
+  names(ij_count) = ij_nm
+
+  # loop while there are still NAs in the sub-grid
+  while(has_NA)
+  {
+    # count NAs around on outer grid lines
     ni_NA = apply(is_NA_mat[ij_count[['i']], j_seq], 1, sum)
-    nj_NA = apply(is_NA_mat[i_seq ,ij_count[['j']]], 2, sum)
+    nj_NA = apply(is_NA_mat[i_seq, ij_count[['j']]], 2, sum)
 
     # score each grid line and identify the worst
     i_score = 1 - ( ni_NA/length(j_seq) )
@@ -320,202 +531,70 @@ bk_sub = function(g_obs, ij=list(), mirror=FALSE, idx=FALSE)
     dim_worst = ij_nm[ which.min(c(min(i_score), min(j_score))) ]
     side_worst = which.min( list(i=i_score, j=j_score)[[ dim_worst ]] )
 
-    # remove the worst grid line from sub-grid and check again for NAs
+    # remove the worst grid line
     inc = ifelse(side_worst==2, -1, 1)
-    ij_removed = ij_count[[dim_worst]][side_worst]
-    ij_count[[dim_worst]][side_worst] = inc + ij_removed
+    ij_count[[dim_worst]][side_worst] = inc + ij_count[[dim_worst]][side_worst]
 
-    #cat(paste('\nremoved grid line', ij_removed, 'from dimension', dim_worst))
-
-    # copy the new grid line vectors
+    # copy the new grid line vectors then check again for NAs
     i_seq = seq(ij_count[['i']][1], ij_count[['i']][2])
     j_seq = seq(ij_count[['j']][1], ij_count[['j']][2])
     has_NA = any(is_NA_mat[i_seq, j_seq])
   }
 
+  # copy results to ij_keep then generate corresponding ij_rem
   ij_keep = list(i=i_seq, j=j_seq)
-  ij_rem = Map(function(g, i) seq(g)[ !(seq(g) %in% i) ], g=gdim_old, i=ij_keep)
+  ij_rem = Map(function(d, i) seq(d)[ !(seq(d) %in% i) ], d=gdim, i=ij_keep)
+  names(ij_rem) = ij_nm
   if(idx) return( list(remove=ij_rem, keep=ij_keep) )
-  return(bk_sub(g_obs, ij=list(remove=ij_rem)))
+
+  # recursive call to make the bk object
+  return(bk_sub(g, ij_rem=ij_rem))
 }
 
-
-
-#' Up or down-scale a grid
+#' Find complete regular sub-grids in a bk grid object
 #'
-#' Changes the resolution of a grid by a factor of `up` or `down`.
+#' If a bk grid `g` has missing values (`NA`s) but the set of non-`NA` points form a
+#' complete (regular) sub-grid, this function finds its grid lines, resolution, and
+#' dimensions. If no eligible sub-grids are found, the function returns `NULL`.
 #'
-#' Users should specify a grid `g` to re-scale and an integer scaling factor; either `up`
-#' or `down`. This effects the scaling of resolution (`g$gres`) by `up` or `1/down`.
+#' A sub-grid is only eligible if it contains ALL of the non-`NA` points in `g` and none
+#' of the `NA`s. For example if a single point missing from the sub-grid, or a single non-`NA`
+#' point lies outside the sub-grid, the function will fail to detect any sub-grids and return
+#' `NULL`. If no points are `NA`, the function returns indices for the full grid.
 #'
-#' `up` (or `down`) should be a vector of two positive integers, supplying the re-scaling
-#' factors in the y and x dimensions in that order, or a single value to be used for both.
+#' The returned list contains the following named elements:
 #'
-#' When `up` is supplied, a lower resolution grid is returned comprising every `up`th grid
-#' line of `g` along each dimension. All other grid lines, and any data values lying on them,
-#' are ignored. `up` should be no greater than `g$gdim - 1`. Note that if `up` does not
-#' evenly divide this number, the bounding box will shrink slightly.
+#'  * `ij` the grid line numbers of the sub-grid with respect to `g`
+#'  * `res_scale` the resolution scaling factor (relative increase in grid line spacing of `g`)
+#'  * `gdim` the number of y and x grid lines in the sub-grid
 #'
-#' When `down` is supplied, the function returns a higher resolution grid (`g_fine`) with
-#' the same bounding box as `g`. Along each dimension, every `down`th grid line of `g_fine`
-#' coincides with a grid line of `g`. Any values found in `g$gval` are copied to `g_fine`,
-#' and un-mapped grid lines in `g_fine` are initialized to `NA`. Recover `g` from `g_fine`
-#' with `bk_rescale(g_fine, up=down)`.
+#' As in `bk`, each of these is given in the 'y', 'x' order.
 #'
-#' @param g any object accepted or returned by `bk`
-#' @param up integer > 0, or vector of two, the up-scaling factor(s)
-#' @param down integer > 0, or vector of two, the down-scaling factor(s)
+#' Users can also pass the logical vector returned by `!is.na(g)` instead of `g`, in which
+#' case argument `gdim` must also be specified. This can be much faster with large grids.
 #'
-#' @return a grid list of the form returned by `bk`
-#' @export
+#' @param g logical vector, bk grid, or any grid object accepted by `bk`
+#' @param gdim integer vector, the grid dimensions (in order 'y', 'x')
 #'
-#' @examples
-#'
-#' # example data
-#' gdim = c(50, 53)
-#' g = bk(gdim)
-#' pars = modifyList(bk_pars(g), list(eps=1e-6))
-#' gval = bk_sim(g, pars)
-#' g_obs = modifyList(g, list(gval=gval))
-#' bk_plot(g_obs)
-#'
-#' # upscale
-#' bk_plot(bk_rescale(g=g_obs, up=1)) # does nothing
-#' bk_plot(bk_rescale(g=g_obs, up=2))
-#'
-#' # downscale
-#' bk_plot(bk_rescale(g=g_obs, down=1)) # does nothing
-#' bk_plot(bk_rescale(g=g_obs, down=2))
-#'
-#' # length-2 vectors to rescale differently in x and y directions
-#' bk_plot(bk_rescale(g=g_obs, up=c(2,3)))
-#' bk_plot(bk_rescale(g=g_obs, down=c(2,3)))
-#'
-#' # invert a down-scaling
-#' g_obs_compare = bk_rescale(bk_rescale(g=g_obs, down=c(5,3)), up=c(5,3))
-#' identical(g_obs, g_obs_compare)
-#'
-#' # multi-layer example with missing data
-#' n_pt = prod(gdim)
-#' n_layer = 3
-#'
-#' # generate some data and omit 50% of it
-#' gval_multi = bk_sim(bk(list(gdim=gdim, gval=matrix(NA, n_pt, n_layer))), pars)
-#' idx_miss = sample.int(n_pt, round(0.5*n_pt))
-#' gval_multi[idx_miss,] = NA
-#'
-#' # plot third layer, then down-scaled and up-scaled versions
-#' g_sim_multi = modifyList(g, list(gval=gval_multi))
-#' bk_plot(g_sim_multi, layer=3)
-#' bk_plot(bk_rescale(g=g_sim_multi, down=2), layer=3)
-#' bk_plot(bk_rescale(g=g_sim_multi, up=2), layer=3)
-#'
-bk_rescale = function(g, up=NULL, down=NULL)
-{
-  # user has to pick one or the other
-  is_up = !is.null(up)
-  is_down = !is.null(down)
-  if(is_up & is_down) stop('both up and down were specified')
-  if( !(is_up | is_down) ) stop('either up or down must be specified')
-
-  # unpack the grid object as list
-  g = bk(g)
-  gdim = g[['gdim']]
-
-  # multi-layer support
-  if( !is.null(g[['idx_grid']]) )
-  {
-    # re-scale mapping vector to get new grid and mapping from the old
-    g_first = modifyList(g, list(gval=g[['idx_grid']], idx_grid=NULL))
-    g_result = bk_rescale(g_first, up=up, down=down)
-    is_obs_first = !is.na(g_result[['gval']])
-
-    # copy gval, omit rows no longer mapped to grid (applies only to up-scaling)
-    idx_keep = g_result[['gval']][is_obs_first]
-    g_result[['gval']] = g[['gval']][idx_keep,]
-
-    # compute and copy the new indexing vector
-    g_result[['idx_grid']] = match(seq(prod(g_result[['gdim']])), which(is_obs_first))
-    return(g_result)
-  }
-
-  # up-scaling
-  if(is_up)
-  {
-    # check for invalid up-scaling arguments
-    msg_max = paste(gdim, collapse=', ')
-    up = as.integer(up)
-    if( any(up < 1) ) stop('upscaling factors cannot be less than 1')
-    if( !any(up < gdim) ) stop( paste('upscaling factors must be less than', msg_max) )
-
-    # set up dimensions of sub-grid
-    ij_values = stats::setNames(Map(function(d, r) seq(1, d, r), d=gdim, r=up), c('i', 'j'))
-    gdim_new = stats::setNames(sapply(ij_values, length), c('y', 'x'))
-
-    # overwrite data vector with the subset then update other fields in g
-    idx_sub = bk_sub_idx(gdim, ij_values, idx=TRUE)
-    g[['gval']] = g[['gval']][idx_sub]
-    g[['gres']] = g[['gres']] * up
-    g[['gdim']] = gdim_new
-    g[['gyx']] = Map(function(yx, idx) yx[idx], yx=g[['gyx']], idx=ij_values)
-    return(g)
-  }
-
-  # check for invalid down-scaling arguments
-  down = as.integer(down)
-  if( any(down < 1) ) stop('downscaling factors cannot be less than 1')
-
-  # set up dimensions of super-grid
-  gdim_new = gdim + (down - 1L) * (gdim - 1L)
-  gres_new = g[['gres']] / down
-  g_new = bk(list(gdim=gdim_new, gres=gres_new), vals=!is.null(g[['gval']]))
-  g_new[['gyx']] = Map(function(old, new) new + old[1], old=g[['gyx']], new=g_new[['gyx']])
-  g_new[['crs']] = g[['crs']]
-
-  # copy data to the sub-grid of the output and return
-  ij_sub = stats::setNames(Map(function(d, b) seq(1, d, b), d=gdim_new, b=down), c('i', 'j'))
-  idx_sub = bk_sub_idx(gdim_new, ij=ij_sub, idx=TRUE)
-  if( !is.null(g[['gval']]) ) g_new[['gval']][idx_sub] = g[['gval']]
-  return(g_new)
-}
-
-
-#' Check vectorized grid data for non-NA points that form a complete sub-grid
-#'
-#' If a gridded data-set `g_obs` has missing values (NAs), but the set of non-NA points
-#' form a complete sub-grid, this function finds its grid lines, resolution scaling factor,
-#' and dimensions. If no eligible sub-grids are found, the function returns NULL.
-#'
-#' A sub-grid is only eligible if it contains all of the non-NA points in `g_obs` and none
-#' of the NAs; eg if a single point missing from the sub-grid, or a single non-NA point lies
-#' outside the sub-grid, the function will fail to detect the sub-grid and return NULL. If no
-#' points are NA, the function returns indices for the full grid.
-#'
-#' In the special case that `g_obs` is a logical vector, it should indicate the the non-NA
-#' locations in a grid with dimensions `gdim`. Otherwise, grid dimensions are extracted
-#' from `g_obs`, overriding any argument to `gdim`.
-#'
-#' @param g_obs logical vector, or any other object accepted by `bk`
-#' @param gdim integer vector, the grid dimensions (ny, nx)
-#' @param g_out logical, indicates to return a grid list object
-#'
-#' @return NULL or list of information about the location and spacing of the sub-grid
+#' @return `NULL` or list of information about the location and spacing of the sub-grid
 #' within `g` (see details)
+#'
 #' @export
+#' @keywords internal
+#' @family indexing functions
 #'
 #' @examples
 #'
 #' # define a grid and example data
 #' gdim = c(50, 53)
-#' g_bare = bk(gdim)
-#' gval = bk_sim(g_bare, modifyList(bk_pars(g), list(eps=1e-12)))
-#' g_obs = modifyList(g_bare, list(gval=gval))
-#' bk_plot(g_obs)
+#' g = bk(gdim)
+#' g[] = bk_sim(g, modifyList(bk_pars(g), list(eps=1e-12)))
+#' plot(g)
 #'
 #' # define a super-grid containing the original data and make sure we can find it
-#' g_obs_big = bk_rescale(g_obs, down=3)
-#' bk_plot(g_obs_big)
-#' str(bk_sub_find(g_obs_big))
+#' g_big = bk_rescale(g, down=3)
+#' plot(g_big)
+#' print(bk_sub_find(g_big))
 #'
 #' # define a smaller sub-grid at random
 #' spacing = sapply(floor(gdim/10), function(x) 1 + sample.int(x, 1))
@@ -524,65 +603,56 @@ bk_rescale = function(g, up=NULL, down=NULL)
 #'
 #' # find index of sub-grid lines and vectorized index of points
 #' ij_sg = Map(\(idx, r, n) seq(idx, by=r, length.out=n), idx=ij_first, r=spacing, n=gdim_sg)
+#' names(ij_sg) = c('i', 'j')
 #' is_sg = bk_sub_idx(gdim, ij_sg, idx=FALSE)
 #'
 #' # assign values to the sub-grid points
-#' g_obs_sub = g_bare
-#' g_obs_sub$gval[is_sg] = gval[is_sg]
-#' bk_plot(g_obs)
-#' bk_plot(g_obs_sub, zlab='sub-grid')
+#' g_sub = bk(gdim)
+#' g_sub[is_sg] = g[is_sg]
+#' plot(g_sub, zlab='sub-grid')
 #'
 #' # call the function and check for expected results
-#' subgrid_result = bk_sub_find(g_obs_sub)
-#' all.equal(unname(subgrid_result$gdim), gdim_sg)
-#' all.equal(unname(subgrid_result$ij), ij_sg)
+#' sub_result = bk_sub_find(g_sub)
+#' all.equal(unname(sub_result[['gdim']]), gdim_sg)
+#' all.equal(unname(sub_result[['ij']]), unname(ij_sg))
 #'
 #' # sub grids with side length 1 have no spacing defined along that dimension
 #' spacing[gdim_sg==1] = NA
-#' all.equal(unname(subgrid_result$res_scale), spacing)
 #'
-#' # or call on the vector and supply gdim separately
-#' identical(subgrid_result, bk_sub_find(g_obs_sub$gval, g_obs_sub$gdim))
-#' identical(subgrid_result, bk_sub_find(!is.na(g_obs_sub$gval), g_obs_sub$gdim))
+#' # check consistency in spacing
+#' all.equal(unname(sub_result[['res_scale']]), spacing)
 #'
-bk_sub_find = function(g_obs, gdim=NULL)
+#' # can also call on the vector and supply gdim separately
+#' identical(sub_result, bk_sub_find(!is.na(g_sub), dim(g_sub)))
+#'
+bk_sub_find = function(g, gdim=NULL)
 {
-  # handle vector input
-  if( is.logical(g_obs) & is.vector(g_obs) )
+  # expected order for dimensional info
+  nm_dim = c('y', 'x')
+
+  # open various grid objects with bk
+  if(!is.logical(g))
   {
-    # logical vectors interpreted as indicating non-NAs
-    if( anyNA(g_obs) ) stop('g_obs vector of logical class cannot have NAs')
-    gdim = stats::setNames(as.integer(gdim), c('y', 'x'))
+    # overwrite g with logical NAs indicator, copying gdim first
+    g = bk(g)
+    gdim = dim(g)
+    g = !is.na(g)
 
   } else {
 
-    # open as blitzKrig list object
-    if( is.vector(g_obs) & !is.list(g_obs) ) g_obs = list(gval=g_obs, gdim=gdim)
-    g_result = bk(g_obs)
+    # validity checks
+    if( anyNA(g) ) stop('logical vector g cannot have NAs')
+    if( is.null(gdim) ) stop('full grid dimensions gdim must be supplied when g is a vector')
+    msg_len = paste('expected logical vector g to have length', prod(gdim), 'but got', length(g))
+    if( prod(gdim) != length(g)) stop(msg_len)
 
-    # process only the first column of multi-layer input
-    if( is.matrix(g_result[['gval']]) ) g_result[['gval']] = as.vector(g_obs[['gval']][,1])
-    g_obs = !is.na( g_result[['gval']] )
-    gdim = g_result[['gdim']]
-
-    # handle sparse indexing
-    if( !is.null(g_result[['idx_obs']]) )
-    {
-      # decompress and replace NAs with FALSE
-      g_obs = g_obs[ g_result[['idx_obs']] ]
-      g_obs[is.na(g_obs)] = FALSE
-    }
+    # set names for user-supplied gdim
+    gdim = stats::setNames(as.integer(gdim), c('y', 'x'))
   }
 
-  # checks for valid arguments
-  n_obs = sum(g_obs)
-  if(n_obs < 2) return(NULL)
-  if( is.null(gdim) ) stop('full grid dimensions gdim must be supplied when g_obs is a vector')
-  msg_len = paste('Expected', prod(gdim), 'but got', length(g_obs))
-  if( prod(gdim) != length(g_obs)) stop(paste('input g_obs was the wrong length.', msg_len))
-
   # need this to get indices of first, second, and last elements in sub-grid
-  idx_obs = which(g_obs)
+  idx_obs = which(g)
+  n_obs = sum(g)
 
   # find the dimensions of the smallest sub-grid enclosing all observed points
   ij_bbox = bk_vec2mat(c(idx_obs[1], idx_obs[n_obs]), gdim)
@@ -598,27 +668,28 @@ bk_sub_find = function(g_obs, gdim=NULL)
   # compute number of columns in sub-grid and do second existence check
   nj = n_obs / ni
   if( nj %% 1L != 0 ) return(NULL)
-  skip_j = as.integer( ifelse(nj > 1, (gdim_bbox[['j']] - nj) / (nj - 1), NA) )
+  nj = as.integer(nj)
+  skip_j = as.integer( ifelse(nj > 1, (gdim_bbox[['j']] - nj) / (nj - 1L), NA) )
 
   # sub-grid resolution scaling factor and dimensions
-  nm_dim = c('y', 'x')
-  res_ij = setNames(1L + c(skip_i, skip_j), nm_dim)
+  res_ij = 1L + c(skip_i, skip_j)
   res_scale = 1L / res_ij
-  gdim_sub = setNames(as.integer(c(ni, nj)), nm_dim)
 
   # sub-grid line indices
-  ij_obs = Map(\(idx, r, n) seq(idx, by=r, length.out=n), idx=ij_bbox[1,], r=res_ij, n=gdim_sub)
+  ij_obs = Map(\(idx, r, n) seq(idx, by=r, length.out=n), idx=ij_bbox[1,], r=res_ij, n=c(ni, nj))
   ij_na = sapply(ij_obs, anyNA)
   ij_obs[ij_na] = as.list(ij_bbox[1,])[ ij_na ]
 
   # final existence check
   idx_sub = bk_sub_idx(gdim, ij_obs)
-  if( !all( g_obs[idx_sub] ) ) return(NULL)
+  if( !all( g[idx_sub] ) ) return(NULL)
 
   # return sub-grid info in a list
-  gdim_result = setNames(sapply(ij_obs, length), c('y', 'x'))
-  sub_result = list(ij=setNames(ij_obs, nm_dim), res_scale=res_ij, gdim=gdim_result)
-  return(sub_result)
+  gdim_result = sapply(ij_obs, length)
+  names(gdim_result) = nm_dim
+  names(ij_obs) = nm_dim
+  names(res_ij) = nm_dim
+  return(list(ij=ij_obs, res_scale=res_ij, gdim=gdim_result))
 }
 
 

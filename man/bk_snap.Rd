@@ -143,4 +143,12 @@ plot(eg_sfc, add=TRUE)
 }
 
 }
-\concept{ways of creating a bk object}
+\seealso{
+bk_coords
+
+Other bk constructors: 
+\code{\link{bk_rescale}()},
+\code{\link{bk_sub}()},
+\code{\link{bk}()}
+}
+\concept{bk constructors}

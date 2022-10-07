@@ -29,10 +29,4 @@ specified) for \code{gdim}, \code{gres}, and \code{gyx}.
 bk_validate(list(gdim=10, gres=0.5))
 bk_validate(list(gval=rnorm(10^2), gdim=10, gres=0.5))
 }
-\seealso{
-Other bk constructors: 
-\code{\link{bk_make}()},
-\code{\link{bk}()}
-}
-\concept{bk constructors}
 \keyword{internal}

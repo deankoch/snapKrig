@@ -29,10 +29,4 @@ data, and \code{crs} should be a character string (the WKT representation).
 bk_make(list(gdim=10, gres=0.5))
 
 }
-\seealso{
-Other bk constructors: 
-\code{\link{bk_validate}()},
-\code{\link{bk}()}
-}
-\concept{bk constructors}
 \keyword{internal}

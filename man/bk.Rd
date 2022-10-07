@@ -158,7 +158,8 @@ summary(g)
 }
 \seealso{
 Other bk constructors: 
-\code{\link{bk_make}()},
-\code{\link{bk_validate}()}
+\code{\link{bk_rescale}()},
+\code{\link{bk_snap}()},
+\code{\link{bk_sub}()}
 }
 \concept{bk constructors}

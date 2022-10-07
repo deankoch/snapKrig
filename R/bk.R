@@ -229,7 +229,6 @@ bk = function(..., vals=TRUE)
 #'
 #' @return a "bk" object
 #' @export
-#' @family bk constructors
 #' @keywords internal
 #'
 #' @examples
@@ -330,7 +329,6 @@ bk_make = function(g)
 #'
 #' @return a validated "bk" object
 #' @export
-#' @family bk constructors
 #' @keywords internal
 
 #' @examples

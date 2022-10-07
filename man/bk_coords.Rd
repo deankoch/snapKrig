@@ -72,6 +72,8 @@ plot(sf_coords, pch=16, cex=2, add=TRUE)
 
 }
 \seealso{
+bk bk_snap
+
 Other exporting functions: 
 \code{\link{bk_export}()}
 }

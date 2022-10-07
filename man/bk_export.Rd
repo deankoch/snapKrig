@@ -11,7 +11,7 @@ bk_export(g, template = "terra")
 
 \item{template}{character or RasterLayer/SpatRaster to set output type
 
-Converts a vector or matrix to a SpatRaster, or RasterLayer. Multi-layer outputs are
+Converts a vector or matrix to a SpatRaster or RasterLayer. Multi-layer outputs are
 supported for terra but not raster.}
 }
 \value{
@@ -55,6 +55,8 @@ all.equal(r_from_g, r)
 
 }
 \seealso{
+bk
+
 Other exporting functions: 
 \code{\link{bk_coords}()}
 }

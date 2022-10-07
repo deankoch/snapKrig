@@ -2,49 +2,54 @@
 % Please edit documentation in R/bk_index.R
 \name{bk_sub_find}
 \alias{bk_sub_find}
-\title{Check vectorized grid data for non-NA points that form a complete sub-grid}
+\title{Find complete regular sub-grids in a bk grid object}
 \usage{
-bk_sub_find(g_obs, gdim = NULL)
+bk_sub_find(g, gdim = NULL)
 }
 \arguments{
-\item{g_obs}{logical vector, or any other object accepted by \code{bk}}
+\item{g}{logical vector, bk grid, or any grid object accepted by \code{bk}}
 
-\item{gdim}{integer vector, the grid dimensions (ny, nx)}
-
-\item{g_out}{logical, indicates to return a grid list object}
+\item{gdim}{integer vector, the grid dimensions (in order 'y', 'x')}
 }
 \value{
-NULL or list of information about the location and spacing of the sub-grid
+\code{NULL} or list of information about the location and spacing of the sub-grid
 within \code{g} (see details)
 }
 \description{
-If a gridded data-set \code{g_obs} has missing values (NAs), but the set of non-NA points
-form a complete sub-grid, this function finds its grid lines, resolution scaling factor,
-and dimensions. If no eligible sub-grids are found, the function returns NULL.
+If a bk grid \code{g} has missing values (\code{NA}s) but the set of non-\code{NA} points form a
+complete (regular) sub-grid, this function finds its grid lines, resolution, and
+dimensions. If no eligible sub-grids are found, the function returns \code{NULL}.
 }
 \details{
-A sub-grid is only eligible if it contains all of the non-NA points in \code{g_obs} and none
-of the NAs; eg if a single point missing from the sub-grid, or a single non-NA point lies
-outside the sub-grid, the function will fail to detect the sub-grid and return NULL. If no
-points are NA, the function returns indices for the full grid.
+A sub-grid is only eligible if it contains ALL of the non-\code{NA} points in \code{g} and none
+of the \code{NA}s. For example if a single point missing from the sub-grid, or a single non-\code{NA}
+point lies outside the sub-grid, the function will fail to detect any sub-grids and return
+\code{NULL}. If no points are \code{NA}, the function returns indices for the full grid.
 
-In the special case that \code{g_obs} is a logical vector, it should indicate the the non-NA
-locations in a grid with dimensions \code{gdim}. Otherwise, grid dimensions are extracted
-from \code{g_obs}, overriding any argument to \code{gdim}.
+The returned list contains the following named elements:
+\itemize{
+\item \code{ij} the grid line numbers of the sub-grid with respect to \code{g}
+\item \code{res_scale} the resolution scaling factor (relative increase in grid line spacing of \code{g})
+\item \code{gdim} the number of y and x grid lines in the sub-grid
+}
+
+As in \code{bk}, each of these is given in the 'y', 'x' order.
+
+Users can also pass the logical vector returned by \code{!is.na(g)} instead of \code{g}, in which
+case argument \code{gdim} must also be specified. This can be much faster with large grids.
 }
 \examples{
 
 # define a grid and example data
 gdim = c(50, 53)
-g_bare = bk(gdim)
-gval = bk_sim(g_bare, modifyList(bk_pars(g), list(eps=1e-12)))
-g_obs = modifyList(g_bare, list(gval=gval))
-bk_plot(g_obs)
+g = bk(gdim)
+g[] = bk_sim(g, modifyList(bk_pars(g), list(eps=1e-12)))
+plot(g)
 
 # define a super-grid containing the original data and make sure we can find it
-g_obs_big = bk_rescale(g_obs, down=3)
-bk_plot(g_obs_big)
-str(bk_sub_find(g_obs_big))
+g_big = bk_rescale(g, down=3)
+plot(g_big)
+print(bk_sub_find(g_big))
 
 # define a smaller sub-grid at random
 spacing = sapply(floor(gdim/10), function(x) 1 + sample.int(x, 1))
@@ -53,25 +58,35 @@ ij_first = sapply(gdim - ( spacing * gdim_sg ), function(x) sample.int(x, 1))
 
 # find index of sub-grid lines and vectorized index of points
 ij_sg = Map(\(idx, r, n) seq(idx, by=r, length.out=n), idx=ij_first, r=spacing, n=gdim_sg)
+names(ij_sg) = c('i', 'j')
 is_sg = bk_sub_idx(gdim, ij_sg, idx=FALSE)
 
 # assign values to the sub-grid points
-g_obs_sub = g_bare
-g_obs_sub$gval[is_sg] = gval[is_sg]
-bk_plot(g_obs)
-bk_plot(g_obs_sub, zlab='sub-grid')
+g_sub = bk(gdim)
+g_sub[is_sg] = g[is_sg]
+plot(g_sub, zlab='sub-grid')
 
 # call the function and check for expected results
-subgrid_result = bk_sub_find(g_obs_sub)
-all.equal(unname(subgrid_result$gdim), gdim_sg)
-all.equal(unname(subgrid_result$ij), ij_sg)
+sub_result = bk_sub_find(g_sub)
+all.equal(unname(sub_result[['gdim']]), gdim_sg)
+all.equal(unname(sub_result[['ij']]), unname(ij_sg))
 
 # sub grids with side length 1 have no spacing defined along that dimension
 spacing[gdim_sg==1] = NA
-all.equal(unname(subgrid_result$res_scale), spacing)
 
-# or call on the vector and supply gdim separately
-identical(subgrid_result, bk_sub_find(g_obs_sub$gval, g_obs_sub$gdim))
-identical(subgrid_result, bk_sub_find(!is.na(g_obs_sub$gval), g_obs_sub$gdim))
+# check consistency in spacing
+all.equal(unname(sub_result[['res_scale']]), spacing)
+
+# can also call on the vector and supply gdim separately
+identical(sub_result, bk_sub_find(!is.na(g_sub), dim(g_sub)))
 
 }
+\seealso{
+Other indexing functions: 
+\code{\link{bk_mat2vec}()},
+\code{\link{bk_rescale}()},
+\code{\link{bk_sub_idx}()},
+\code{\link{bk_vec2mat}()}
+}
+\concept{indexing functions}
+\keyword{internal}

@@ -186,7 +186,7 @@ bk_GLS = function(g_obs, pars, X=NA, fac=NULL, fac_method='eigen', out='b')
 #' @param pars todo
 #' @param X todo
 #'
-#' @return
+#' @return sdfsdfdsfs
 #' @export
 #'
 #' @examples
@@ -385,7 +385,7 @@ bk_fit = function(g_obs, pars=NULL, X=NA, iso=TRUE, initial=NULL, quiet=FALSE,
 #' @param quiet logical, indicating to suppress console output
 #' @param ... named arguments to pass to `bk_bds`
 #'
-#' @return
+#' @return sdfsdfsd
 #' @export
 #'
 #' @examples

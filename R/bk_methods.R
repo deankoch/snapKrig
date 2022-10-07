@@ -437,7 +437,7 @@ summary.bk = function(x, ...)
   gres_msg = paste('resolution :', paste(x[['gres']], collapse=' x '))
 
   # strings for extent
-  ext_list = apply(bk_coords(x, corner=TRUE), 2, range, simplify=FALSE)
+  ext_list = apply(bk_coords(x, corner=TRUE, quiet=TRUE), 2, range, simplify=FALSE)
   ext_ranges = sapply(ext_list, function(e) paste0('[', paste(e, collapse=', '), ']'))
   ext_msg = paste('    extent :', paste(ext_ranges, collapse=' x '))
 
@@ -524,7 +524,6 @@ is.na.bk = function(x)
 #'
 #' @return logical
 #' @export
-#' @rdname
 #'
 #' @examples
 #' g = bk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))

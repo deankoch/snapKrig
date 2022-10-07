@@ -2,33 +2,84 @@
 % Please edit documentation in R/bk_index.R
 \name{bk_sub}
 \alias{bk_sub}
-\title{Return a sub-grid of a blitzKrig grid object}
+\title{Return a sub-grid of a bk grid object}
 \usage{
-bk_sub(g_obs, ij = list(), mirror = FALSE, idx = FALSE)
+bk_sub(g, ij_keep = NULL, ij_rem = NULL, idx = FALSE, mirror = FALSE)
+}
+\arguments{
+\item{g}{bk grid or any grid-like object accepted by \code{bk}}
+
+\item{ij_keep}{list of grid line numbers ("i" and "j") forming regular sub-grid}
+
+\item{ij_rem}{list of grid line numbers ("i" and "j") whose exclusion forms regular sub-grid}
+
+\item{idx}{logical, if TRUE the function returns a list containing \code{ij_keep} and \code{ij_rem}}
+
+\item{mirror}{logical, whether to mirror the selection in \code{ij_rem} (see details)}
 }
 \description{
-Removes grid lines as specified in \code{ij} and returns the result as a blitzKrig grid
-list; If \code{ij} is empty, the function attempts to find a set of grid lines that forms
-a complete regular sub-grid of \code{g_obs}.
+Creates a "bk" object containing only the grid-lines specified in \code{idx_keep}. Alternatively,
+grid lines to remove can be specified in \code{idx_rem}.
 }
 \details{
-\code{ij} can be a list of integer vectors, named \code{i} and \code{j}, specifying grid line numbers to
-remove, in ascending order. \code{ij} can also be a nested list, with the grid lines
-to remove in element \code{remove}. Alternatively, users can specify the grid lines to NOT
-remove in element \code{keep}, and the function will remove the others. If both \code{keep} and
-\code{remove} are specified, the function ignores \code{keep} and uses \code{remove}.
+One of \code{idx_keep} or \code{idx_rem} (but not both) can be specified, and the grid line numbers
+(not intercepts) should be supplied in ascending order in list entries named "i" and "j".
 
-Default \code{idx=FALSE} causes the function to return the sub-grid as a blitzKrig grid object.
-If \code{idx=TRUE}, the function instead returns a list containing \code{keep} and \code{remove} as
-specified above. This can be passed back to bk_sub when repeatedly cropping multiple
-grids in the same way.
+If \code{idx_rem} is specified, \code{mirror=TRUE} will cause the selection in \code{idx_rem} to be
+reflected about the central grid line (useful for specifying outer grid lines). \code{mirror}
+is ignored if \code{idx_keep} is specified instead.
 
-\code{mirror=TRUE} indicates to mirror the supplied selection of grid lines in \code{ij}
-about the central grid line. For example \code{ij_rem=list(i=1)} removes both the first
-(left-most) column and the last (right-most).
+Default \code{idx=FALSE} causes the function to return the sub-grid as a bk grid object.
+If \code{idx=TRUE}, the function instead returns a list containing \code{idx_keep} and \code{idx_rem} as
+specified above.
 
-When \code{ij} is an empty \code{list()}, the function sets \code{ij} automatically using a
-greedy algorithm that iteratively checks all (four) outer grid lines and removes
-the one with the highest proportion of NAs. Ties are broken in clockwise order, starting
-from the left vertical. The algorithm stops when the remaining sub-grid is complete.
+If neither \code{idx_keep} nor \code{idx_rem} is supplied, the function removes outer grid lines
+iteratively (selecting the one with highest proportion of \code{NA}s), attempting to find a
+complete sub-grid (having no \code{NA}s) somewhere in the interior. This heuristic is designed
+for rasters with few \code{NA}s, all located around the perimeter.
 }
+\examples{
+
+# make an example grid
+g = bk(c(50, 100))
+g[] = apply(expand.grid(g[['gyx']]), 1, \(z) cos( 2*sum(z^2) ) )
+plot(g)
+
+# subset by specifying grid lines to keep
+ij_keep = list(i=seq(1, 50, by=2), j=seq(1, 50, by=2))
+g_keep = bk_sub(g, ij_keep)
+plot(g_keep)
+
+# get the indices kept and removed
+idx = bk_sub(g, ij_keep, idx=TRUE)
+
+# equivalent call specifying grid lines to omit
+g_rem = bk_sub(g, ij_rem=idx[['rem']])
+identical(g_rem, g_keep)
+
+# remove some data around the edges of the grid
+idx = bk_sub(g, ij_rem=list(i=seq(10), j=seq(10)), mirror=TRUE, idx=TRUE)
+idx_y_pts = bk_sub_idx(dim(g), idx[['rem']]['i'], idx=TRUE)
+idx_x_pts = bk_sub_idx(dim(g), idx[['rem']]['j'], idx=TRUE)
+idx_pts = c(idx_y_pts, idx_x_pts)
+idx_na = sort(sample(idx_pts, 0.6*length(idx_pts)))
+g[idx_na] = NA
+plot(g)
+
+# identify the interior sub-grid that is complete
+g_sub = bk_sub(g)
+print(g_sub)
+plot(g_sub)
+
+# verify it is as large as expected
+( dim(g) - dim(g_sub) ) == sapply(idx[['rem']], length)
+
+}
+\seealso{
+Other bk constructors: 
+\code{\link{bk_rescale}()},
+\code{\link{bk_snap}()},
+\code{\link{bk}()}
+}
+\concept{bk constructors}
+\keyword{internal}

@@ -43,3 +43,12 @@ result = bk_mat2vec(gyx, gdim)
 data.frame(k=result, gyx)
 
 }
+\seealso{
+Other indexing functions: 
+\code{\link{bk_rescale}()},
+\code{\link{bk_sub_find}()},
+\code{\link{bk_sub_idx}()},
+\code{\link{bk_vec2mat}()}
+}
+\concept{indexing functions}
+\keyword{internal}

@@ -33,6 +33,9 @@ bk_optim(
 
 \item{...}{named arguments to pass to \code{bk_bds}}
 }
+\value{
+sdfsdfsd
+}
 \description{
 documentation unfinished
 }

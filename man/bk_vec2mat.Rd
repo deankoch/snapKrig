@@ -40,3 +40,12 @@ bk_vec2mat(c(2, 10, 5), gdim)
 bk_vec2mat(c(2, 10, 5), gdim, out='list')
 
 }
+\seealso{
+Other indexing functions: 
+\code{\link{bk_mat2vec}()},
+\code{\link{bk_rescale}()},
+\code{\link{bk_sub_find}()},
+\code{\link{bk_sub_idx}()}
+}
+\concept{indexing functions}
+\keyword{internal}

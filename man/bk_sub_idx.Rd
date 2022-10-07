@@ -90,3 +90,12 @@ vec_order[is_sg] = as.character(idx_sg_xflip)
 bk_plot(vec_order, gdim, col_grid='black', zlab='vector index')
 
 }
+\seealso{
+Other indexing functions: 
+\code{\link{bk_mat2vec}()},
+\code{\link{bk_rescale}()},
+\code{\link{bk_sub_find}()},
+\code{\link{bk_vec2mat}()}
+}
+\concept{indexing functions}
+\keyword{internal}

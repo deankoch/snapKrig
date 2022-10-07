@@ -23,6 +23,9 @@ bk_fit(
 
 \item{X}{todo}
 }
+\value{
+sdfsdfdsfs
+}
 \description{
 An automated model fitting procedure
 }

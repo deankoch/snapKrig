@@ -2,40 +2,41 @@
 % Please edit documentation in R/bk_index.R
 \name{bk_rescale}
 \alias{bk_rescale}
-\title{Up or down-scale a grid}
+\title{Up or down-scale a bk grid by an integer factor}
 \usage{
 bk_rescale(g, up = NULL, down = NULL)
 }
 \arguments{
-\item{g}{any object accepted or returned by \code{bk}}
+\item{g}{a bk grid or any grid object accepted by \code{bk}}
 
-\item{up}{integer > 0, or vector of two, the up-scaling factor(s)}
+\item{up}{integer > 0, or vector of two, the up-scaling factors}
 
-\item{down}{integer > 0, or vector of two, the down-scaling factor(s)}
+\item{down}{integer > 0, or vector of two, the down-scaling factors}
 }
 \value{
-a grid list of the form returned by \code{bk}
+a bk grid of the requested resolution
 }
 \description{
-Changes the resolution of a grid by a factor of \code{up} or \code{down}.
+Changes the resolution of a bk grid by a factor of \code{up} or \code{down}. For down-scaling, this
+introduces \code{NA}s at unobserved grid points (and does no interpolation).
 }
 \details{
-Users should specify a grid \code{g} to re-scale and an integer scaling factor; either \code{up}
-or \code{down}. This effects the scaling of resolution (\code{g$gres}) by \code{up} or \code{1/down}.
+Users should specify a bk grid \code{g} to re-scale and an integer scaling factor; either \code{up}
+or \code{down} (and not both). This effects the scaling of resolution (\code{g[['gres']]}) by \code{up}
+or \code{1/down}.
 
-\code{up} (or \code{down}) should be a vector of two positive integers, supplying the re-scaling
-factors in the y and x dimensions in that order, or a single value to be used for both.
+\code{up} (or \code{down}) should be a vector of two positive integers, the desired re-scaling
+factors in the y and x dimensions, in that order, or a single value to be used for both.
 
 When \code{up} is supplied, a lower resolution grid is returned comprising every \code{up}th grid
 line of \code{g} along each dimension. All other grid lines, and any data values lying on them,
-are ignored. \code{up} should be no greater than \code{g$gdim - 1}. Note that if \code{up} does not
+are ignored. \code{up} should be no greater than \code{dim(g) - 1}. Note that if \code{up} does not
 evenly divide this number, the bounding box will shrink slightly.
 
-When \code{down} is supplied, the function returns a higher resolution grid (\code{g_fine}) with
+When \code{down} is supplied, the function returns a higher resolution grid (say \code{g_fine}) with
 the same bounding box as \code{g}. Along each dimension, every \code{down}th grid line of \code{g_fine}
-coincides with a grid line of \code{g}. Any values found in \code{g$gval} are copied to \code{g_fine},
-and un-mapped grid lines in \code{g_fine} are initialized to \code{NA}. Recover \code{g} from \code{g_fine}
-with \code{bk_rescale(g_fine, up=down)}.
+coincides with a grid line of \code{g}. Any non-NA values found in \code{g[]} are copied to \code{g_fine},
+and \code{g} can be recovered from \code{g_fine} with \code{bk_rescale(g_fine, up=down)}.
 }
 \examples{
 
@@ -43,39 +44,54 @@ with \code{bk_rescale(g_fine, up=down)}.
 gdim = c(50, 53)
 g = bk(gdim)
 pars = modifyList(bk_pars(g), list(eps=1e-6))
-gval = bk_sim(g, pars)
-g_obs = modifyList(g, list(gval=gval))
-bk_plot(g_obs)
+g[] = bk_sim(g, pars)
+plot(g)
 
 # upscale
-bk_plot(bk_rescale(g=g_obs, up=1)) # does nothing
-bk_plot(bk_rescale(g=g_obs, up=2))
+plot(bk_rescale(g, up=1)) # does nothing
+plot(bk_rescale(g, up=2))
 
 # downscale
-bk_plot(bk_rescale(g=g_obs, down=1)) # does nothing
-bk_plot(bk_rescale(g=g_obs, down=2))
+bk_plot(bk_rescale(g, down=1)) # does nothing
+bk_plot(bk_rescale(g, down=2))
 
 # length-2 vectors to rescale differently in x and y directions
-bk_plot(bk_rescale(g=g_obs, up=c(2,3)))
-bk_plot(bk_rescale(g=g_obs, down=c(2,3)))
+plot(bk_rescale(g, up=c(2,3)))
+plot(bk_rescale(g, down=c(2,3)))
 
 # invert a down-scaling
-g_obs_compare = bk_rescale(bk_rescale(g=g_obs, down=c(5,3)), up=c(5,3))
-identical(g_obs, g_obs_compare)
+g_compare = bk_rescale(bk_rescale(g, down=c(5,3)), up=c(5,3))
+all.equal(g, g_compare)
 
 # multi-layer example with missing data
 n_pt = prod(gdim)
 n_layer = 3
 
-# generate some data and omit 50\% of it
+# generate some more data and omit 50\% of it
 gval_multi = bk_sim(bk(list(gdim=gdim, gval=matrix(NA, n_pt, n_layer))), pars)
 idx_miss = sample.int(n_pt, round(0.5*n_pt))
 gval_multi[idx_miss,] = NA
 
 # plot third layer, then down-scaled and up-scaled versions
-g_sim_multi = modifyList(g, list(gval=gval_multi))
+g_sim_multi = bk(gdim=gdim, gval=gval_multi)
 bk_plot(g_sim_multi, layer=3)
 bk_plot(bk_rescale(g=g_sim_multi, down=2), layer=3)
 bk_plot(bk_rescale(g=g_sim_multi, up=2), layer=3)
 
 }
+\seealso{
+bk bk_cmean
+
+Other indexing functions: 
+\code{\link{bk_mat2vec}()},
+\code{\link{bk_sub_find}()},
+\code{\link{bk_sub_idx}()},
+\code{\link{bk_vec2mat}()}
+
+Other bk constructors: 
+\code{\link{bk_snap}()},
+\code{\link{bk_sub}()},
+\code{\link{bk}()}
+}
+\concept{bk constructors}
+\concept{indexing functions}

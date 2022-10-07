@@ -1,5 +1,5 @@
 # bk_export.R
-# Dean Koch, 2022
+# Dean Koch, October 2022
 # Functions for exporting grids
 
 #' Convert "bk" grid to SpatRaster
@@ -7,12 +7,13 @@
 #' @param g any object accepted or returned by `bk`
 #' @param template character or RasterLayer/SpatRaster to set output type
 #'
-#' Converts a vector or matrix to a SpatRaster, or RasterLayer. Multi-layer outputs are
+#' Converts a vector or matrix to a SpatRaster or RasterLayer. Multi-layer outputs are
 #' supported for terra but not raster.
 #'
 #' @return a RasterLayer or SpatRaster containing the data from `g` (or a sub-grid)
 #'
 #' @family exporting functions
+#' @seealso bk
 #' @export
 #'
 #' @examples
@@ -146,7 +147,8 @@ bk_export = function(g, template='terra')
 #' the corresponding data value in `from`, or if  `from` has no data, an integer mapping
 #' to the points in `from`. Un-mapped grid points are set to NA.
 #' @export
-#' @family ways of creating a bk object
+#' @family bk constructors
+#' @seealso bk_coords
 #'
 #' @examples
 #'
@@ -413,6 +415,7 @@ bk_snap = function(from, g=NULL, crop_from=FALSE, crop_g=FALSE, quiet=FALSE)
 #' @return a matrix, list, or sf POINT collection, in column vectorized order
 #' @export
 #' @family exporting functions
+#' @seealso bk bk_snap
 #'
 #' @examples
 #' gdim = c(5,3)

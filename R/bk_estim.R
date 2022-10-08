@@ -2,34 +2,34 @@
 # Dean Koch, 2022
 # Functions for parameter inference and spatial prediction
 
-#' Generalized least squares (GLS) estimator
+#' Generalized least squares (GLS) with Kronecker covariances
 #'
-#' Computes coefficients b of the linear predictor E(Z) = Xb using the GLS equation
+#' Computes coefficients b of the linear predictor E(Z) = Xb using the GLS equation,
+#' the maximum likelihood estimator given bk grid data `g` covariance model `pars`.
+#' If `out='z'`, the function returns the product Xb instead of b.
 #'
-#' The GLS equation is: b = ( X^T V^{-1} X )^{-1} X^T V^{-1} z,
+#' The GLS solution is: b = ( X^T V^{-1} X )^{-1} X^T V^{-1} z,
 #'
-#' where V is the covariance matrix for data z, and X is a matrix of covariates.
-#' V is generated from the covariance model specified in `pars` on the grid `g_obs`,
-#' where the non-NA values of `g_obs$gval` form the vector z. Operations with V^{-1}
-#' are computed using the factorization `fac`, or else as specified in `fac_method`.
-#'
-#' When `out='z'`, the function returns the product Xb instead of b.
+#' where V is the covariance matrix for data z (the non-`NA` entries of `g[]`), and X
+#' is a matrix of covariates. V is generated from the covariance model specified by
+#' `pars` for the grid `g`. Operations with V^{-1} are computed using the
+#' factorization `fac`, or else as specified in `fac_method`.
 #'
 #' Argument `X` should provide matrix X without the intercept column (a vector of 1's).
 #' DO NOT include an intercept column in argument `X` or you will get collinearity errors
-#' (the function appends it without checking if its there already). The columns of `X` must
-#' be independent, and its rows should match the entries of `g_obs$gval`, or its non-NA data
-#' values, in order. Use `X=NA` to specify an intercept-only model; ie to fit a spatially
+#' (the function doesn't check if its there already). `X` should have independent columns,
+#' and its rows should match the entries of `g[]`, in order.
+#'
+#' Use `X=NA` to specify an intercept-only model; ie to fit a spatially
 #' constant mean. This replaces X in the GLS equation by a vector of 1's.
 #'
-#' `g_obs$gval` can be a matrix whose columns are multiple repetitions (layers) of the
-#' same spatial process (see `bk`), in which case the covariates in `X` are recycled
+#' If `g[]` is a matrix (a multi-layer grid), the covariates in `X` are recycled
 #' for each layer. Layers are assumed mutually independent and the GLS equation is evaluated
 #' using the corresponding block-diagonal V. Note that this is equivalent to (but faster
 #' than) calling `bk_GLS` separately on each layer with the same `X` and averaging the
-#' estimated b's.
+#' resulting b estimates
 #'
-#' @param g_obs list of form returned by `bk` (with entries 'gdim', 'gres', 'gval')
+#' @param g a bk grid object (or list with entries 'gdim', 'gres', 'gval')
 #' @param pars list of form returned by `bk_pars` (with entries 'y', 'x', 'eps', 'psill')
 #' @param X matrix or NA, the linear predictors (in columns) excluding intercept
 #' @param fac_method character, factorization method: 'eigen' (default) or 'chol' (see `bk_var`)
@@ -37,103 +37,105 @@
 #' @param out character, either 'b' (coefficients) or 'z' (linear predictor)
 #'
 #' @return numeric vector, either b (default) or Xb (if `out='z'`)
+#'
 #' @export
+#' @seealso bk
+#' @family estimators
 #'
 #' @examples
-#' # set up example grid, and covariance parameters
+#' # set up example grid and covariance parameters
 #' gdim = c(45, 31)
-#' n = prod(gdim)
-#' g = bk(gdim)
-#' pars = modifyList(bk_pars(g, 'gau'), list(psill=2))
+#' g_empty = bk(gdim)
+#' n = length(g_empty)
+#' pars = modifyList(bk_pars(g_empty, 'gau'), list(psill=2))
 #'
 #' # generate spatial noise
-#' z = bk_sim(g, pars)
-#' bk_plot(modifyList(g, list(gval=z)))
+#' g_noise = g_empty
+#' g_noise[] = bk_sim(g_noise, pars)
+#' plot(g_noise)
 #'
-#' # generate some covariates and data
+#' # generate some covariates
 #' n_betas = 3
 #' betas = rnorm(n_betas, 0, 10)
-#' X_all = cbind(1, matrix(rnorm(n*(n_betas-1)), n))
+#' X = matrix(rnorm(n*(n_betas-1)), n)
+#' X_all = cbind(1, X)
 #' lm_actual = as.vector(X_all %*% betas)
-#' g_obs = modifyList(g, list(gval=z+lm_actual))
+#' g_lm = g_empty
+#' g_lm[] = lm_actual
+#' plot(g_lm)
 #'
-#' # exclude intercept column in calls to bk_GLS
-#' X_pass = X_all[,-1]
+#' # combine with noise to make "observed" data
+#' g_obs = g_lm + g_noise
 #'
 #' # find the GLS coefficients
-#' betas_est = bk_GLS(g_obs, pars, X_pass)
+#' betas_est = bk_GLS(g_obs, pars, X)
 #' print(betas_est)
 #' print(betas)
 #'
-#' # compute trend as product of betas with matrix X_all, or by setting out='z'
+#' # compute trend as product of betas with X and intercept, or by setting out='z'
 #' lm_est = X_all %*% betas_est
-#' max( abs( bk_GLS(g_obs, pars, X_pass, out='z') - lm_est ) )
+#' max( abs( bk_GLS(g_obs, pars, X, out='z') - lm_est ) )
 #'
-#' # repeat with pre-computed eigen factorization
+#' # repeat with pre-computed eigen factorization (same result but faster)
 #' fac_eigen = bk_var(g_obs, pars, fac_method='eigen', sep=TRUE)
-#' betas_est_compare_eigen = bk_GLS(g_obs, pars, X_pass, fac=fac_eigen)
-#' max( abs( betas_est_compare_eigen - betas_est ) )
+#' betas_est_compare = bk_GLS(g_obs, pars, X, fac=fac_eigen)
+#' max( abs( betas_est_compare - betas_est ) )
 #'
 #' # missing data example
 #' n_obs = 10
-#' idx_rem = sort(sample.int(n, n-n_obs))
 #' g_miss = g_obs
-#' g_miss$gval[idx_rem] = NA
-#' bk_plot(g_miss)
-#' betas_est = bk_GLS(g_miss, pars, X_pass)
+#' g_miss[ sort(sample.int(n, n-n_obs)) ] = NA
+#' plot(g_miss)
+#'
+#' # coefficient estimates still unbiased but less precise
+#' betas_est = bk_GLS(g_miss, pars, X)
 #' print(betas_est)
 #' print(betas)
 #'
-#' # set X to NA to estimate the a spatially constant trend (the adjusted mean)
+#' # set X to NA to estimate the spatially constant trend
 #' bk_GLS(g_miss, pars, X=NA)
-#' mean(g_miss$gval, na.rm=TRUE)
 #'
-#' # generate some extra layers
-#' z_extra = lapply(seq(9), function(x) bk_sim(g, pars))
-#' z_multi = lm_actual + do.call(cbind, c(list(z), z_extra))
-#'
-#' # multi-layer example with missing data
-#' is_obs = !is.na(g_miss$gval)
-#' map_sparse = match(seq(n), which(is_obs))
-#' g_sparse = modifyList(g_miss, list(gval=z_multi[is_obs,], idx_grid=map_sparse))
-#' betas_sparse = bk_GLS(g_obs=g_sparse, pars, X=X_pass)
-#' print(betas_sparse)
+#' # generate some extra noise for 10-layer example
+#' z_extra = lapply(seq(9), function(x) bk_sim(g_empty, pars))
+#' g_multi = g_empty
+#' g_multi[] = lm_actual + do.call(cbind, c(list(g_noise[]), z_extra))
+#' betas_complete = bk_GLS(g_multi, pars, X)
+#' print(betas_complete)
 #' print(betas)
 #'
-#' bk_GLS(g_sparse, pars, NA)
-#' mean(g_sparse$gval, na.rm=TRUE)
+#' # repeat with missing data
+#' is_obs = !is.na(g_miss)
+#' g_multi[!is_obs,] = NA
+#' betas_sparse = bk_GLS(g_multi, pars, X)
+#' print(betas_sparse)
+#' print(betas)
+#' bk_GLS(g_multi, pars, NA)
 #'
-bk_GLS = function(g_obs, pars, X=NA, fac=NULL, fac_method='eigen', out='b')
+bk_GLS = function(g, pars, X=NA, fac=NULL, fac_method='eigen', out='b')
 {
   # multi-layer support
-  n_layer = 1L
-  is_multi = !is.null(g_obs[['idx_grid']])
+  is_multi = !is.null(g[['idx_grid']])
   if(is_multi)
   {
-    # identify non-NA points
-    is_obs = !is.na(g_obs[['idx_grid']])
-
-    # reorder the non-NA data matrix to grid-vectorized order
-    reorder_z = g_obs[['idx_grid']][is_obs]
-    n_layer = ncol(g_obs[['gval']])
-
-    # matrix(.., ncol) avoids R simplifying to vector in 1 column case
-    z = matrix(g_obs[['gval']][reorder_z,], ncol=n_layer)
+    # identify non-NA points and extract them as matrix
+    is_obs = !is.na(g[['idx_grid']])
+    n_layer = ncol(g[['gval']])
+    z = g[['gval']]
 
   } else {
 
     # copy non-NA data as a 1-column matrix
-    is_obs = as.vector(!is.na(g_obs[['gval']]))
-    if( sum(is_obs) < 2 ) stop('Not enough non-NA values in g_obs')
-    z = matrix(g_obs[['gval']][is_obs], ncol=n_layer)
+    is_obs = as.vector(!is.na(g[['gval']]))
+    z = matrix(g[['gval']][is_obs], ncol=1L)
   }
 
   # set default factorization method
+  if( sum(is_obs) < 2 ) stop('Not enough non-NA values in g')
   is_sep = all(is_obs)
   if( is_sep & (fac_method=='chol') ) stop('eigen method is required for complete grids')
 
   # compute variance factorization (scaled=TRUE -> partial sill is factored out)
-  if( is.null(fac) ) fac = bk_var(g_obs, pars, scaled=TRUE, fac_method=fac_method, sep=is_sep)
+  if( is.null(fac) ) fac = bk_var(g, pars, scaled=TRUE, fac_method=fac_method, sep=is_sep)
 
   # build matrix of covariate values from intercept column and (optionally) X
   n = length(is_obs)
@@ -154,13 +156,12 @@ bk_GLS = function(g_obs, pars, X=NA, fac=NULL, fac_method='eigen', out='b')
     msg_expected = paste('expected', n, 'or', n_obs, 'but got', nrow(X))
     if( !( nrow(X) %in% c(n, n_obs) ) ) stop(paste('incorrect number of rows in X:', msg_expected))
 
-    # reorder X to match z
+    # take observed subset of X if the full matrix was supplied
     if( nrow(X) > n_obs ) X_obs = matrix(X[is_obs,], ncol=ncol(X))
-    if( is_multi ) X_obs = matrix(X_obs[reorder_z,], ncol=ncol(X))
   }
 
   # find the factorization of quadratic form with X (scaling by V inverse)
-  fac_X = bk_var(g_obs, pars, X=X_obs, scaled=TRUE, fac=fac, fac_method='eigen')
+  fac_X = bk_var(g, pars, X=X_obs, scaled=TRUE, fac=fac, fac_method='eigen')
 
   # compute GLS coefficients using whitened observation data
   z_trans = bk_var_mult(z, pars, fac=fac)

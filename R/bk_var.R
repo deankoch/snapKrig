@@ -248,10 +248,11 @@ bk_corr_mat = function(pars, n, gres=1, i=seq(n), j=seq(n))
 #' effect in this output mode. Note also that `sep` has no effect when `X` is supplied.
 #'
 #' If the function is passed an empty grid `g` (all points `NA`) it returns results for the
-#' complete case (no `NA`s).
+#' complete case (no `NA`s). If it is passed a list that is not a bk grid object, it must
+#' include entries 'gdim', 'gres', 'gval' (as they are specified in `bk`), and 'gval' must be
+#' a vector. All other entries are ignored in this case.
 #'
-#'
-#' @param g a bk grid object
+#' @param g a bk grid object or a list with entries 'gdim', 'gres', 'gval'
 #' @param pars list of form returned by `bk_pars` (with entries 'y', 'x', 'eps', 'psill')
 #' @param scaled logical, whether to scale by `1/pars$psill`
 #' @param fac_method character, the factorization to return, one of 'none', 'chol', 'eigen'
@@ -357,17 +358,23 @@ bk_var = function(g, pars=NULL, scaled=FALSE, fac_method='none', X=NULL, fac=NUL
   msg_fac_method = paste('fac_method must be one of: NA,', paste(nm_fac_method, collapse=', '))
   if( !(fac_method %in% nm_fac_method) ) stop(msg_fac_method)
 
-  # bk converts 1-layer matrix input to vector
-  if(is.matrix(g[['gval']])) g = bk(g)
+  # extract NA index and number of grid points
+  if(inherits(g, 'bk'))
+  {
+    # we have these generics for bk objects
+    is_obs = !is.na(g)
+    n = length(g)
 
-  # reduce multi-layer to single-layer case by overwrite g with its indexing vector
-  if(is.matrix(g[['gval']])) g = bk(gdim=dim(g), gres=g[['gres']], gval=g[['idx_grid']])
+  } else {
 
-  # identify NA grid-points and flag separable case (empty or complete)
-  n = length(g)
-  is_obs = !is.na(g)
-  if( !any(is_obs) | all(is_obs) ) g[['gval']] = NULL
-  if( is.null(g[['gval']]) ) is_obs = rep(TRUE, n)
+    # for lists it's more verbose and gval must be a vector
+    if( is.matrix(g[['gval']]) ) stop('gval was a matrix (expected vector)')
+    is_obs = !is.na(g[['gval']])
+    n = length(g[['gval']])
+  }
+
+  # no-data case treated as complete
+  if( !any(is_obs) ) is_obs = !logical(n)
   n_obs = sum(is_obs)
   is_sep = n == n_obs
 
@@ -395,7 +402,7 @@ bk_var = function(g, pars=NULL, scaled=FALSE, fac_method='none', X=NULL, fac=NUL
 
   # unpack grid config and covariance parameters
   gres = g[['gres']]
-  gdim = dim(g)
+  gdim = g[['gdim']]
   eps = ifelse(scaled, pars[['eps']]/pars[['psill']], pars[['eps']])
   psill = ifelse(scaled, 1, pars[['psill']])
 

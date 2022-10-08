@@ -132,33 +132,36 @@
   # calls with [] assign all entries/rows
   if(is.null(i)) i = seq_along(x)
 
-  # character indices specify sub-lists (handled by default method)
+  # character indices specify sub-lists (handled by default method for lists)
   if(is.character(i)) { NextMethod() } else {
 
     # numeric indices are for the vectorized grid values
     if( !is_multi )
     {
-      # initialize gval vector as needed
+      # initialize gval vector if it's not already there
       if( is.null(x[['gval']]) ) x[['gval']] = rep(NA_real_, length(x))
 
       # overwriting the whole object prevents unwanted coercion
-      if(replace_all) { x[['gval']] = as.vector(value) } else { x[['gval']][i] = as.vector(value) }
+      if(replace_all) { x[['gval']] = value } else { x[['gval']][i] = as.vector(value) }
 
     } else {
 
       # default selects all layers
       if(is.null(j)) j = seq(ncol(x[['gval']]))
+      if(replace_all) { x[['gval']] = value } else {
 
-      # if replacing everything we assume NAs are already removed
-      if(replace_all) {  x[['gval']] = as.matrix(value) } else {
-
-        # vectorized indices mapped to rows via idx_grid in sparse representation
-        x[['gval']][ x[['idx_grid']][i], j] = as.matrix(value)
-
+        # extract all, modify the requested columns, copy back
+        gval_mod = x[]
+        gval_mod[i, j] = as.matrix(value)
+        x[['gval']] = gval_mod
       }
+
+      # idx_grid will be re-computed in bk_make (as needed)
+      x[['idx_grid']] = NULL
     }
 
-    return(bk_validate(x))
+    # check validity, update n_missing, etc then return
+    return(bk_validate(bk_make(x)))
   }
 }
 

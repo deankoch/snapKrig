@@ -310,14 +310,24 @@ bk_make = function(g)
         # identify observed data in first layer and build an indexing vector from it
         is_obs_first = !is.na(g[['gval']][,1L])
         g[['idx_grid']] = match(seq(nrow(g[['gval']])), which(is_obs_first))
-        if(length(g[['idx_grid']]) == 0) g[['idx_grid']] = rep(NA, nrow(g[['gval']]))
 
-        # omit NA rows and set indexing flag
-        g[['gval']] = g[['gval']][is_obs_first,]
-        is_sparse = TRUE
+        # check if there is any data
+        if(length(g[['idx_grid']]) == 0)
+        {
+          # if not then we don't bother with sparse representation
+          g[['idx_grid']] = NULL
+          g[['gval']] = NULL
+          is_sparse = FALSE
 
-        # if valid idx_grid is supplied, the trimmed copy of gval should now have no NAs
-        if( anyNA(g[['gval']]) ) stop('inconsistent pattern of NAs among layers')
+        } else {
+
+          # omit NA rows and set indexing flag
+          g[['gval']] = g[['gval']][is_obs_first,]
+          is_sparse = TRUE
+
+          # if valid idx_grid is supplied, the trimmed copy of gval should now have no NAs
+          if( anyNA(g[['gval']]) ) stop('inconsistent pattern of NAs among layers')
+        }
       }
     }
 

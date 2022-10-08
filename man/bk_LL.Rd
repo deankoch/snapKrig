@@ -2,7 +2,7 @@
 % Please edit documentation in R/bk_model.R
 \name{bk_LL}
 \alias{bk_LL}
-\title{Likelihood of covariance model \code{pars} given data \code{g_obs}}
+\title{Likelihood of covariance model \code{pars} given the data in bk grid \code{g}}
 \usage{
 bk_LL(
   pars,
@@ -17,8 +17,6 @@ bk_LL(
 \arguments{
 \item{pars}{list of form returned by \code{bk_pars} (with entries 'y', 'x', 'eps', 'psill')}
 
-\item{g_obs}{list of form returned by \code{bk} (with entries 'gdim', 'gres', 'gval')}
-
 \item{X}{numeric, vector, matrix, or NA, a fixed mean value, or matrix of linear predictors}
 
 \item{fac_method}{character, the factorization to use: 'chol' (default) or 'eigen'}
@@ -28,13 +26,15 @@ bk_LL(
 \item{quiet}{logical indicating to suppress console output}
 
 \item{more}{logical, indicates to return list with likelihood components}
+
+\item{g}{a bk grid (with entries 'gdim', 'gres', 'gval')}
 }
 \value{
 numeric, the likelihood of \code{pars} given \code{g_obs} and \code{X}, or list (if \code{more=TRUE})
 }
 \description{
-Computes the log-likelihood for the Gaussian process covariance model \code{pars},
-given 2-dimensional grid data \code{g_obs}, and, optionally, linear trend data in \code{X}.
+This computes the log-likelihood for the Gaussian process covariance model \code{pars},
+given 2-dimensional grid data \code{g}, and, optionally, linear trend data in \code{X}.
 }
 \details{
 The function evaluates:
@@ -42,12 +42,12 @@ The function evaluates:
 \code{-log( 2 * pi ) - ( 1/2 ) * ( log_det + quad_form )},
 
 where \code{log_det} is the logarithm of the determinant of covariance matrix V, and
-\code{quad_form} is z^T V^{-1} z, for the observed response vector z. This z is constructed
-by subtracting the trend specified in \code{X} (if any) from the non-NA values in \code{g_obs$gval}.
+\code{quad_form} is z^T V^{-1} z, for the observed response vector z, which is constructed
+by subtracting the trend specified in \code{X} (if any) from the non-NA values in \code{g}.
 
 If the trend is known, it can be supplied in argument \code{X} as a numeric scalar or vector of
-length equal to the number of non-NA values in \code{g_obs$gval}, in matching order. Equivalently,
-users can simply subtract the trend from \code{g_obs} beforehand and set \code{X=0} (the default).
+length equal to the number of non-NA values in \code{g}, in matching order. Equivalently,
+users can simply subtract the trend from \code{g} beforehand and set \code{X=0} (the default).
 If the trend is unknown, the function optionally estimates it by GLS using the model
 \code{pars}. To estimate a spatially constant mean, set \code{X=NA}. To estimate a spatially variable
 mean, supply linear predictors as columns of a matrix argument to \code{X} (see \code{bk_GLS}).
@@ -167,3 +167,7 @@ LL_result$d - log_det
 LL_result$n - n
 
 }
+\seealso{
+bk
+}
+\concept{likelihood functions}

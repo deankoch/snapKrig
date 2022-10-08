@@ -2,12 +2,12 @@
 % Please edit documentation in R/bk_estim.R
 \name{bk_GLS}
 \alias{bk_GLS}
-\title{Generalized least squares (GLS) estimator}
+\title{Generalized least squares (GLS) with Kronecker covariances}
 \usage{
-bk_GLS(g_obs, pars, X = NA, fac = NULL, fac_method = "eigen", out = "b")
+bk_GLS(g, pars, X = NA, fac = NULL, fac_method = "eigen", out = "b")
 }
 \arguments{
-\item{g_obs}{list of form returned by \code{bk} (with entries 'gdim', 'gres', 'gval')}
+\item{g}{a bk grid object, or list with entries 'gdim', 'gres', 'gval'}
 
 \item{pars}{list of form returned by \code{bk_pars} (with entries 'y', 'x', 'eps', 'psill')}
 
@@ -23,94 +23,103 @@ bk_GLS(g_obs, pars, X = NA, fac = NULL, fac_method = "eigen", out = "b")
 numeric vector, either b (default) or Xb (if \code{out='z'})
 }
 \description{
-Computes coefficients b of the linear predictor E(Z) = Xb using the GLS equation
+Computes coefficients b of the linear predictor E(Z) = Xb using the GLS equation,
+the maximum likelihood estimator given bk grid data \code{g} covariance model \code{pars}.
+If \code{out='z'}, the function returns the product Xb instead of b.
 }
 \details{
-The GLS equation is: b = ( X^T V^{-1} X )^{-1} X^T V^{-1} z,
+The GLS solution is: b = ( X^T V^{-1} X )^{-1} X^T V^{-1} z,
 
-where V is the covariance matrix for data z, and X is a matrix of covariates.
-V is generated from the covariance model specified in \code{pars} on the grid \code{g_obs},
-where the non-NA values of \code{g_obs$gval} form the vector z. Operations with V^{-1}
-are computed using the factorization \code{fac}, or else as specified in \code{fac_method}.
-
-When \code{out='z'}, the function returns the product Xb instead of b.
+where V is the covariance matrix for data z (the non-\code{NA} entries of \code{g[]}), and X
+is a matrix of covariates. V is generated from the covariance model specified by
+\code{pars} for the grid \code{g}. Operations with V^{-1} are computed using the
+factorization \code{fac}, or else as specified in \code{fac_method}.
 
 Argument \code{X} should provide matrix X without the intercept column (a vector of 1's).
 DO NOT include an intercept column in argument \code{X} or you will get collinearity errors
-(the function appends it without checking if its there already). The columns of \code{X} must
-be independent, and its rows should match the entries of \code{g_obs$gval}, or its non-NA data
-values, in order. Use \code{X=NA} to specify an intercept-only model; ie to fit a spatially
+(the function doesn't check if its there already). \code{X} should have independent columns,
+and its rows should match the entries of \code{g[]}, in order.
+
+Use \code{X=NA} to specify an intercept-only model; ie to fit a spatially
 constant mean. This replaces X in the GLS equation by a vector of 1's.
 
-\code{g_obs$gval} can be a matrix whose columns are multiple repetitions (layers) of the
-same spatial process (see \code{bk}), in which case the covariates in \code{X} are recycled
+If \code{g[]} is a matrix (a multi-layer grid), the covariates in \code{X} are recycled
 for each layer. Layers are assumed mutually independent and the GLS equation is evaluated
 using the corresponding block-diagonal V. Note that this is equivalent to (but faster
 than) calling \code{bk_GLS} separately on each layer with the same \code{X} and averaging the
-estimated b's.
+resulting b estimates
 }
 \examples{
-# set up example grid, and covariance parameters
+# set up example grid and covariance parameters
 gdim = c(45, 31)
-n = prod(gdim)
-g = bk(gdim)
-pars = modifyList(bk_pars(g, 'gau'), list(psill=2))
+g_empty = bk(gdim)
+n = length(g_empty)
+pars = modifyList(bk_pars(g_empty, 'gau'), list(psill=2))
 
 # generate spatial noise
-z = bk_sim(g, pars)
-bk_plot(modifyList(g, list(gval=z)))
+g_noise = g_empty
+g_noise[] = bk_sim(g_noise, pars)
+plot(g_noise)
 
-# generate some covariates and data
+# generate some covariates
 n_betas = 3
 betas = rnorm(n_betas, 0, 10)
-X_all = cbind(1, matrix(rnorm(n*(n_betas-1)), n))
+X = matrix(rnorm(n*(n_betas-1)), n)
+X_all = cbind(1, X)
 lm_actual = as.vector(X_all \%*\% betas)
-g_obs = modifyList(g, list(gval=z+lm_actual))
+g_lm = g_empty
+g_lm[] = lm_actual
+plot(g_lm)
 
-# exclude intercept column in calls to bk_GLS
-X_pass = X_all[,-1]
+# combine with noise to make "observed" data
+g_obs = g_lm + g_noise
 
 # find the GLS coefficients
-betas_est = bk_GLS(g_obs, pars, X_pass)
+betas_est = bk_GLS(g_obs, pars, X)
 print(betas_est)
 print(betas)
 
-# compute trend as product of betas with matrix X_all, or by setting out='z'
+# compute trend as product of betas with X and intercept, or by setting out='z'
 lm_est = X_all \%*\% betas_est
-max( abs( bk_GLS(g_obs, pars, X_pass, out='z') - lm_est ) )
+max( abs( bk_GLS(g_obs, pars, X, out='z') - lm_est ) )
 
-# repeat with pre-computed eigen factorization
+# repeat with pre-computed eigen factorization (same result but faster)
 fac_eigen = bk_var(g_obs, pars, fac_method='eigen', sep=TRUE)
-betas_est_compare_eigen = bk_GLS(g_obs, pars, X_pass, fac=fac_eigen)
-max( abs( betas_est_compare_eigen - betas_est ) )
+betas_est_compare = bk_GLS(g_obs, pars, X, fac=fac_eigen)
+max( abs( betas_est_compare - betas_est ) )
 
 # missing data example
 n_obs = 10
-idx_rem = sort(sample.int(n, n-n_obs))
 g_miss = g_obs
-g_miss$gval[idx_rem] = NA
-bk_plot(g_miss)
-betas_est = bk_GLS(g_miss, pars, X_pass)
+g_miss[ sort(sample.int(n, n-n_obs)) ] = NA
+plot(g_miss)
+
+# coefficient estimates still unbiased but less precise
+betas_est = bk_GLS(g_miss, pars, X)
 print(betas_est)
 print(betas)
 
-# set X to NA to estimate the a spatially constant trend (the adjusted mean)
+# set X to NA to estimate the spatially constant trend
 bk_GLS(g_miss, pars, X=NA)
-mean(g_miss$gval, na.rm=TRUE)
 
-# generate some extra layers
-z_extra = lapply(seq(9), function(x) bk_sim(g, pars))
-z_multi = lm_actual + do.call(cbind, c(list(z), z_extra))
-
-# multi-layer example with missing data
-is_obs = !is.na(g_miss$gval)
-map_sparse = match(seq(n), which(is_obs))
-g_sparse = modifyList(g_miss, list(gval=z_multi[is_obs,], idx_grid=map_sparse))
-betas_sparse = bk_GLS(g_obs=g_sparse, pars, X=X_pass)
-print(betas_sparse)
+# generate some extra noise for 10-layer example
+z_extra = lapply(seq(9), function(x) bk_sim(g_empty, pars))
+g_multi = g_empty
+g_multi[] = lm_actual + do.call(cbind, c(list(g_noise[]), z_extra))
+betas_complete = bk_GLS(g_multi, pars, X)
+print(betas_complete)
 print(betas)
 
-bk_GLS(g_sparse, pars, NA)
-mean(g_sparse$gval, na.rm=TRUE)
+# repeat with missing data
+is_obs = !is.na(g_miss)
+g_multi[!is_obs,] = NA
+betas_sparse = bk_GLS(g_multi, pars, X)
+print(betas_sparse)
+print(betas)
+bk_GLS(g_multi, pars, NA)
 
 }
+\seealso{
+bk
+}
+\concept{estimators}

@@ -15,7 +15,7 @@ bk_var(
 )
 }
 \arguments{
-\item{g}{a bk grid object}
+\item{g}{a bk grid object or a list with entries 'gdim', 'gres', 'gval'}
 
 \item{pars}{list of form returned by \code{bk_pars} (with entries 'y', 'x', 'eps', 'psill')}
 
@@ -59,7 +59,9 @@ their factorizations, as requested in \code{fac_method}) separately, in a list. 
 effect in this output mode. Note also that \code{sep} has no effect when \code{X} is supplied.
 
 If the function is passed an empty grid \code{g} (all points \code{NA}) it returns results for the
-complete case (no \code{NA}s).
+complete case (no \code{NA}s). If it is passed a list that is not a bk grid object, it must
+include entries 'gdim', 'gres', 'gval' (as they are specified in \code{bk}), and 'gval' must be
+a vector. All other entries are ignored in this case.
 }
 \examples{
 # define example grid with NAs and example predictors matrix

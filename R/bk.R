@@ -242,66 +242,83 @@ bk_make = function(g)
   if( is.null(g[['gdim']]) )
   {
     # gdim or gyx is required
-    if( is.null(g[['gyx']]) ) stop('argument g$gdim not found')
+    if( is.null(g[['gyx']]) ) stop('argument gdim not found')
     g[['gdim']] = sapply(g[['gyx']], length)
   }
 
   # check class and length of gdim and duplicate if it has length 1
-  if( !is.numeric(g[['gdim']]) ) stop('g$gdim was not numeric')
+  if( !is.numeric(g[['gdim']]) ) stop('gdim was not numeric')
   g[['gdim']] = sapply(g[['gdim']], as.integer)
   if( length(g[['gdim']]) == 1 ) g[['gdim']] = rep(g[['gdim']], 2)
-  if( length(g[['gdim']]) !=2 ) stop('g$gdim must be length 2')
+  if( length(g[['gdim']]) !=2 ) stop('gdim must be length 2')
 
   # check class and length of grid resolution, duplicate if it has length 1
   if( !is.null(g[['gres']]) )
   {
-    if( !is.numeric(g[['gres']]) ) stop('g$gres was not numeric')
+    if( !is.numeric(g[['gres']]) ) stop('gres was not numeric')
     if( length(g[['gres']]) == 1 ) g[['gres']] = rep(g[['gres']], 2)
-    if( length(g[['gres']]) !=2 ) stop('g$gres must be length 2')
+    if( length(g[['gres']]) !=2 ) stop('gres must be length 2')
   }
 
   # check class and length of grid line positions
   if( !is.null(g[['gyx']]) )
   {
     if( !is.list(g[['gyx']]) ) stop('g$gyx was not a list')
-    if( !all( sapply(g[['gyx']], is.numeric) ) ) stop('non-numeric entries in g$gyx')
-    if( length(g[['gyx']]) !=2 ) stop('g$gyx must be length 2')
+    if( !all( sapply(g[['gyx']], is.numeric) ) ) stop('non-numeric entries in gyx')
+    if( length(g[['gyx']]) !=2 ) stop('gyx must be length 2')
   }
 
   # check class and length of CRS string
   if( !is.null(g[['crs']]) )
   {
-    if( !is.character(g[['crs']]) ) stop('non-character g$crs')
-    if( length(g[['crs']]) !=1 ) stop('g$crs must be a single character string')
+    if( !is.character(g[['crs']]) ) stop('non-character crs')
+    if( length(g[['crs']]) !=1 ) stop('crs must be a single character string')
   }
 
   # check for values and sparse representation index
   any_gval = !is.null(g[['gval']])
   is_sparse = !is.null(g[['idx_grid']])
-  if( is_sparse & !any_gval ) stop('g$idx_grid supplied without g$gval')
+  if( is_sparse & !any_gval ) stop('idx_grid supplied without gval')
 
   # check gval input when it is supplied
   if( !any_gval ) { is_sparse = FALSE } else {
 
-    # check check class of values in gval
+    # check class of values in gval
     is_multi = is.matrix(g[['gval']])
     is_g_valid = is.vector(g[['gval']]) | is_multi
-    if(!is_g_valid) stop('g$gval was not a vector or matrix')
+    if(!is_g_valid) stop('gval was not a vector or matrix')
 
-    # create sparse representation when it is expected (matrix gval) but not found
-    if( is_multi & !is_sparse )
+    # validity checks and/or build idx_grid
+    if(is_multi)
     {
-      # identify observed data in first layer and build an indexing vector from it
-      is_obs_first = !is.na(g[['gval']][,1L])
-      g[['idx_grid']] = match(seq(nrow(g[['gval']])), which(is_obs_first))
-      if(length(g[['idx_grid']]) == 0) g[['idx_grid']] = rep(NA, nrow(g[['gval']]))
+      nrow_multi = nrow(g[['gval']])
 
-      # omit NA rows and set indexing flag
-      g[['gval']] = g[['gval']][is_obs_first,]
-      is_sparse = TRUE
+      # create sparse representation when it is expected (matrix gval) but not found
+      if(is_sparse)
+      {
+        # validity checks for idx_grid
+        is_obs = !is.na(g[['idx_grid']])
+        if( length(g[['idx_grid']]) != prod(g[['gdim']]) ) stop('idx_grid has the wrong length')
+        if( nrow(g[['gval']]) != sum(is_obs) ) stop('wrong number of non-NA indices in idx_grid')
+        if( !all(g[['idx_grid']][is_obs] == seq(nrow_multi)) ) stop('mismatch in idx_grid and gval')
 
-      # if valid idx_grid is supplied, the trimmed copy of gval should now have no NAs
-      if(anyNA(g[['gval']])) stop('inconsistent pattern of NAs among layers')
+        # if valid idx_grid is supplied, the trimmed copy of gval should now have no NAs
+        if( anyNA(g[['gval']]) ) stop('gval should have no NAs when supplied with idx_grid')
+
+      } else {
+
+        # identify observed data in first layer and build an indexing vector from it
+        is_obs_first = !is.na(g[['gval']][,1L])
+        g[['idx_grid']] = match(seq(nrow(g[['gval']])), which(is_obs_first))
+        if(length(g[['idx_grid']]) == 0) g[['idx_grid']] = rep(NA, nrow(g[['gval']]))
+
+        # omit NA rows and set indexing flag
+        g[['gval']] = g[['gval']][is_obs_first,]
+        is_sparse = TRUE
+
+        # if valid idx_grid is supplied, the trimmed copy of gval should now have no NAs
+        if( anyNA(g[['gval']]) ) stop('inconsistent pattern of NAs among layers')
+      }
     }
 
     # check class of sparse matrix indexing vector

@@ -331,7 +331,7 @@ print.bk = function(x, ...)
 
   # message about completeness
   n_miss = x[['n_missing']]
-  if(is.null(n_miss)) {complete_msg = 'not validated'} else {
+  if(is.null(n_miss)) {complete_msg = 'not validated\n'} else {
 
     n = prod(x[['gdim']])
     complete_msg = 'incomplete\n'

@@ -60,8 +60,8 @@ effect in this output mode. Note also that \code{sep} has no effect when \code{X
 
 If the function is passed an empty grid \code{g} (all points \code{NA}) it returns results for the
 complete case (no \code{NA}s). If it is passed a list that is not a sk grid object, it must
-include entries 'gdim', 'gres', 'gval' (as they are specified in \code{sk}), and 'gval' must be
-a vector. All other entries are ignored in this case.
+include entries 'gdim', 'gres', 'gval' and/or 'idx_grid' (as they are specified in
+\code{sk}), all other entries are ignored in this case.
 }
 \examples{
 # define example grid with NAs and example predictors matrix
@@ -75,7 +75,7 @@ plot(g)
 
 # example kernel
 psill = 0.3
-pars = modifyList(sk_pars(g_obs), list(psill=psill))
+pars = modifyList(sk_pars(g), list(psill=psill))
 
 # plot the covariance matrix for observed data, its cholesky factor and eigen-decomposition
 V_obs = sk_var(g, pars)

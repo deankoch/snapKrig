@@ -283,6 +283,9 @@ sk_make = function(g)
   # check gval input when it is supplied
   if( !any_gval ) { is_sparse = FALSE } else {
 
+    # convert factor gval to character
+    if( is.factor(g[['gval']]) ) g[['gval']] = as.character(g[['gval']])
+
     # check class of values in gval
     is_multi = is.matrix(g[['gval']])
     is_g_valid = is.vector(g[['gval']]) | is_multi
@@ -291,7 +294,9 @@ sk_make = function(g)
     # validity checks and/or build idx_grid
     if(is_multi)
     {
+      # number of grid points and layers
       nrow_multi = nrow(g[['gval']])
+      n_layer = ncol(g[['gval']])
 
       # create sparse representation when it is expected (matrix gval) but not found
       if(is_sparse)
@@ -322,7 +327,7 @@ sk_make = function(g)
         } else {
 
           # omit NA rows and set indexing flag
-          g[['gval']] = g[['gval']][is_obs_first,]
+          g[['gval']] = matrix(g[['gval']][is_obs_first,], ncol=n_layer)
           is_sparse = TRUE
 
           # if valid idx_grid is supplied, the trimmed copy of gval should now have no NAs

@@ -57,7 +57,7 @@
 #' betas = rnorm(n_betas)
 #' X_all = cbind(1, matrix(rnorm(n*(n_betas-1)), n))
 #' z = as.vector( sk_sim(g_all) + (X_all %*% betas) )
-#' g_all[['gval']] = z
+#' g_all[] = z
 #'
 #' # two methods for likelihood
 #' LL_chol = sk_LL(pars, g_all, fac_method='chol')
@@ -81,9 +81,10 @@
 #' # repeat with most data missing
 #' n_obs = 50
 #' idx_obs = sort(sample.int(n, n_obs))
-#' z_obs = g_all$gval[idx_obs]
-#' g_obs = modifyList(g_all, list(gval=rep(NA, n)))
-#' g_obs[['gval']][idx_obs] = z_obs
+#' z_obs = g_all[idx_obs]
+#' g_obs = g_all
+#' g_obs[] = rep(NA, n)
+#' g_obs[idx_obs] = z_obs
 #' LL_chol_obs = sk_LL(pars, g_obs, fac_method='chol')
 #' LL_eigen_obs = sk_LL(pars, g_obs, fac_method='eigen')
 #'
@@ -107,8 +108,8 @@
 #'
 #' # use GLS to de-trend, with and without covariatea
 #' g_detrend_obs = g_detrend_obs_X = g_obs
-#' g_detrend_obs[['gval']][idx_obs] = z_obs - sk_GLS(g_obs, pars)
-#' g_detrend_obs_X[['gval']][idx_obs] = z_obs - sk_GLS(g_obs, pars, X, out='z')
+#' g_detrend_obs[idx_obs] = z_obs - sk_GLS(g_obs, pars)
+#' g_detrend_obs_X[idx_obs] = z_obs - sk_GLS(g_obs, pars, X, out='z')
 #'
 #' # pass X (or NA) to sk_LL to do this automatically
 #' LL_detrend_obs = sk_LL(pars, g_detrend_obs)
@@ -117,8 +118,9 @@
 #' LL_detrend_obs_X - sk_LL(pars, g_obs, X=X)
 #'
 #' # equivalent sparse input specification
-#' idx_grid = match(seq(n), idx_obs)
-#' g_sparse = modifyList(g_all, list(gval=matrix(z_obs, ncol=1), idx_grid=idx_grid))
+#' g_sparse = g_all
+#' g_sparse[] = matrix(g_obs[], ncol=1)
+#' g_sparse = sk(gval=matrix(g_obs[], ncol=1), gdim=gdim)
 #' LL_chol_obs - sk_LL(pars, g_sparse)
 #' LL_eigen_obs - sk_LL(pars, g_sparse)
 #' LL_detrend_obs - sk_LL(pars, g_sparse, X=NA)
@@ -130,13 +132,11 @@
 #' X = X_all[,-1]
 #' LL_X_chol = sk_LL(pars, g_all, X=X)
 #' LL_X_eigen = sk_LL(pars, g_all, fac_method='eigen', X=X)
-#' z_obs = g_all$gval[!is.na(g_all$gval)]
-#' #z_mat = matrix(z_obs, ncol=1)
 #' V = sk_var(g_all, pars, sep=FALSE)
 #' V_inv = chol2inv(chol(V))
 #' X_tilde_inv = chol2inv(chol( crossprod(crossprod(V_inv, X_all), X_all) ))
-#' betas_gls = X_tilde_inv %*% crossprod(X_all, (V_inv %*% z_obs))
-#' z_gls = z_obs - (X_all %*% betas_gls)
+#' betas_gls = X_tilde_inv %*% crossprod(X_all, (V_inv %*% z))
+#' z_gls = z - (X_all %*% betas_gls)
 #' z_gls_trans = crossprod(V_inv, z_gls)
 #' quad_form = as.numeric( t(z_gls) %*% z_gls_trans )
 #' log_det = as.numeric( determinant(V, logarithm=TRUE) )[1]
@@ -151,57 +151,61 @@
 #' LL_result$d - log_det
 #' LL_result$n - n
 #'
-sk_LL = function(pars, g_obs, X=0, fac_method='chol', fac=NULL, quiet=TRUE, more=FALSE)
+sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, more=FALSE)
 {
-  # set flag for GLS and default one layer count
-  if(is.data.frame(X)) X = as.matrix(X)
-  use_GLS = is.matrix(X) | anyNA(X)
+  # count layers
+  n_layer = ifelse(is.matrix(g[['gval']]), ncol(g[['gval']]), 1L)
 
-  # multi-layer support
-  n_layer = 1
-  is_multi = !is.null(g_obs[['idx_grid']])
-  if(is_multi)
+  # extract data from input list object g
+  if(inherits(g, 'sk'))
   {
-    # coerce vector to 1-column matrix and identify non-NA points
-    if( !is.matrix(g_obs[['gval']]) ) g_obs[['gval']] = matrix(g_obs[['gval']], ncol=1L)
-    is_obs = !is.na(g_obs[['idx_grid']])
-
-    # reorder the non-NA data matrix to grid-vectorized order
-    reorder_z = g_obs[['idx_grid']][is_obs]
-    n_layer = ncol(g_obs[['gval']])
-
-    # matrix(.., ncol) avoids R simplifying to vector in 1 column case
-    z = matrix(g_obs[['gval']][reorder_z,], ncol=n_layer)
-    n_obs = nrow(z)
+    # generics for sk objects to extract non-NA data
+    is_obs = !is.na(g)
+    z = matrix(g[is_obs], ncol=n_layer)
 
   } else {
 
-    # single layer mode - copy non-NA data
-    is_obs = as.vector(!is.na(g_obs[['gval']]))
-    z = matrix(g_obs[['gval']][is_obs], ncol=1L)
-    if( is.null(z) ) stop('No non-NA values found in g_obs')
-    n_obs = length(z)
+    # handle non-sparse input
+    if( is.null(g[['idx_grid']]) )
+    {
+      # extract from vector, represent as 1-column matrix
+      if( is.matrix(g[['gval']]) ) stop('gval was a matrix (expected a vector)')
+      is_obs = !is.na(g[['gval']])
+      z = matrix(g[['gval']][is_obs], ncol=1L)
+
+    } else {
+
+      # copy matrix
+      if( !is.matrix(g[['gval']]) ) stop('gval was a vector (expected a matrix)')
+      is_obs = !is.na(g[['idx_grid']])
+      z = g[['gval']]
+    }
   }
 
   # complete data case triggers separability methods, which require eigen
+  n_obs = sum(is_obs)
   is_sep = all(is_obs)
   if(is_sep) fac_method = 'eigen'
 
   # compute factorization (scaled=TRUE means partial sill is factored out)
-  if( is.null(fac) ) fac = sk_var(g_obs, pars, scaled=TRUE, fac_method=fac_method, sep=is_sep)
+  if( is.null(fac) ) fac = sk_var(g, pars, scaled=TRUE, fac_method=fac_method, sep=is_sep)
 
-  # detect supplied factorization type
-  fac_method = ifelse(is.matrix(fac), 'chol', 'eigen')
+  # detect factorization method based on class of fac (in case user supplied it)
+  if( is_sep )
+  {
+    # in separable case there are factorizations in a list(check only the first)
+    fac_method = ifelse(is.matrix(fac[[1]]), 'chol', 'eigen')
+
+  } else { fac_method = ifelse(is.matrix(fac), 'chol', 'eigen') }
 
   # GLS estimate of mean based on predictors in X
-  if( use_GLS ) X = sk_GLS(g_obs, pars, X=X, fac=fac, out='z')
+  if(is.data.frame(X)) X = as.matrix(X)
+  use_GLS = is.matrix(X) | anyNA(X)
+  if( use_GLS ) X = sk_GLS(g, pars, X=X, fac=fac, out='z')
 
-  # matricize scalar and vector input to X
+  # turn scalar and vector input into matrix X
   if( !is.matrix(X) ) X = matrix(X, ncol=1L)
   if( nrow(X) == 1 ) X = matrix(rep(X, n_obs), ncol=ncol(X))
-
-  # reorder X to match z
-  if(is_multi) X = X[reorder_z,]
 
   # matrix of de-trended Gaussian random vectors to evaluate
   z_centered = matrix(z-X, ncol=n_layer)
@@ -252,7 +256,7 @@ sk_LL = function(pars, g_obs, X=0, fac_method='chol', fac=NULL, quiet=TRUE, more
   }
 
   # compute log likelihood, print to console then return
-  log_likelihood = (-1/2) * ( n_layer*( n_obs * log( 2 * pi ) + log_det ) + sum(quad_form) )
+  log_likelihood = (-1/2) * ( n_layer * ( n_obs * log( 2 * pi ) + log_det ) + sum(quad_form) )
   if( !quiet ) cat( paste(round(log_likelihood, 5), '\n') )
   if(more) return(list(LL=log_likelihood, q=quad_form, d=log_det, n_obs=n_obs))
   return(log_likelihood)

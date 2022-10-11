@@ -6,7 +6,7 @@
 \usage{
 sk_LL(
   pars,
-  g_obs,
+  g,
   X = 0,
   fac_method = "chol",
   fac = NULL,
@@ -17,6 +17,8 @@ sk_LL(
 \arguments{
 \item{pars}{list of form returned by \code{sk_pars} (with entries 'y', 'x', 'eps', 'psill')}
 
+\item{g}{a sk grid (with entries 'gdim', 'gres', 'gval')}
+
 \item{X}{numeric, vector, matrix, or NA, a fixed mean value, or matrix of linear predictors}
 
 \item{fac_method}{character, the factorization to use: 'chol' (default) or 'eigen'}
@@ -26,8 +28,6 @@ sk_LL(
 \item{quiet}{logical indicating to suppress console output}
 
 \item{more}{logical, indicates to return list with likelihood components}
-
-\item{g}{a sk grid (with entries 'gdim', 'gres', 'gval')}
 }
 \value{
 numeric, the likelihood of \code{pars} given \code{g_obs} and \code{X}, or list (if \code{more=TRUE})
@@ -72,7 +72,7 @@ n_betas = 3
 betas = rnorm(n_betas)
 X_all = cbind(1, matrix(rnorm(n*(n_betas-1)), n))
 z = as.vector( sk_sim(g_all) + (X_all \%*\% betas) )
-g_all[['gval']] = z
+g_all[] = z
 
 # two methods for likelihood
 LL_chol = sk_LL(pars, g_all, fac_method='chol')
@@ -96,9 +96,10 @@ sk_LL(pars, g_all, fac=fac_eigen) - LL_eigen
 # repeat with most data missing
 n_obs = 50
 idx_obs = sort(sample.int(n, n_obs))
-z_obs = g_all$gval[idx_obs]
-g_obs = modifyList(g_all, list(gval=rep(NA, n)))
-g_obs[['gval']][idx_obs] = z_obs
+z_obs = g_all[idx_obs]
+g_obs = g_all
+g_obs[] = rep(NA, n)
+g_obs[idx_obs] = z_obs
 LL_chol_obs = sk_LL(pars, g_obs, fac_method='chol')
 LL_eigen_obs = sk_LL(pars, g_obs, fac_method='eigen')
 
@@ -122,8 +123,8 @@ X = X_all[idx_obs, -1]
 
 # use GLS to de-trend, with and without covariatea
 g_detrend_obs = g_detrend_obs_X = g_obs
-g_detrend_obs[['gval']][idx_obs] = z_obs - sk_GLS(g_obs, pars)
-g_detrend_obs_X[['gval']][idx_obs] = z_obs - sk_GLS(g_obs, pars, X, out='z')
+g_detrend_obs[idx_obs] = z_obs - sk_GLS(g_obs, pars)
+g_detrend_obs_X[idx_obs] = z_obs - sk_GLS(g_obs, pars, X, out='z')
 
 # pass X (or NA) to sk_LL to do this automatically
 LL_detrend_obs = sk_LL(pars, g_detrend_obs)
@@ -132,8 +133,9 @@ LL_detrend_obs - sk_LL(pars, g_obs, X=NA)
 LL_detrend_obs_X - sk_LL(pars, g_obs, X=X)
 
 # equivalent sparse input specification
-idx_grid = match(seq(n), idx_obs)
-g_sparse = modifyList(g_all, list(gval=matrix(z_obs, ncol=1), idx_grid=idx_grid))
+g_sparse = g_all
+g_sparse[] = matrix(g_obs[], ncol=1)
+g_sparse = sk(gval=matrix(g_obs[], ncol=1), gdim=gdim)
 LL_chol_obs - sk_LL(pars, g_sparse)
 LL_eigen_obs - sk_LL(pars, g_sparse)
 LL_detrend_obs - sk_LL(pars, g_sparse, X=NA)
@@ -145,13 +147,11 @@ LL_detrend_obs_X - sk_LL(pars, g_sparse, X=X)
 X = X_all[,-1]
 LL_X_chol = sk_LL(pars, g_all, X=X)
 LL_X_eigen = sk_LL(pars, g_all, fac_method='eigen', X=X)
-z_obs = g_all$gval[!is.na(g_all$gval)]
-#z_mat = matrix(z_obs, ncol=1)
 V = sk_var(g_all, pars, sep=FALSE)
 V_inv = chol2inv(chol(V))
 X_tilde_inv = chol2inv(chol( crossprod(crossprod(V_inv, X_all), X_all) ))
-betas_gls = X_tilde_inv \%*\% crossprod(X_all, (V_inv \%*\% z_obs))
-z_gls = z_obs - (X_all \%*\% betas_gls)
+betas_gls = X_tilde_inv \%*\% crossprod(X_all, (V_inv \%*\% z))
+z_gls = z - (X_all \%*\% betas_gls)
 z_gls_trans = crossprod(V_inv, z_gls)
 quad_form = as.numeric( t(z_gls) \%*\% z_gls_trans )
 log_det = as.numeric( determinant(V, logarithm=TRUE) )[1]

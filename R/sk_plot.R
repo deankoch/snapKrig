@@ -148,7 +148,7 @@
 #' # reduce number of color breaks or specify a factor for discrete value plots
 #' plot(g, breaks=50)
 #' plot(g, breaks=3)
-#' g[] = cut(g[], breaks=3, dig.lab=1) #|> as.character()
+#' g[] = cut(g[], breaks=3, dig.lab=1)
 #' plot(g)
 #'
 #' # pass color bar labels for discrete plots in breaks (in order low to high)

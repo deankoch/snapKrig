@@ -249,8 +249,8 @@ sk_corr_mat = function(pars, n, gres=1, i=seq(n), j=seq(n))
 #'
 #' If the function is passed an empty grid `g` (all points `NA`) it returns results for the
 #' complete case (no `NA`s). If it is passed a list that is not a sk grid object, it must
-#' include entries 'gdim', 'gres', 'gval' (as they are specified in `sk`), and 'gval' must be
-#' a vector. All other entries are ignored in this case.
+#' include entries 'gdim', 'gres', 'gval' and/or 'idx_grid' (as they are specified in
+#' `sk`), all other entries are ignored in this case.
 #'
 #' @param g a sk grid object or a list with entries 'gdim', 'gres', 'gval'
 #' @param pars list of form returned by `sk_pars` (with entries 'y', 'x', 'eps', 'psill')
@@ -278,7 +278,7 @@ sk_corr_mat = function(pars, n, gres=1, i=seq(n), j=seq(n))
 #'
 #' # example kernel
 #' psill = 0.3
-#' pars = modifyList(sk_pars(g_obs), list(psill=psill))
+#' pars = modifyList(sk_pars(g), list(psill=psill))
 #'
 #' # plot the covariance matrix for observed data, its cholesky factor and eigen-decomposition
 #' V_obs = sk_var(g, pars)
@@ -367,10 +367,18 @@ sk_var = function(g, pars=NULL, scaled=FALSE, fac_method='none', X=NULL, fac=NUL
 
   } else {
 
-    # for lists it's more verbose and gval must be a vector
-    if( is.matrix(g[['gval']]) ) stop('gval was a matrix (expected vector)')
-    is_obs = !is.na(g[['gval']])
-    n = length(g[['gval']])
+    # for non sk lists we access elements directly
+    if( is.null(g[['idx_grid']]) )
+    {
+      if( is.matrix(g[['gval']]) ) stop('gval was a matrix (expected a vector)')
+      is_obs = !is.na(g[['gval']])
+
+    } else {
+
+      # when idx_grid supplied, we don't need to look at gval at all
+      is_obs = !is.na(g[['idx_grid']])
+      n = length(g[['idx_grid']])
+    }
   }
 
   # no-data case treated as complete

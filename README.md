@@ -12,15 +12,15 @@ an R package for computationally fast grid-based Gaussian processes models and k
 This is a continuation of the [`pkern`](https://github.com/deankoch/pkern) package, just with a catchier
 name and some updates. Development on `pkern` has ended, with `snapKrig` picking up where it left off.
 
-The most important update in this version was to define an S3 class, "bk" for grid list objects (which are
-usually named `g` in examples). The base class for "bk" still a list, and square-bracket replace/access
+The most important update in this version was to define an S3 class, "sk" for grid list objects (which are
+usually named `g` in examples). The base class for "sk" still a list, and square-bracket replace/access
 calls with entry names, like `g[['gdim']]` and `g[c('gdim', 'gres')]`, still behave the same way. However,
 grid data values can now be accessed/assigned directly via square-bracket indexing, such as
 with `g[i]` instead of `g[["gval"]][i]`. For numeric indices, `g` now behaves like a numeric vector.
 
-We also now have a large number of methods defined for "bk", including common generics like `summary`,
+We also now have a large number of methods defined for "sk", including common generics like `summary`,
 `plot`, `length`, `range`, `mean`, `sum`, and much more. Group generics like `exp`, `*`, and `>` also have
-methods for `g` and will return a "bk" object directly (no more fussing with `modifyList`).
+methods for `g` and will return a "sk" object directly (no more fussing with `modifyList`).
 
 # Coming soon
 

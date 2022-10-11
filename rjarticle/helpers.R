@@ -132,9 +132,9 @@ run_cv = function(g, X, n_fold=5, n_rep=25)
       }
 
       # fit and predict
-      fit_result = bk_fit(g_train, pars=pars, X=X_train, iso=iso, quiet=TRUE)
-      z_pred = bk_cmean(g, pars=fit_result[['pars']], X=X_test)
-      z_var = bk_cmean(g, pars=fit_result[['pars']], X=X_test, out='v', quiet=TRUE)
+      fit_result = sk_fit(g_train, pars=pars, X=X_train, iso=iso, quiet=TRUE)
+      z_pred = sk_cmean(g, pars=fit_result[['pars']], X=X_test)
+      z_var = sk_cmean(g, pars=fit_result[['pars']], X=X_test, out='v', quiet=TRUE)
       z_pred_b = exp(z_pred + z_var/2)
 
       # standardized residuals

@@ -2,22 +2,22 @@
 # Dean Koch, 2022
 # Functions for modeling with blitzKrig
 
-#' Likelihood of covariance model `pars` given data `g_obs`
+#' Likelihood of covariance model `pars` given the data in bk grid `g`
 #'
-#' Computes the log-likelihood for the Gaussian process covariance model `pars`,
-#' given 2-dimensional grid data `g_obs`, and, optionally, linear trend data in `X`.
+#' This computes the log-likelihood for the Gaussian process covariance model `pars`,
+#' given 2-dimensional grid data `g`, and, optionally, linear trend data in `X`.
 #'
 #' The function evaluates:
 #'
 #' `-log( 2 * pi ) - ( 1/2 ) * ( log_det + quad_form )`,
 #'
 #' where `log_det` is the logarithm of the determinant of covariance matrix V, and
-#' `quad_form` is z^T V^{-1} z, for the observed response vector z. This z is constructed
-#' by subtracting the trend specified in `X` (if any) from the non-NA values in `g_obs$gval`.
+#' `quad_form` is z^T V^{-1} z, for the observed response vector z, which is constructed
+#' by subtracting the trend specified in `X` (if any) from the non-NA values in `g`.
 #'
 #' If the trend is known, it can be supplied in argument `X` as a numeric scalar or vector of
-#' length equal to the number of non-NA values in `g_obs$gval`, in matching order. Equivalently,
-#' users can simply subtract the trend from `g_obs` beforehand and set `X=0` (the default).
+#' length equal to the number of non-NA values in `g`, in matching order. Equivalently,
+#' users can simply subtract the trend from `g` beforehand and set `X=0` (the default).
 #' If the trend is unknown, the function optionally estimates it by GLS using the model
 #' `pars`. To estimate a spatially constant mean, set `X=NA`. To estimate a spatially variable
 #' mean, supply linear predictors as columns of a matrix argument to `X` (see `bk_GLS`).
@@ -32,7 +32,7 @@
 #'
 #'
 #' @param pars list of form returned by `bk_pars` (with entries 'y', 'x', 'eps', 'psill')
-#' @param g_obs list of form returned by `bk` (with entries 'gdim', 'gres', 'gval')
+#' @param g a bk grid (with entries 'gdim', 'gres', 'gval')
 #' @param X numeric, vector, matrix, or NA, a fixed mean value, or matrix of linear predictors
 #' @param fac_method character, the factorization to use: 'chol' (default) or 'eigen'
 #' @param fac matrix or list, (optional) pre-computed covariance factorization
@@ -41,6 +41,9 @@
 #'
 #' @return numeric, the likelihood of `pars` given `g_obs` and `X`, or list (if `more=TRUE`)
 #' @export
+#'
+#' @family likelihood functions
+#' @seealso bk
 #'
 #' @examples
 #' # set up example grid, covariance parameters

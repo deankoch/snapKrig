@@ -1,4 +1,4 @@
-Package: blitzKrig
+Package: snapKrig
 Title: Fast Kriging with Kronecker Covariance
 Version: 0.0.0.9000
 Authors@R: 

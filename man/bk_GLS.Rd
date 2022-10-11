@@ -7,7 +7,7 @@
 bk_GLS(g, pars, X = NA, fac = NULL, fac_method = "eigen", out = "b")
 }
 \arguments{
-\item{g}{a bk grid object, or list with entries 'gdim', 'gres', 'gval'}
+\item{g}{a bk grid object (or list with entries 'gdim', 'gres', 'gval')}
 
 \item{pars}{list of form returned by \code{bk_pars} (with entries 'y', 'x', 'eps', 'psill')}
 

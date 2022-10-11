@@ -60,11 +60,11 @@ var_matrix_compare = (pars$psill*cxy) + diag(pars$eps, n_test^2)
 max(abs( var_matrix - var_matrix_compare ))
 
 # extract a subgrid without computing the whole thing
-cx_sub = bk_corr_mat(pars_x, n=n_test, i=2:4, j=2:4)
+cx_sub = bk_corr_mat(pars[['x']], n=n_test, i=2:4, j=2:4)
 cx_sub - cx[2:4, 2:4]
 
 # gres scales distances. Increasing gres causes correlations to decrease
-cx_long = bk_corr_mat(pars_x, n=n_test, gres=2*g_example$gres)
+cx_long = bk_corr_mat(pars[['x']], n=n_test, gres=2*g_example$gres)
 cx_long < cx
 
 }

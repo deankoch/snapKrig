@@ -1,16 +1,16 @@
-# blitzKrig
+# snapKrig
 
-an R package for fast grid-based Gaussian processes models and kriging
+an R package for computationally fast grid-based Gaussian processes models and kriging
 
-<img src="https://raw.githubusercontent.com/deankoch/blitzKrig/master/vignettes/meuse_vignette_files/figure-gfm/ordinary_kriging-1.png" width="30%"></img>
-<img src="https://raw.githubusercontent.com/deankoch/blitzKrig/master/vignettes/meuse_vignette_files/figure-gfm/predictor_plot-1.png" width="30%"></img>
-<img src="https://raw.githubusercontent.com/deankoch/blitzKrig/master/vignettes/meuse_vignette_files/figure-gfm/variance_plot-1.png" width="30%"></img>
+<img src="https://raw.githubusercontent.com/deankoch/snapKrig/master/vignettes/meuse_vignette_files/figure-gfm/ordinary_kriging-1.png" width="30%"></img>
+<img src="https://raw.githubusercontent.com/deankoch/snapKrig/master/vignettes/meuse_vignette_files/figure-gfm/predictor_plot-1.png" width="30%"></img>
+<img src="https://raw.githubusercontent.com/deankoch/snapKrig/master/vignettes/meuse_vignette_files/figure-gfm/variance_plot-1.png" width="30%"></img>
 
 
 # Update October 2022
 
 This is a continuation of the [`pkern`](https://github.com/deankoch/pkern) package, just with a catchier
-name and some updates. Development on `pkern` has ended, with `blitzKrig` picking up where it left off.
+name and some updates. Development on `pkern` has ended, with `snapKrig` picking up where it left off.
 
 The most important update in this version was to define an S3 class, "bk" for grid list objects (which are
 usually named `g` in examples). The base class for "bk" still a list, and square-bracket replace/access
@@ -25,13 +25,13 @@ methods for `g` and will return a "bk" object directly (no more fussing with `mo
 # Coming soon
 
 A CRAN submission is coming up soon. For now you can install the package using devtools and try out
-the [Meuse River vignette](https://github.com/deankoch/blitzKrig/blob/master/vignettes/meuse_vignette.md).
-An paper introducing `blitzKrig` has also been drafted for submission to the R Journal around the same time.
+the [Meuse River vignette](https://github.com/deankoch/snapKrig/blob/master/vignettes/meuse_vignette.md).
+An paper introducing `snapKrig` has also been drafted for submission to the R Journal around the same time.
 
 
 # Overview
 
-`blitzKrig` provides a computationally lean implementation of a 2-dimensional spatial correlation model for
+`snapKrig` provides a computationally lean implementation of a 2-dimensional spatial correlation model for
 gridded data. This can be useful when working with geo-referenced data, such as in earth sciences, where 
 users often need a tool for interpolation or down-scaling.
 
@@ -40,7 +40,7 @@ It works much faster than alternatives like `gstat` and `fields` (sometimes by s
 at the expense of slightly restricting the type of model users can select, and forcing the use of gridded
 datasets (possibly requiring the data to be snapped).
 
-`blitzKrig` depends only on packages included by default in R (like `graphics` and `stats`), but supports 
+`snapKrig` depends only on packages included by default in R (like `graphics` and `stats`), but supports 
 raster and geometry classes from `sf` and `terra`. While we recommend the newest version of R, the package
 is written for compatibility with older versions of R (*eg.* we steer clear of syntax like `|>` and `\(x)`).
 

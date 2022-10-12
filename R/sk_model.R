@@ -15,15 +15,15 @@
 #' `quad_form` is z^T V^{-1} z, for the observed response vector z, which is constructed
 #' by subtracting the trend specified in `X` (if any) from the non-NA values in `g`.
 #'
-#' If the trend is known, it can be supplied in argument `X` as a numeric scalar or vector
-#' of length equal to the number of non-NA values in `g`, in matching order. Equivalently,
-#' users can simply subtract the trend from `g` beforehand and set `X=0` (the default).
+#' If the trend spatially uniform and known, it can be supplied in argument `X` as a
+#' numeric scalar. The default is zero-mean model `X=0`, which assumes users has
+#' subtracted the trend from `g` beforehand.
 #'
 #' If the trend is unknown, the function will automatically use GLS to estimate it.
 #' This is profile likelihood on the covariance function parameters (not REML). To
 #' estimate a spatially constant mean, set `X=NA`. To estimate a spatially variable mean,
-#' supply linear predictors as columns of a matrix argument to `X`. See `sk_GLS` for more
-#' on this.
+#' supply linear predictors as columns of a matrix argument to `X` (see `sk_GLS`). Users
+#' can also pass a multi-layer bk grid `X` with covariates in layers.
 #'
 #' `fac_method` specifies how to factorize V; either by using the Cholesky factor ('chol')
 #' or eigen-decomposition ('eigen'). A pre-computed factorization `fac` can be supplied by
@@ -60,11 +60,18 @@
 #' g_empty = g_lm = sk(gdim)
 #' pars = modifyList(sk_pars(g_empty, 'gau'), list(psill=0.7, eps=5e-2))
 #'
-#' # generate some covariates and complete data
+#' # generate some coefficients
 #' n_betas = 3
 #' betas = rnorm(n_betas)
-#' X_all = cbind(1, matrix(rnorm(n*(n_betas-1)), n))
+#'
+#' # generate covariates and complete data in grid and vector form
+#' g_X = sk_sim(g_empty, pars, n_layer=n_betas-1L)
+#' X = g_X[]
+#' X_all = cbind(1, X)
+#' g_lm = g_empty
 #' g_lm[] = c(X_all %*% betas)
+#'
+#' # add some noise
 #' g_all = sk_sim(g_empty, pars) + g_lm
 #' z = g_all[]
 #'
@@ -107,12 +114,17 @@
 #' abs( LL_direct - LL_eigen ) / max(LL_direct, LL_eigen)
 #'
 #' # repeat with most data missing
-#' n_obs = 50
-#' idx_obs = sort(sample.int(n, n_obs))
-#' z_obs = g_all[idx_obs]
-#' g_obs = g_all
-#' g_obs[] = rep(NA, n)
-#' g_obs[idx_obs] = z_obs
+#' is_obs = seq(n) %in% sort(sample.int(n, 50))
+#' n_obs = sum(is_obs)
+#' g_obs = g_empty
+#' z_obs = g_all[is_obs]
+#' g_obs[is_obs] = z_obs
+#'
+#' # take subsets of covariates
+#' g_X_obs = g_X
+#' g_X_obs[!is_obs,] = NA
+#' X_obs = X[is_obs,]
+#'
 #' LL_chol_obs = sk_LL(pars, g_obs, fac_method='chol')
 #' LL_eigen_obs = sk_LL(pars, g_obs, fac_method='eigen')
 #'
@@ -131,19 +143,25 @@
 #' sk_LL(pars, g_obs, fac=fac_chol_obs) - LL_chol_obs
 #' sk_LL(pars, g_obs, fac=fac_eigen_obs) - LL_eigen_obs
 #'
-#' # copy covariates (don't pass the intercept column in X)
-#' X = X_all[idx_obs, -1]
+#' # detrend the data by hand, with and without covariates then compute likelihood
+#' g_obs_dtr = g_obs - sk_GLS(g_obs, pars)
+#' g_obs_X_dtr = g_obs - sk_GLS(g_obs, pars, g_X)
+#' LL_dtr = sk_LL(pars, g_obs_dtr, X=0)
+#' LL_X_dtr = sk_LL(pars, g_obs_X_dtr, X=0)
 #'
-#' # use GLS to de-trend, with and without covariatea
-#' g_detrend_obs = g_detrend_obs_X = g_obs
-#' g_detrend_obs[idx_obs] = z_obs - sk_GLS(g_obs, pars)
-#' g_detrend_obs_X[idx_obs] = z_obs - sk_GLS(g_obs, pars, X, out='z')
+#' # or pass a covariates grid (or matrix) to de-trend automatically
+#' LL_dtr - sk_LL(pars, g_obs, X=NA)
+#' LL_X_dtr - sk_LL(pars, g_obs, g_X)
 #'
-#' # pass X (or NA) to sk_LL to do this automatically
-#' LL_detrend_obs = sk_LL(pars, g_detrend_obs)
-#' LL_detrend_obs_X = sk_LL(pars, g_detrend_obs_X)
-#' LL_detrend_obs - sk_LL(pars, g_obs, X=NA)
-#' LL_detrend_obs_X - sk_LL(pars, g_obs, X=X)
+#' # note that this introduce new unknown parameter(s), so AIC and BIC increase (worsen)
+#' sk_LL(pars, g_obs, X=NA, out='a') > sk_LL(pars, g_obs_dtr, X=0, out='a')
+#' sk_LL(pars, g_obs, X=g_X, out='a') > sk_LL(pars, g_obs_X_dtr, X=0, out='a')
+#'
+#' # X can be the observed subset, or the full grid (as sk grid or as matrix)
+#' sk_LL(pars, g_obs, X=X)
+#' sk_LL(pars, g_obs, X=X_obs)
+#' sk_LL(pars, g_obs, X=g_X)
+#' sk_LL(pars, g_obs, X=g_X_obs)
 #'
 #' # equivalent sparse input specification
 #' g_sparse = g_all
@@ -151,15 +169,16 @@
 #' g_sparse = sk(gval=matrix(g_obs[], ncol=1), gdim=gdim)
 #' LL_chol_obs - sk_LL(pars, g_sparse)
 #' LL_eigen_obs - sk_LL(pars, g_sparse)
-#' LL_detrend_obs - sk_LL(pars, g_sparse, X=NA)
-#' LL_detrend_obs_X - sk_LL(pars, g_sparse, X=X)
+#' LL_dtr - sk_LL(pars, g_sparse, X=NA)
+#' LL_X_dtr - sk_LL(pars, g_sparse, X=g_X)
 #'
-#' # repeat with complete data
+#' ## repeat with complete data
 #'
-#' # (don't pass the intercept column in X)
-#' X = X_all[,-1]
-#' LL_X_chol = sk_LL(pars, g_all, X=X)
-#' LL_X_eigen = sk_LL(pars, g_all, fac_method='eigen', X=X)
+#' # the easy way to get likelihood
+#' LL_X_chol = sk_LL(pars, g_all, g_X)
+#' LL_X_eigen = sk_LL(pars, g_all, g_X, fac_method='eigen')
+#'
+#' # the hard way
 #' V = sk_var(g_all, pars, sep=FALSE)
 #' V_inv = chol2inv(chol(V))
 #' X_tilde_inv = chol2inv(chol( crossprod(crossprod(V_inv, X_all), X_all) ))
@@ -226,6 +245,17 @@ sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, out='l')
 
   } else { fac_method = ifelse(is.matrix(fac), 'chol', 'eigen') }
 
+  # # unpack X as needed
+  # if( inherits(X, 'sk') )
+  # {
+  #   # extract only the required points
+  #   if( is.matrix(X[['gval']]) ) { X = X[is_obs,] } else {X = matrix(X[is_obs], ncol=1L)}
+  # }
+  # TESTING
+
+  # unpack X as matrix
+  if(inherits(X, 'sk')) X = X[is_obs]
+
   # GLS estimate of mean based on predictors in X
   n_X = 0L
   if(is.data.frame(X)) X = as.matrix(X)
@@ -241,6 +271,9 @@ sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, out='l')
   # turn scalar and vector input into matrix X
   if( !is.matrix(X) ) X = matrix(X, ncol=1L)
   if( nrow(X) == 1 ) X = matrix(rep(X, n_obs), ncol=1L)
+
+  # take subset of observed data as needed
+  if( nrow(X) > n_obs ) X = X[is_obs]
 
   # matrix of de-trended Gaussian random vectors to evaluate
   z_centered = sweep(z, 1, X)
@@ -296,8 +329,8 @@ sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, out='l')
 
   # count number of parameters and compute AIC, BIC
   n_pars  = ( length(unlist(pars)) - 2 ) + n_X
-  aic_out = ( -2 * log_likelihood ) + ( -2 * n_pars )
-  bic_out = ( -2 * log_likelihood ) + ( -log(n_obs * n_layer) * n_pars  )
+  aic_out = ( -2 * log_likelihood ) + ( 2 * n_pars )
+  bic_out = ( -2 * log_likelihood ) + ( log(n_obs * n_layer) * n_pars  )
 
   # return requested info
   out = tolower(out)

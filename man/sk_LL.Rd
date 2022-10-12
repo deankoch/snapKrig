@@ -64,14 +64,15 @@ log-determinant \code{log_det}, and the quadratic form \code{quad_form}.
 # set up example grid, covariance parameters
 gdim = c(25, 12)
 n = prod(gdim)
-g_empty = sk(gdim)
+g_empty = g_lm = sk(gdim)
 pars = modifyList(sk_pars(g_empty, 'gau'), list(psill=0.7, eps=5e-2))
 
 # generate some covariates and complete data
 n_betas = 3
 betas = rnorm(n_betas)
 X_all = cbind(1, matrix(rnorm(n*(n_betas-1)), n))
-g_all = sk_sim(g_empty, pars) + c(X_all \%*\% betas)
+g_lm[] = c(X_all \%*\% betas)
+g_all = sk_sim(g_empty, pars) + g_lm
 z = g_all[]
 
 # two methods for likelihood
@@ -94,8 +95,19 @@ fac_eigen = sk_var(g_all, pars, fac_method='eigen', sep=TRUE)
 sk_LL(pars, g_all, fac=fac_eigen) - LL_eigen
 
 # repeat with multi-layer example
-g_multi = g_all
-g_multi[] = matrix()
+n_layer = 10
+g_noise_multi = sk_sim(g_empty, pars, n_layer)
+g_multi = g_lm + g_noise_multi
+LL_chol = sk_LL(pars, g_multi, fac_method='chol')
+LL_eigen = sk_LL(pars, g_multi, fac_method='eigen')
+LL_direct = sum(sapply(seq(n_layer), function(j) {
+ quad_form = as.numeric( t(g_multi[,j]) \%*\% crossprod(V_inv, g_multi[,j]) )
+ (-1/2) * ( n * log( 2 * pi ) + log_det + quad_form )
+}))
+
+# relative errors
+abs( LL_direct - LL_chol ) / max(LL_direct, LL_chol)
+abs( LL_direct - LL_eigen ) / max(LL_direct, LL_eigen)
 
 # repeat with most data missing
 n_obs = 50
@@ -168,7 +180,7 @@ LL_result = sk_LL(pars, g_all, X=X, more=TRUE)
 LL_result$LL - LL_X_chol
 LL_result$q - quad_form
 LL_result$d - log_det
-LL_result$n - n
+LL_result$n_obs - n
 
 }
 \seealso{

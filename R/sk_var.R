@@ -670,7 +670,7 @@ sk_var_mult = function(g, pars, fac_method='eigen', fac=NULL, quad=FALSE, p=-1)
     fac_method = 'eigen'
   }
 
-  # factorize the (full) variance matrix using the specified method
+  # factorize the (observed points) variance matrix using the specified method
   if( is.null(fac) ) fac = sk_var(g, pars=pars, scaled=TRUE, fac_method=fac_method, sep=FALSE)
 
   # handle cases where user supplies a different `fac` than what is specified in `fac_method`

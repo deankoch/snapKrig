@@ -357,10 +357,13 @@ sk_snap = function(from, g=NULL, crop_from=FALSE, crop_g=FALSE, quiet=FALSE)
     to_max = pmax(to_max, sapply(g_bbox, max))
   }
 
-  # compute new grid line locations and initialize the output grid list object
+  # compute new grid line locations
   to_yx = Map(function(a, b, r) seq(a, b, by=r), a=to_min, b=to_max, r=g[['gres']])
-  g_out = sk(list(gyx=to_yx), vals=FALSE)
-  if( !is.null(to_crs) ) g_out[['crs']] = to_crs
+  gdim_out = sapply(to_yx, length)
+
+  # # initialize the output grid list object
+  # g_out = sk(list(gyx=to_yx), vals=FALSE)
+  # if( !is.null(to_crs) ) g_out[['crs']] = to_crs
 
   # find cross-distance matrices for point coordinates and grid lines
   d_yx_all = Map(function(a, b) outer(a, b, '-')^2, a=from_yx, b=to_yx)
@@ -378,17 +381,22 @@ sk_snap = function(from, g=NULL, crop_from=FALSE, crop_g=FALSE, quiet=FALSE)
   }
 
   # reflect indexing of vertical axis for snapKrig
-  ij_min[['i']] = dim(g_out)['y'] + 1L - ij_min[['i']]
-  to_idx = sk_mat2vec(ij_min, dim(g_out))
+  ij_min[['i']] = gdim_out['y'] + 1L - ij_min[['i']]
+  to_idx = sk_mat2vec(ij_min, gdim_out)
 
   # handle multiple points mapping to a single grid-point
   is_dupe = duplicated(to_idx)
   if( !quiet & any(is_dupe) ) cat( paste('omitting', sum(is_dupe), 'duplicate mapping(s)\n') )
 
   # match magic to get NAs at unassigned grid points
-  from_idx = match(seq_along(g_out), to_idx)
-  if( is.null(vals) ) { g_out[['gval']] = from_idx } else { g_out[['gval']] = vals[from_idx] }
-  return(g_out)
+  from_idx = match(seq(prod(gdim_out)), to_idx)
+  #if( is.null(vals) ) { gval = from_idx } else { gval = vals[from_idx] }
+  return(sk(gyx = to_yx,
+            crs = to_crs,
+            gval = if(is.null(vals)) from_idx else vals[from_idx]))
+
+  # if( is.null(vals) ) { g_out[['gval']] = from_idx } else { g_out[['gval']] = vals[from_idx] }
+  # return(sk_validate(g_out))
 }
 
 

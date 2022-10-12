@@ -283,7 +283,7 @@ sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, more=FAL
 #' Negative log-likelihood for parameter vector `p`
 #'
 #' Returns the negative log-likelihood of parameter vector `p` for the covariance
-#' model `pars_fix`, given data grid `g_obs`.
+#' model `pars_fix`, given the observations in data grid `g_obs`.
 #'
 #' This is a wrapper for `-sk_LL()` allowing parameters to be passed as a numeric
 #' vector instead of a list (for use in optimization etc). Parameters in `p` are copied
@@ -295,34 +295,33 @@ sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, more=FAL
 #' `sk_pars_update(pars_fix, p, iso=iso, na_omit=TRUE)`.
 #'
 #' @param p numeric vector of covariance parameters accepted by `sk_pars_update`
-#' @param g_obs list of form returned by `sk` (with entries 'gdim', 'gres', 'gval')
+#' @param g_obs sk object or list with entries 'gdim', 'gres', 'gval'
 #' @param pars_fix list of form returned by `sk_pars` (with entries 'y', 'x', 'eps', 'psill')
 #' @param X numeric, vector, matrix, or NA, the mean or its linear predictors, passed to `sk_LL`
 #' @param iso logical, indicates to use identical kernels for x and y (`pars$x` is ignored)
 #' @param quiet logical indicating to suppress console output
 #'
-#' @return numeric, the negative log-likelihood of `p` given `g_obs`
+#' @return numeric, the negative log-likelihood of `p` given data `g_obs`
 #' @export
 #'
 #' @examples
 #' # set up example grid and data
-#' g_obs = sk(10)
-#' g_obs$gval = rnorm(10^2)
+#' g = sk(gdim=10, gval=rnorm(10^2))
 #'
 #' # get some default parameters and vectorize them
-#' pars = sk_pars(g_obs, 'gau')
+#' pars = sk_pars(g, 'gau')
 #' p = sk_pars_update(pars)
-#' sk_nLL(p, g_obs, pars)
+#' sk_nLL(p, g, pars)
 #'
 #' # change a parameter and re-evaluate
 #' p_compare = p
 #' p_compare[1] = 2*p_compare[1]
-#' sk_nLL(p_compare, g_obs, pars)
+#' sk_nLL(p_compare, g, pars)
 #'
 #' # repeat by calling sk_LL directly
 #' pars_compare = pars
 #' pars_compare$eps = 2*pars_compare$eps
-#' -sk_LL(pars_compare, g_obs)
+#' -sk_LL(pars_compare, g)
 #'
 #' # set up a subset of parameters for fitting
 #' pars_fix = pars
@@ -331,13 +330,13 @@ sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, more=FAL
 #'
 #' # names in p_fit are for illustration only (only the order matters)
 #' p_fit = c(eps=1, y.rho=1)
-#' sk_nLL(p_fit, g_obs, pars_fix)
+#' sk_nLL(p_fit, g, pars_fix)
 #'
 #' # equivalently:
 #' pars_fit = pars
 #' pars_fit$eps = p_fit[1]
 #' pars_fit$y$kp = p_fit[2]
-#' -sk_LL(pars_fit, g_obs)
+#' -sk_LL(pars_fit, g)
 #'
 #' # check an input specification
 #' sk_pars_update(pars_fix, p_fit, na_omit=TRUE)
@@ -360,7 +359,7 @@ sk_nLL = function(p, g_obs, pars_fix, X=0, iso=FALSE, quiet=TRUE, log_scale=FALS
 
   # print complete parameters vector then compute likelihood
   if(!quiet) cat( paste(paste(format(p_complete), collapse=', '), ' :: LL = ') )
-  return(-sk_LL(pars=pars_complete, g_obs=g_obs, X=X, quiet=quiet))
+  return(-sk_LL(pars=pars_complete, g=g_obs, X=X, quiet=quiet))
 }
 
 

@@ -7,9 +7,9 @@
 #'
 #' **Mitacs UYRW project**
 #'
-#' **blitzKrig**: Fast kriging on gridded datasets
+#' **snapKrig**: Fast kriging on gridded datasets
 #'
-#' This vignette shows how to use `blitzKrig` to interpolate the Meuse river dataset
+#' This vignette shows how to use `snapKrig` to interpolate the Meuse river dataset
 #' (part of the `sp` package) onto a high resolution grid:
 #'
 #' * `sk_grid` defines the grid
@@ -23,14 +23,14 @@
 #'
 #' ## Getting started
 #'
-#' `blitzKrig` has no requirements outside of base packages (`stats`, `utils`, `grDevices`, and `graphics`),
+#' `snapKrig` has no requirements outside of base packages (`stats`, `utils`, `grDevices`, and `graphics`),
 #' but `terra` and `sf` are (strongly) suggested, and we use them in this vignette to load and manage
 #' the example data.
 #'
 
 #+ dependencies_hide, include=FALSE
 
-# load blitzKrig
+# load snapKrig
 library(devtools)
 load_all()
 
@@ -140,13 +140,24 @@ gres = c(y=5, x=5)
 # snap points, copying values of dependent variable
 g_meuse = sk_snap(meuse[['soils']]['log_zinc'], g=list(gres=gres))
 
-# plot the grid only
-g = sk_grid(modifyList(g_meuse, list(gval=NULL)))
-sk_plot(modifyList(g_meuse, list(gval=NULL)), col_grid=NA)
+# make an empty copy of this grid
+g_empty = g_meuse
+g_empty[] = NULL
+
+#' # functions to scale arbitrary inverval to (1, 2,... 100) and make color palettes
+num_to_cent = function(x) 1L + floor(99*( x-min(x) ) / diff(range(x)))
+my_pal = function(x) hcl.colors(x, 'Spectral', rev=T)
+my_col = function(x) my_pal(1e2)[ num_to_cent(x) ]
 
 # plot with source points indicated over their snapped grid location
-sk_plot(g_meuse, zlab='log(zinc)', reset=FALSE)
-plot(sf::st_geometry(meuse[['soils']]), add=TRUE)
+plot(g_meuse, zlab='log(zinc)', reset=FALSE)
+plot(meuse[['soils']]['log_zinc'], add=TRUE, pch=16, pal=my_pal)
+plot(meuse[['soils']]['log_zinc'], add=TRUE, col='black')
+
+# add faint lines to indicate the selected grid points
+gcol = adjustcolor('black', alpha.f=0.1)
+abline(v=sk_coords(g_meuse, na_omit=TRUE)[,'x'], xpd=FALSE, col=gcol)
+abline(h=sk_coords(g_meuse, na_omit=TRUE)[,'y'], xpd=FALSE, col=gcol)
 
 #'
 #' Pass this data to sk_fit to do ordinary kriging
@@ -155,7 +166,7 @@ plot(sf::st_geometry(meuse[['soils']]), add=TRUE)
 #+ ordinary_kriging
 
 # ordinary kriging: fit isotropic gaussian model by default
-fit_result_OK = sk_fit(g_obs=g_meuse, quiet=TRUE)
+fit_result_OK = sk_fit(g_meuse, quiet=TRUE)
 #fit_result_OK = sk_fit(g_obs=g_meuse, pars='mat', quiet=TRUE)
 #vg_detrend = sk_sample_vg(g_meuse)
 #sk_plot_semi(vg_detrend, fit_result_OK$pars)
@@ -176,9 +187,11 @@ fit_result_OK = sk_fit(g_obs=g_meuse, quiet=TRUE)
 
 #+ make_distances
 
-# useful variables
-gdim = g_meuse[['gdim']]
-is_obs = !is.na(g_meuse[['gval']])
+# display then copy some info about the grid
+summary(g_meuse)
+gdim = dim(g_meuse)
+is_obs = !is.na(g_meuse)
+n = length(g_meuse)
 n_obs = sum(is_obs)
 
 # get distance values for entire grid
@@ -221,10 +234,12 @@ str(pars_UK)
 
 #+ GLS_plot
 
+
+
 # GLS to estimate the (spatially varying) trend
-z_gls = sk_GLS(g_meuse, pars_UK, X=meuse_predictors, out='z')
-g_meuse_gls = modifyList(g_meuse, list(gval=z_gls))
-sk_plot(g_meuse_gls, main='estimated trend component')
+g_lm = g_empty
+g_lm[] = sk_GLS(g_meuse, pars_UK, X=meuse_predictors, out='z')
+plot(g_lm, main='estimated trend component')
 
 # g2 = g_meuse
 # g2[['gval']] = g2[['gval']] - z_gls
@@ -242,22 +257,19 @@ sk_plot(g_meuse_gls, main='estimated trend component')
 
 #+ spatial_plot
 
-# compute spatial mean
-g_meuse_detrend = modifyList(g_meuse, list(gval=g_meuse[['gval']]-z_gls))
-z_spat = sk_cmean(g_meuse_detrend, pars_UK, X=0)
-g_meuse_spat = modifyList(g_meuse, list(gval=z_spat))
-sk_plot(g_meuse_spat,
-           main='estimated spatial component')
+
+
+# compute expectation (UK kriging predictor)
+g_pred = g_empty
+g_pred[] = sk_cmean(g_meuse, pars_UK, X=meuse_predictors)
+
 
 #+ predictor_plot
+#+
 
-# compute UK predictions, masking outside observed range
-z_pred = z_gls + z_spat
-g_meuse_pred = modifyList(g_meuse, list(gval=z_pred))
-sk_plot(g_meuse_pred,
-           zlim=log(range(meuse[['soils']][['zinc']])),
-           zlab='log(zinc)',
-           main='kriging predictor')
+# plot UK predictions, mask to observed range
+zlim_pred = range(g_meuse, na.rm=TRUE)
+plot(g_pred, zlim=zlim_pred, zlab='log(zinc)', main='kriging predictor')
 
 #'
 #' Kriging variance is also computed with `sk_cmean`. This is much slower
@@ -267,16 +279,22 @@ sk_plot(g_meuse_pred,
 #+ variance_plot
 
 
+
+
 # prediction variance
-z_var = sk_cmean(g_meuse_detrend, pars_UK, X=0, out='v', quiet=TRUE)
+g_var = g_empty
+g_var[] = sk_cmean(g_meuse, pars_UK, X=meuse_predictors, out='v', quiet=TRUE)
 
 
-g_meuse_var = modifyList(g_meuse, list(gval=z_var))
-sk_plot(g_meuse_var, main='kriging variance')
+# plot
+zlim_var = c(pars_UK[['eps']], pars_UK[['eps']] + pars_UK[['psill']])
+sk_plot(g_var, main='kriging variance', zlim=zlim_var)
+
+
 
 
 #'
-#' The above plots are for the variable on the log-scale. The unbiasdness property
+#' The above plots are for the variable on the log-scale. The unbiasedness property
 #' is lost when transforming back to the original scale, but now that we have the
 #' kriging variance, we can make a correction:
 #'
@@ -284,18 +302,15 @@ sk_plot(g_meuse_var, main='kriging variance')
 #+ predictor
 
 # prediction bias adjustment from log scale
-z_pred2 = exp(z_pred + z_var/2)
-g_meuse_pred2 = modifyList(g_meuse, list(gval=z_pred2))
-sk_plot(g_meuse_pred2,
-           zlab='zinc (ppm)',
-           zlim=range(meuse[['soils']][['zinc']]),
-           main='UK predictions (masked to input range)')
+g_pred_adj = exp(g_pred + g_var/2)
+
+sk_plot(g_pred_adj, zlab='zinc (ppm)', main='UK predictions (masked to input range)', zlim=exp(zlim_pred))
 
 
 #'
 #' ## Summary
 #'
-#' This vignette is intended to get users up and running with `blitzKrig` by demonstrating
+#' This vignette is intended to get users up and running with `snapKrig` by demonstrating
 #' a very simple example on a familiar dataset. In other vignettes we will look in more
 #' detail at how `sk_cmean` actually works, and how users can modify the workflow to
 #' incorporate a trend model.
@@ -323,6 +338,6 @@ if(FALSE)
   unlink(path.garbage)
 
   # substitute local file paths for image files with URLs on github
-  md.github = gsub('D:/blitzKrig', 'https://github.com/deankoch/blitzKrig/blob/master', readLines(path.output))
+  md.github = gsub('D:/snapKrig', 'https://github.com/deankoch/snapKrig/blob/master', readLines(path.output))
   writeLines(md.github, path.output)
 }

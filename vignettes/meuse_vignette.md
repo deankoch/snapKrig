@@ -1,14 +1,14 @@
 meuse_vignette
 ================
 Dean Koch
-2022-10-04
+2022-10-12
 
 **Mitacs UYRW project**
 
-**blitzKrig**: Fast kriging on gridded datasets
+**snapKrig**: Fast kriging on gridded datasets
 
-This vignette shows how to use `blitzKrig` to interpolate the Meuse
-river dataset (part of the `sp` package) onto a high resolution grid:
+This vignette shows how to use `snapKrig` to interpolate the Meuse river
+dataset (part of the `sp` package) onto a high resolution grid:
 
 -   `sk_grid` defines the grid
 -   `sk_snap` snaps point data to the grid
@@ -22,7 +22,7 @@ matrices.
 
 ## Getting started
 
-`blitzKrig` has no requirements outside of base packages (`stats`,
+`snapKrig` has no requirements outside of base packages (`stats`,
 `utils`, `grDevices`, and `graphics`), but `terra` and `sf` are
 (strongly) suggested, and we use them in this vignette to load and
 manage the example data.
@@ -90,7 +90,7 @@ plot(meuse[['river_line']], lwd=2, add=TRUE)
 plot(meuse[['soils']]['zinc'], pch=16, add=TRUE)
 ```
 
-![](https://github.com/deankoch/blitzKrig/blob/master/vignettes/meuse_vignette_files/figure-gfm/meuse_load-1.png)<!-- -->
+![](https://github.com/deankoch/snapKrig/blob/master/vignettes/meuse_vignette_files/figure-gfm/meuse_load-1.png)<!-- -->
 
 ``` r
 n_meuse = nrow(meuse[['soils']])
@@ -107,29 +107,47 @@ gres = c(y=5, x=5)
 g_meuse = sk_snap(meuse[['soils']]['log_zinc'], g=list(gres=gres))
 ```
 
+    ## processing all 4 grid points...
     ## maximum snapping distance: 2.82842712474619
 
 ``` r
-# plot the grid only
-g = sk_grid(modifyList(g_meuse, list(gval=NULL)))
-sk_plot(modifyList(g_meuse, list(gval=NULL)), col_grid=NA)
+# make an empty copy of this grid
+g_empty = g_meuse
+g_empty[] = NULL
 ```
 
-![](https://github.com/deankoch/blitzKrig/blob/master/vignettes/meuse_vignette_files/figure-gfm/snap_grid-1.png)<!-- -->
+# functions to scale arbitrary inverval to (1, 2,… 100) and make color palettes
 
 ``` r
+num_to_cent = function(x) 1L + floor(99*( x-min(x) ) / diff(range(x)))
+my_pal = function(x) hcl.colors(x, 'Spectral', rev=T)
+my_col = function(x) my_pal(1e2)[ num_to_cent(x) ]
+
 # plot with source points indicated over their snapped grid location
-sk_plot(g_meuse, zlab='log(zinc)', reset=FALSE)
-plot(sf::st_geometry(meuse[['soils']]), add=TRUE)
+plot(g_meuse, zlab='log(zinc)', reset=FALSE)
+plot(meuse[['soils']]['log_zinc'], add=TRUE, pch=16, pal=my_pal)
+plot(meuse[['soils']]['log_zinc'], add=TRUE, col='black')
+
+# add faint lines to indicate the selected grid points
+gcol = adjustcolor('black', alpha.f=0.1)
+abline(v=sk_coords(g_meuse, na_omit=TRUE)[,'x'], xpd=FALSE, col=gcol)
 ```
 
-![](https://github.com/deankoch/blitzKrig/blob/master/vignettes/meuse_vignette_files/figure-gfm/snap_grid-2.png)<!-- -->
+    ## processing all 435240 grid points...
+
+``` r
+abline(h=sk_coords(g_meuse, na_omit=TRUE)[,'y'], xpd=FALSE, col=gcol)
+```
+
+![](https://github.com/deankoch/snapKrig/blob/master/vignettes/meuse_vignette_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
+
+    ## processing all 435240 grid points...
 
 Pass this data to sk_fit to do ordinary kriging
 
 ``` r
 # ordinary kriging: fit isotropic gaussian model by default
-fit_result_OK = sk_fit(g_obs=g_meuse, quiet=TRUE)
+fit_result_OK = sk_fit(g_meuse, quiet=TRUE)
 #fit_result_OK = sk_fit(g_obs=g_meuse, pars='mat', quiet=TRUE)
 #vg_detrend = sk_sample_vg(g_meuse)
 #sk_plot_semi(vg_detrend, fit_result_OK$pars)
@@ -149,16 +167,30 @@ The code below demonstrates creating a linear predictor - the distance
 to the river.
 
 ``` r
-# useful variables
-gdim = g_meuse[['gdim']]
-is_obs = !is.na(g_meuse[['gval']])
+# display then copy some info about the grid
+summary(g_meuse)
+```
+
+    ## incomplete geo-referenced sk grid
+    ## 435240 points
+    ## 155 observed
+    ## range [4.73, 7.52]
+    ## ..............................
+    ## dimensions : 780 x 558
+    ## resolution : 5 x 5
+    ##     extent : [329715, 333610] x [178605, 181390]
+
+``` r
+gdim = dim(g_meuse)
+is_obs = !is.na(g_meuse)
+n = length(g_meuse)
 n_obs = sum(is_obs)
 
 # get distance values for entire grid
 g_meuse_sf = sk_coords(g_meuse, out='sf')
 ```
 
-    ## processing 435240 grid points...
+    ## processing all 435240 grid points...
 
 ``` r
 d2r_result = units::drop_units(st_distance(g_meuse_sf, meuse[['river_line']]))
@@ -193,7 +225,7 @@ grid.
 sk_plot_pars(pars_UK, g_meuse)
 ```
 
-![](https://github.com/deankoch/blitzKrig/blob/master/vignettes/meuse_vignette_files/figure-gfm/kernel_plot-1.png)<!-- -->
+![](https://github.com/deankoch/snapKrig/blob/master/vignettes/meuse_vignette_files/figure-gfm/kernel_plot-1.png)<!-- -->
 
 ``` r
 # print the actual contents of the parameters list
@@ -214,12 +246,12 @@ str(pars_UK)
 
 ``` r
 # GLS to estimate the (spatially varying) trend
-z_gls = sk_GLS(g_meuse, pars_UK, X=meuse_predictors, out='z')
-g_meuse_gls = modifyList(g_meuse, list(gval=z_gls))
-sk_plot(g_meuse_gls, main='estimated trend component')
+g_lm = g_empty
+g_lm[] = sk_GLS(g_meuse, pars_UK, X=meuse_predictors, out='z')
+plot(g_lm, main='estimated trend component')
 ```
 
-![](https://github.com/deankoch/blitzKrig/blob/master/vignettes/meuse_vignette_files/figure-gfm/GLS_plot-1.png)<!-- -->
+![](https://github.com/deankoch/snapKrig/blob/master/vignettes/meuse_vignette_files/figure-gfm/GLS_plot-1.png)<!-- -->
 
 ``` r
 # g2 = g_meuse
@@ -235,62 +267,52 @@ interpolator with nice properties like unbiasedness and minimal
 variance, under suitable assumptions.
 
 ``` r
-# compute spatial mean
-g_meuse_detrend = modifyList(g_meuse, list(gval=g_meuse[['gval']]-z_gls))
-z_spat = sk_cmean(g_meuse_detrend, pars_UK, X=0)
-g_meuse_spat = modifyList(g_meuse, list(gval=z_spat))
-sk_plot(g_meuse_spat,
-           main='estimated spatial component')
+# compute expectation (UK kriging predictor)
+g_pred = g_empty
+g_pred[] = sk_cmean(g_meuse, pars_UK, X=meuse_predictors)
 ```
-
-![](https://github.com/deankoch/blitzKrig/blob/master/vignettes/meuse_vignette_files/figure-gfm/spatial_plot-1.png)<!-- -->
 
 ``` r
-# compute UK predictions, masking outside observed range
-z_pred = z_gls + z_spat
-g_meuse_pred = modifyList(g_meuse, list(gval=z_pred))
-sk_plot(g_meuse_pred,
-           zlim=log(range(meuse[['soils']][['zinc']])),
-           zlab='log(zinc)',
-           main='kriging predictor')
+# plot UK predictions, mask to observed range
+zlim_pred = range(g_meuse, na.rm=TRUE)
+plot(g_pred, zlim=zlim_pred, zlab='log(zinc)', main='kriging predictor')
 ```
 
-![](https://github.com/deankoch/blitzKrig/blob/master/vignettes/meuse_vignette_files/figure-gfm/predictor_plot-1.png)<!-- -->
+![](https://github.com/deankoch/snapKrig/blob/master/vignettes/meuse_vignette_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
 
 Kriging variance is also computed with `sk_cmean`. This is much slower
 to compute than the kriging predictor
 
 ``` r
 # prediction variance
-z_var = sk_cmean(g_meuse_detrend, pars_UK, X=0, out='v', quiet=TRUE)
+g_var = g_empty
+g_var[] = sk_cmean(g_meuse, pars_UK, X=meuse_predictors, out='v', quiet=TRUE)
 
 
-g_meuse_var = modifyList(g_meuse, list(gval=z_var))
-sk_plot(g_meuse_var, main='kriging variance')
+# plot
+zlim_var = c(pars_UK[['eps']], pars_UK[['eps']] + pars_UK[['psill']])
+sk_plot(g_var, main='kriging variance', zlim=zlim_var)
 ```
 
-![](https://github.com/deankoch/blitzKrig/blob/master/vignettes/meuse_vignette_files/figure-gfm/variance_plot-1.png)<!-- -->
+![](https://github.com/deankoch/snapKrig/blob/master/vignettes/meuse_vignette_files/figure-gfm/variance_plot-1.png)<!-- -->
 
-The above plots are for the variable on the log-scale. The unbiasdness
+The above plots are for the variable on the log-scale. The unbiasedness
 property is lost when transforming back to the original scale, but now
 that we have the kriging variance, we can make a correction:
 
 ``` r
 # prediction bias adjustment from log scale
-z_pred2 = exp(z_pred + z_var/2)
-g_meuse_pred2 = modifyList(g_meuse, list(gval=z_pred2))
-sk_plot(g_meuse_pred2,
-           zlab='zinc (ppm)',
-           zlim=range(meuse[['soils']][['zinc']]),
-           main='UK predictions (masked to input range)')
+g_pred_adj = exp(g_pred + g_var/2)
+
+sk_plot(g_pred_adj, zlab='zinc (ppm)', main='UK predictions (masked to input range)', zlim=exp(zlim_pred))
 ```
 
-![](https://github.com/deankoch/blitzKrig/blob/master/vignettes/meuse_vignette_files/figure-gfm/predictor-1.png)<!-- -->
+![](https://github.com/deankoch/snapKrig/blob/master/vignettes/meuse_vignette_files/figure-gfm/predictor-1.png)<!-- -->
 
 ## Summary
 
-This vignette is intended to get users up and running with `blitzKrig`
-by demonstrating a very simple example on a familiar dataset. In other
+This vignette is intended to get users up and running with `snapKrig` by
+demonstrating a very simple example on a familiar dataset. In other
 vignettes we will look in more detail at how `sk_cmean` actually works,
 and how users can modify the workflow to incorporate a trend model.
 
@@ -317,7 +339,7 @@ if(FALSE)
   unlink(path.garbage)
 
   # substitute local file paths for image files with URLs on github
-  md.github = gsub('https://github.com/deankoch/blitzKrig/blob/master', 'https://github.com/deankoch/blitzKrig/blob/master', readLines(path.output))
+  md.github = gsub('https://github.com/deankoch/snapKrig/blob/master', 'https://github.com/deankoch/snapKrig/blob/master', readLines(path.output))
   writeLines(md.github, path.output)
 }
 ```

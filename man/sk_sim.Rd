@@ -64,8 +64,10 @@ plot(g_sim_multi, layer=3)
 sk sk_pars base::rnorm
 
 Other variance-related functions: 
+\code{\link{sk_LL}()},
 \code{\link{sk_corr_mat}()},
 \code{\link{sk_corr}()},
+\code{\link{sk_nLL}()},
 \code{\link{sk_toep_mult}()},
 \code{\link{sk_var_mult}()},
 \code{\link{sk_var}()}

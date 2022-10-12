@@ -15,14 +15,17 @@
 #' `quad_form` is z^T V^{-1} z, for the observed response vector z, which is constructed
 #' by subtracting the trend specified in `X` (if any) from the non-NA values in `g`.
 #'
-#' If the trend is known, it can be supplied in argument `X` as a numeric scalar or vector of
-#' length equal to the number of non-NA values in `g`, in matching order. Equivalently,
+#' If the trend is known, it can be supplied in argument `X` as a numeric scalar or vector
+#' of length equal to the number of non-NA values in `g`, in matching order. Equivalently,
 #' users can simply subtract the trend from `g` beforehand and set `X=0` (the default).
-#' If the trend is unknown, the function optionally estimates it by GLS using the model
-#' `pars`. To estimate a spatially constant mean, set `X=NA`. To estimate a spatially variable
-#' mean, supply linear predictors as columns of a matrix argument to `X` (see `sk_GLS`).
 #'
-#' `fac_method` specifies how to factorize V, either using the Cholesky factor ('chol')
+#' If the trend is unknown, the function will automatically use GLS to estimate it.
+#' This is profile likelihood on the covariance function parameters (not REML). To
+#' estimate a spatially constant mean, set `X=NA`. To estimate a spatially variable mean,
+#' supply linear predictors as columns of a matrix argument to `X`. See `sk_GLS` for more
+#' on this.
+#'
+#' `fac_method` specifies how to factorize V; either by using the Cholesky factor ('chol')
 #' or eigen-decomposition ('eigen'). A pre-computed factorization `fac` can be supplied by
 #' first calling `sk_var(..., scaled=TRUE)` (in which case `fac_method` is ignored).
 #'
@@ -30,9 +33,8 @@
 #' number of observations, the likelihood function value, and its two major components; the
 #' log-determinant `log_det`, and the quadratic form `quad_form`.
 #'
-#'
 #' @param pars list of form returned by `sk_pars` (with entries 'y', 'x', 'eps', 'psill')
-#' @param g a sk grid (or list with entries 'gdim', 'gres', 'gval' and/or 'idx_grid')
+#' @param g an sk grid (or list with entries 'gdim', 'gres', 'gval' and/or 'idx_grid')
 #' @param X numeric, vector, matrix, or NA, a fixed mean value, or matrix of linear predictors
 #' @param fac_method character, the factorization to use: 'chol' (default) or 'eigen'
 #' @param fac matrix or list, (optional) pre-computed covariance factorization
@@ -43,7 +45,8 @@
 #' @export
 #'
 #' @family likelihood functions
-#' @seealso sk
+#' @family variance-related functions
+#' @seealso sk sk_GLS sk_var
 #'
 #' @examples
 #' # set up example grid, covariance parameters
@@ -282,12 +285,13 @@ sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, more=FAL
 
 #' Negative log-likelihood for parameter vector `p`
 #'
-#' Returns the negative log-likelihood of parameter vector `p` for the covariance
-#' model `pars_fix`, given the observations in data grid `g_obs`.
+#' Returns the negative log-likelihood of covariance model `pars_fix`, given the observations
+#' in data grid `g_obs`. Parameter values are copied from the first argument, vector `p`, so
+#' that the function can be passed to numerical optimizers (etc).
 #'
-#' This is a wrapper for `-sk_LL()` allowing parameters to be passed as a numeric
-#' vector instead of a list (for use in optimization etc). Parameters in `p` are copied
-#' to `pars_fix` and passed to the likelihood computer.
+#' This is a wrapper for `sk_LL` (times -1) that allows parameters to be passed as a numeric
+#' vector instead of a list. Parameters in `p` are copied to `pars_fix` and passed to the
+#' likelihood computer.
 #'
 #' `p` is the vector of covariance parameters to test. Names in `p` are ignored; Its length
 #' and order should correspond with the pattern of NAs in `pars_fix`. Users should check that
@@ -304,6 +308,10 @@ sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, more=FAL
 #' @return numeric, the negative log-likelihood of `p` given data `g_obs`
 #' @export
 #'
+#' @family likelihood functions
+#' @family variance-related functions
+#' @seealso sk sk_GLS sk_var sk_pars_update
+#'
 #' @examples
 #' # set up example grid and data
 #' g = sk(gdim=10, gval=rnorm(10^2))
@@ -313,35 +321,35 @@ sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, more=FAL
 #' p = sk_pars_update(pars)
 #' sk_nLL(p, g, pars)
 #'
-#' # change a parameter and re-evaluate
+#' # change a parameter in the numeric vector and re-evaluate
 #' p_compare = p
-#' p_compare[1] = 2*p_compare[1]
+#' p_compare[1] = 2 * p_compare[1]
 #' sk_nLL(p_compare, g, pars)
 #'
-#' # repeat by calling sk_LL directly
+#' # repeat by calling sk_LL directly with modified parameters list
 #' pars_compare = pars
-#' pars_compare$eps = 2*pars_compare$eps
+#' pars_compare[['eps']] = 2 * pars_compare[['eps']]
 #' -sk_LL(pars_compare, g)
 #'
-#' # set up a subset of parameters for fitting
+#' # set up a subset of parameters to replace - eg when fitting those parameters
 #' pars_fix = pars
-#' pars_fix$eps = NA
-#' pars_fix$y$kp = NA
+#' pars_fix[['eps']] = NA
+#' pars_fix[['y']][['kp']] = NA
 #'
 #' # names in p_fit are for illustration only (only the order matters)
 #' p_fit = c(eps=1, y.rho=1)
+#'
+#' # replace NA parameter values in pars_fix to get completed parameters list
+#' sk_pars_update(pars_fix, p_fit, na_omit=TRUE)
+#'
+#' # make the replacement and evaluate likelihood in one call
 #' sk_nLL(p_fit, g, pars_fix)
 #'
 #' # equivalently:
 #' pars_fit = pars
-#' pars_fit$eps = p_fit[1]
-#' pars_fit$y$kp = p_fit[2]
+#' pars_fit[['eps']] = p_fit[1]
+#' pars_fit[['y']][['kp']] = p_fit[2]
 #' -sk_LL(pars_fit, g)
-#'
-#' # check an input specification
-#' sk_pars_update(pars_fix, p_fit, na_omit=TRUE)
-#' pars_fit
-#'
 #'
 sk_nLL = function(p, g_obs, pars_fix, X=0, iso=FALSE, quiet=TRUE, log_scale=FALSE)
 {

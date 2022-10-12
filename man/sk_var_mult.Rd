@@ -130,8 +130,10 @@ max( rel_err(sk_var_mult(g_miss_sqrt, pars, p=1/2), out_reference) )
 sk base::eigen base::chol
 
 Other variance-related functions: 
+\code{\link{sk_LL}()},
 \code{\link{sk_corr_mat}()},
 \code{\link{sk_corr}()},
+\code{\link{sk_nLL}()},
 \code{\link{sk_sim}()},
 \code{\link{sk_toep_mult}()},
 \code{\link{sk_var}()}

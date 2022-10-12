@@ -17,7 +17,7 @@ sk_LL(
 \arguments{
 \item{pars}{list of form returned by \code{sk_pars} (with entries 'y', 'x', 'eps', 'psill')}
 
-\item{g}{a sk grid (or list with entries 'gdim', 'gres', 'gval' and/or 'idx_grid')}
+\item{g}{an sk grid (or list with entries 'gdim', 'gres', 'gval' and/or 'idx_grid')}
 
 \item{X}{numeric, vector, matrix, or NA, a fixed mean value, or matrix of linear predictors}
 
@@ -45,14 +45,17 @@ where \code{log_det} is the logarithm of the determinant of covariance matrix V,
 \code{quad_form} is z^T V^{-1} z, for the observed response vector z, which is constructed
 by subtracting the trend specified in \code{X} (if any) from the non-NA values in \code{g}.
 
-If the trend is known, it can be supplied in argument \code{X} as a numeric scalar or vector of
-length equal to the number of non-NA values in \code{g}, in matching order. Equivalently,
+If the trend is known, it can be supplied in argument \code{X} as a numeric scalar or vector
+of length equal to the number of non-NA values in \code{g}, in matching order. Equivalently,
 users can simply subtract the trend from \code{g} beforehand and set \code{X=0} (the default).
-If the trend is unknown, the function optionally estimates it by GLS using the model
-\code{pars}. To estimate a spatially constant mean, set \code{X=NA}. To estimate a spatially variable
-mean, supply linear predictors as columns of a matrix argument to \code{X} (see \code{sk_GLS}).
 
-\code{fac_method} specifies how to factorize V, either using the Cholesky factor ('chol')
+If the trend is unknown, the function will automatically use GLS to estimate it.
+This is profile likelihood on the covariance function parameters (not REML). To
+estimate a spatially constant mean, set \code{X=NA}. To estimate a spatially variable mean,
+supply linear predictors as columns of a matrix argument to \code{X}. See \code{sk_GLS} for more
+on this.
+
+\code{fac_method} specifies how to factorize V; either by using the Cholesky factor ('chol')
 or eigen-decomposition ('eigen'). A pre-computed factorization \code{fac} can be supplied by
 first calling \code{sk_var(..., scaled=TRUE)} (in which case \code{fac_method} is ignored).
 
@@ -184,6 +187,19 @@ LL_result$n_obs - n
 
 }
 \seealso{
-sk
+sk sk_GLS sk_var
+
+Other likelihood functions: 
+\code{\link{sk_nLL}()}
+
+Other variance-related functions: 
+\code{\link{sk_corr_mat}()},
+\code{\link{sk_corr}()},
+\code{\link{sk_nLL}()},
+\code{\link{sk_sim}()},
+\code{\link{sk_toep_mult}()},
+\code{\link{sk_var_mult}()},
+\code{\link{sk_var}()}
 }
 \concept{likelihood functions}
+\concept{variance-related functions}

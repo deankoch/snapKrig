@@ -9,7 +9,7 @@ sk_nLL(p, g_obs, pars_fix, X = 0, iso = FALSE, quiet = TRUE, log_scale = FALSE)
 \arguments{
 \item{p}{numeric vector of covariance parameters accepted by \code{sk_pars_update}}
 
-\item{g_obs}{list of form returned by \code{sk} (with entries 'gdim', 'gres', 'gval')}
+\item{g_obs}{sk object or list with entries 'gdim', 'gres', 'gval'}
 
 \item{pars_fix}{list of form returned by \code{sk_pars} (with entries 'y', 'x', 'eps', 'psill')}
 
@@ -20,16 +20,17 @@ sk_nLL(p, g_obs, pars_fix, X = 0, iso = FALSE, quiet = TRUE, log_scale = FALSE)
 \item{quiet}{logical indicating to suppress console output}
 }
 \value{
-numeric, the negative log-likelihood of \code{p} given \code{g_obs}
+numeric, the negative log-likelihood of \code{p} given data \code{g_obs}
 }
 \description{
-Returns the negative log-likelihood of parameter vector \code{p} for the covariance
-model \code{pars_fix}, given data grid \code{g_obs}.
+Returns the negative log-likelihood of covariance model \code{pars_fix}, given the observations
+in data grid \code{g_obs}. Parameter values are copied from the first argument, vector \code{p}, so
+that the function can be passed to numerical optimizers (etc).
 }
 \details{
-This is a wrapper for \code{-sk_LL()} allowing parameters to be passed as a numeric
-vector instead of a list (for use in optimization etc). Parameters in \code{p} are copied
-to \code{pars_fix} and passed to the likelihood computer.
+This is a wrapper for \code{sk_LL} (times -1) that allows parameters to be passed as a numeric
+vector instead of a list. Parameters in \code{p} are copied to \code{pars_fix} and passed to the
+likelihood computer.
 
 \code{p} is the vector of covariance parameters to test. Names in \code{p} are ignored; Its length
 and order should correspond with the pattern of NAs in \code{pars_fix}. Users should check that
@@ -38,42 +39,58 @@ the desired parameter list is being constructed correctly by testing with:
 }
 \examples{
 # set up example grid and data
-g_obs = sk(10)
-g_obs$gval = rnorm(10^2)
+g = sk(gdim=10, gval=rnorm(10^2))
 
 # get some default parameters and vectorize them
-pars = sk_pars(g_obs, 'gau')
+pars = sk_pars(g, 'gau')
 p = sk_pars_update(pars)
-sk_nLL(p, g_obs, pars)
+sk_nLL(p, g, pars)
 
-# change a parameter and re-evaluate
+# change a parameter in the numeric vector and re-evaluate
 p_compare = p
-p_compare[1] = 2*p_compare[1]
-sk_nLL(p_compare, g_obs, pars)
+p_compare[1] = 2 * p_compare[1]
+sk_nLL(p_compare, g, pars)
 
-# repeat by calling sk_LL directly
+# repeat by calling sk_LL directly with modified parameters list
 pars_compare = pars
-pars_compare$eps = 2*pars_compare$eps
--sk_LL(pars_compare, g_obs)
+pars_compare[['eps']] = 2 * pars_compare[['eps']]
+-sk_LL(pars_compare, g)
 
-# set up a subset of parameters for fitting
+# set up a subset of parameters to replace - eg when fitting those parameters
 pars_fix = pars
-pars_fix$eps = NA
-pars_fix$y$kp = NA
+pars_fix[['eps']] = NA
+pars_fix[['y']][['kp']] = NA
 
 # names in p_fit are for illustration only (only the order matters)
 p_fit = c(eps=1, y.rho=1)
-sk_nLL(p_fit, g_obs, pars_fix)
+
+# replace NA parameter values in pars_fix to get completed parameters list
+sk_pars_update(pars_fix, p_fit, na_omit=TRUE)
+
+# make the replacement and evaluate likelihood in one call
+sk_nLL(p_fit, g, pars_fix)
 
 # equivalently:
 pars_fit = pars
-pars_fit$eps = p_fit[1]
-pars_fit$y$kp = p_fit[2]
--sk_LL(pars_fit, g_obs)
-
-# check an input specification
-sk_pars_update(pars_fix, p_fit, na_omit=TRUE)
-pars_fit
-
+pars_fit[['eps']] = p_fit[1]
+pars_fit[['y']][['kp']] = p_fit[2]
+-sk_LL(pars_fit, g)
 
 }
+\seealso{
+sk sk_GLS sk_var sk_pars_update
+
+Other likelihood functions: 
+\code{\link{sk_LL}()}
+
+Other variance-related functions: 
+\code{\link{sk_LL}()},
+\code{\link{sk_corr_mat}()},
+\code{\link{sk_corr}()},
+\code{\link{sk_sim}()},
+\code{\link{sk_toep_mult}()},
+\code{\link{sk_var_mult}()},
+\code{\link{sk_var}()}
+}
+\concept{likelihood functions}
+\concept{variance-related functions}

@@ -32,7 +32,7 @@
 #'
 #'
 #' @param pars list of form returned by `sk_pars` (with entries 'y', 'x', 'eps', 'psill')
-#' @param g a sk grid (with entries 'gdim', 'gres', 'gval')
+#' @param g a sk grid (or list with entries 'gdim', 'gres', 'gval' and/or 'idx_grid')
 #' @param X numeric, vector, matrix, or NA, a fixed mean value, or matrix of linear predictors
 #' @param fac_method character, the factorization to use: 'chol' (default) or 'eigen'
 #' @param fac matrix or list, (optional) pre-computed covariance factorization

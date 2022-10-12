@@ -630,24 +630,33 @@ sk_var_mult = function(g, pars, fac_method='eigen', fac=NULL, quad=FALSE, p=-1)
 
     ## efficient multiplication using Kronecker matrix-vector product identity:
 
-    # left multiply data vector by square root of correlation eigen-decomposition (looping over layers, ie columns of z)
-    z_trans = lapply( apply(z, 2, function(v1) { crossprod(fac[['y']][['vectors']], matrix(v1, ny)) }, simplify=FALSE),
+    # left multiply data vector by square root of correlation eigen-decomposition
+    z_trans = lapply(
 
-                        # inner loop (apply) left-multiplies by eCy, outer loop (lapply) right-multiplies by eCx
-                        function(v2) tcrossprod(v2, t(fac[['x']][['vectors']]))
+      # looping over layers, ie columns of z
+      apply(z, 2, function(v1) {
+
+        # inner loop (apply) left-multiplies by eCy
+        crossprod(fac[['y']][['vectors']], matrix(v1, ny))
+
+      }, simplify=FALSE),
+
+      # outer loop (lapply) right-multiplies by eCx
+      function(v2) tcrossprod(v2, t(fac[['x']][['vectors']]))
     )
 
     # quadratic form is the scaled vector multiplied by its transpose
     if(quad) return( crossprod(sqrt(ev_p) * sapply(z_trans, as.numeric)) )
 
-    # scale by inverse covariance eigen-values and transform back (looping over layers, ie columns of z_trans)
-    z_result = sapply( lapply(z_trans, function(v1) tcrossprod(fac[['y']][['vectors']], t(ev_p * v1))),
+    # scale by inverse covariance eigen-values and transform back
+    z_result = sapply(
 
-                       # inner loop (lapply) left multiples by eCy, outer loop (sapply) right-multiplies by eCx
-                       function(v2) tcrossprod(v2, fac[['x']][['vectors']])
+      # looping over layers, ie columns of z_trans, outer loop (sapply) right-multiplies by eCx
+      lapply(z_trans, function(v1) tcrossprod(fac[['y']][['vectors']], t(ev_p * v1))),
+
+      # inner loop (lapply) left multiples by eCy
+      function(v2) tcrossprod(v2, fac[['x']][['vectors']])
     )
-
-
 
     return(z_result)
   }
@@ -675,7 +684,7 @@ sk_var_mult = function(g, pars, fac_method='eigen', fac=NULL, quad=FALSE, p=-1)
     # sanity check
     if( nrow(fac) != nrow(z) ) stop('factorization was inconsistent with dimensions of g')
 
-    # standard approach for triangular systems, scaling by psill since we used scaled=TRUE in `sk_var` call
+    # standard triangular system solve, scaling by psill since we used scaled=TRUE in `sk_var` call
     z_chol = forwardsolve(fac, z/pars[['psill']] )
 
     # quadratic form is the (scaled) inner product

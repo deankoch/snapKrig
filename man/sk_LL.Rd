@@ -17,7 +17,7 @@ sk_LL(
 \arguments{
 \item{pars}{list of form returned by \code{sk_pars} (with entries 'y', 'x', 'eps', 'psill')}
 
-\item{g}{a sk grid (with entries 'gdim', 'gres', 'gval')}
+\item{g}{a sk grid (or list with entries 'gdim', 'gres', 'gval' and/or 'idx_grid')}
 
 \item{X}{numeric, vector, matrix, or NA, a fixed mean value, or matrix of linear predictors}
 

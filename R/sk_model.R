@@ -49,15 +49,15 @@
 #' # set up example grid, covariance parameters
 #' gdim = c(25, 12)
 #' n = prod(gdim)
-#' g_all = sk(gdim)
-#' pars = modifyList(sk_pars(g_all, 'gau'), list(psill=0.7, eps=5e-2))
+#' g_empty = sk(gdim)
+#' pars = modifyList(sk_pars(g_empty, 'gau'), list(psill=0.7, eps=5e-2))
 #'
 #' # generate some covariates and complete data
 #' n_betas = 3
 #' betas = rnorm(n_betas)
 #' X_all = cbind(1, matrix(rnorm(n*(n_betas-1)), n))
-#' z = as.vector( sk_sim(g_all) + (X_all %*% betas) )
-#' g_all[] = z
+#' g_all = sk_sim(g_empty, pars) + c(X_all %*% betas)
+#' z = g_all[]
 #'
 #' # two methods for likelihood
 #' LL_chol = sk_LL(pars, g_all, fac_method='chol')
@@ -77,6 +77,11 @@
 #' # repeat with pre-computed variance factorization
 #' fac_eigen = sk_var(g_all, pars, fac_method='eigen', sep=TRUE)
 #' sk_LL(pars, g_all, fac=fac_eigen) - LL_eigen
+#'
+# TODO:
+#' # repeat with multi-layer example
+#' g_multi = g_all
+#' g_multi[] = matrix()
 #'
 #' # repeat with most data missing
 #' n_obs = 50
@@ -258,7 +263,7 @@ sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, more=FAL
   # compute log likelihood, print to console then return
   log_likelihood = (-1/2) * ( n_layer * ( n_obs * log( 2 * pi ) + log_det ) + sum(quad_form) )
   if( !quiet ) cat( paste(round(log_likelihood, 5), '\n') )
-  if(more) return(list(LL=log_likelihood, q=quad_form, d=log_det, n_obs=n_obs))
+  if(more) return(list(LL=log_likelihood, q=quad_form, d=log_det, n_obs=n_obs, n_layer=n_layer))
   return(log_likelihood)
 }
 
@@ -347,7 +352,7 @@ sk_nLL = function(p, g_obs, pars_fix, X=0, iso=FALSE, quiet=TRUE, log_scale=FALS
 }
 
 
-#' Random draw from multivariate normal distribution for grids
+#' Random draw from multivariate normal distribution for sk grids
 #'
 #' Generates a random draw from the multivariate Gaussian distribution for the
 #' covariance model `pars` on grid `g`, with mean zero.
@@ -358,15 +363,19 @@ sk_nLL = function(p, g_obs, pars_fix, X=0, iso=FALSE, quiet=TRUE, log_scale=FALS
 #' result has a multivariate normal distribution with mean zero and covariance V.
 #'
 #' Multiple independent draws can be computed more efficiently by reusing the factorization
-#' of V. This can be pre-computed with `sk_var` and supplied in `fac`, or a multi-layer
-#' `g` can be supplied (see examples).
+#' of V. This can be pre-computed with `sk_var` and supplied in `fac`, or users can set
+#' `n_layer` and the function will do this automatically.
 #'
-#' @param g any object accepted or returned by `sk`
+#' @param g an sk object or any grid object accepted by `sk`
 #' @param pars list, covariance parameters in form returned by `sk_pars`
 #' @param fac list, optional pre-computed factorization of component correlation matrices
+#' @param n_layer positive integer, the number of draws to return
 #'
-#' @return numeric vector, the vectorized grid data
+#' @return sk grid or its vectorized form (vector for single-layer case, matrix for multi-layer case)
 #' @export
+#'
+#' @family variance-related functions
+#' @seealso sk sk_pars base::rnorm
 #'
 #' @examples
 #'
@@ -376,54 +385,48 @@ sk_nLL = function(p, g_obs, pars_fix, X=0, iso=FALSE, quiet=TRUE, log_scale=FALS
 #' pars_gau = sk_pars(g)
 #'
 #' # this example has a large nugget effect
-#' gval = sk_sim(g, pars=pars_gau)
-#' sk_plot(matrix(gval, gdim))
-#'
-#' # plot with yx coordinates
-#' g_sim = modifyList(g, list(gval=gval))
-#' sk_plot(g_sim)
+#' g_sim = sk_sim(g, pars_gau)
+#' plot(g_sim)
 #'
 #' # repeat with smaller nugget effect for less noisy data
 #' pars_smooth = modifyList(pars_gau, list(eps=1e-2))
-#' gval_smooth = sk_sim(g, pars_smooth)
-#' g_sim_smooth = modifyList(g, list(gval=gval_smooth))
-#' sk_plot(g_sim_smooth)
+#' g_sim = sk_sim(g, pars_smooth)
+#' plot(g_sim)
 #'
 #' # the nugget effect can be very small, but users should avoid eps=0
 #' pars_smoother = modifyList(pars_gau, list(eps=1e-12))
-#' gval_smoother = sk_sim(g, pars_smoother)
-#' g_sim_smoother = modifyList(g, list(gval=gval_smoother))
-#' sk_plot(g_sim_smoother)
+#' g_sim = sk_sim(g, pars_smoother)
+#' plot(g_sim)
 #'
 #' # multi-layer example
-#' n_pt = prod(gdim)
-#' n_layer = 3
-#' g_multi = sk(list(gdim=gdim, gval=matrix(NA, n_pt, n_layer)))
-#' gval_multi = sk_sim(g_multi, pars_smoother)
-#' g_sim_multi = modifyList(g, list(gval=gval_multi))
-#' sk_plot(g_sim_multi, layer=1)
-#' sk_plot(g_sim_multi, layer=2)
-#' sk_plot(g_sim_multi, layer=3)
+#' g_sim_multi = sk_sim(g, pars_smoother, n_layer=3)
+#' plot(g_sim_multi, layer=1)
+#' plot(g_sim_multi, layer=2)
+#' plot(g_sim_multi, layer=3)
 #'
-#'
-sk_sim = function(g, pars=sk_pars(g), fac=NULL)
+sk_sim = function(g, pars=sk_pars(g), n_layer=1, fac=NULL, out='sk')
 {
+  # extract as sk object if not already a list
+  if( !is.list(g) ) g = sk(g)
+
   # extract grid dimensions
   gdim = g[['gdim']]
   n = prod(gdim)
-  n_layer = ifelse(is.matrix(g[['gval']]), ncol(g[['gval']]), 1L)
 
-  # eigen-decompositions of separable components of full grid correlation matrix
-  g_empty = modifyList(g, list(gval=NULL))
-  if(is.null(fac)) fac = sk_var(g_empty, pars, fac_method='eigen', sep=TRUE)
+  # get eigen-decompositions of separable components of full grid correlation matrix
+  if(is.null(fac)) fac = sk_var(g[c('gdim', 'gres')], pars, fac_method='eigen', sep=TRUE)
 
-  # report eigenvalue problems
-  is_ev_negative = lapply(fac, function(eig) !( (pars$eps + eig[['values']]) > 0 ) )
+  # report any eigenvalue problems
+  is_ev_negative = lapply(fac, function(eig) !( (pars[['eps']] + eig[['values']]) > 0 ) )
   if( any(unlist(is_ev_negative)) ) stop('component correlation matrix has negative eigenvalue(s)')
 
   # multiply random iid normal vector(s) by covariance matrix square root
   seed_noise = matrix(rnorm(n*n_layer), ncol=n_layer)
   sim_gval = sk_var_mult(seed_noise, pars, fac=fac, fac_method='eigen', p=1/2)
-  if(n_layer==1) { return(as.vector(sim_gval)) } else { return(sim_gval) }
+
+  # build the sk object to return
+  if(n_layer==1) sim_gval = as.vector(sim_gval)
+  if(out != 'sk') return(sim_gval)
+  return( sk(modifyList(g, list(idx_grid=NULL, gval=sim_gval))) )
 }
 

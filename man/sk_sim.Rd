@@ -2,19 +2,21 @@
 % Please edit documentation in R/sk_model.R
 \name{sk_sim}
 \alias{sk_sim}
-\title{Random draw from multivariate normal distribution for grids}
+\title{Random draw from multivariate normal distribution for sk grids}
 \usage{
-sk_sim(g, pars = sk_pars(g), fac = NULL)
+sk_sim(g, pars = sk_pars(g), n_layer = 1, fac = NULL, out = "sk")
 }
 \arguments{
-\item{g}{any object accepted or returned by \code{sk}}
+\item{g}{an sk object or any grid object accepted by \code{sk}}
 
 \item{pars}{list, covariance parameters in form returned by \code{sk_pars}}
+
+\item{n_layer}{positive integer, the number of draws to return}
 
 \item{fac}{list, optional pre-computed factorization of component correlation matrices}
 }
 \value{
-numeric vector, the vectorized grid data
+sk grid or its vectorized form (vector for single-layer case, matrix for multi-layer case)
 }
 \description{
 Generates a random draw from the multivariate Gaussian distribution for the
@@ -27,8 +29,8 @@ root of the covariance matrix, V, for the desired model (as defined by \code{par
 result has a multivariate normal distribution with mean zero and covariance V.
 
 Multiple independent draws can be computed more efficiently by reusing the factorization
-of V. This can be pre-computed with \code{sk_var} and supplied in \code{fac}, or a multi-layer
-\code{g} can be supplied (see examples).
+of V. This can be pre-computed with \code{sk_var} and supplied in \code{fac}, or users can set
+\code{n_layer} and the function will do this automatically.
 }
 \examples{
 
@@ -38,34 +40,34 @@ g = sk(gdim)
 pars_gau = sk_pars(g)
 
 # this example has a large nugget effect
-gval = sk_sim(g, pars=pars_gau)
-sk_plot(matrix(gval, gdim))
-
-# plot with yx coordinates
-g_sim = modifyList(g, list(gval=gval))
-sk_plot(g_sim)
+g_sim = sk_sim(g, pars_gau)
+plot(g_sim)
 
 # repeat with smaller nugget effect for less noisy data
 pars_smooth = modifyList(pars_gau, list(eps=1e-2))
-gval_smooth = sk_sim(g, pars_smooth)
-g_sim_smooth = modifyList(g, list(gval=gval_smooth))
-sk_plot(g_sim_smooth)
+g_sim = sk_sim(g, pars_smooth)
+plot(g_sim)
 
 # the nugget effect can be very small, but users should avoid eps=0
 pars_smoother = modifyList(pars_gau, list(eps=1e-12))
-gval_smoother = sk_sim(g, pars_smoother)
-g_sim_smoother = modifyList(g, list(gval=gval_smoother))
-sk_plot(g_sim_smoother)
+g_sim = sk_sim(g, pars_smoother)
+plot(g_sim)
 
 # multi-layer example
-n_pt = prod(gdim)
-n_layer = 3
-g_multi = sk(list(gdim=gdim, gval=matrix(NA, n_pt, n_layer)))
-gval_multi = sk_sim(g_multi, pars_smoother)
-g_sim_multi = modifyList(g, list(gval=gval_multi))
-sk_plot(g_sim_multi, layer=1)
-sk_plot(g_sim_multi, layer=2)
-sk_plot(g_sim_multi, layer=3)
-
+g_sim_multi = sk_sim(g, pars_smoother, n_layer=3)
+plot(g_sim_multi, layer=1)
+plot(g_sim_multi, layer=2)
+plot(g_sim_multi, layer=3)
 
 }
+\seealso{
+sk sk_pars base::rnorm
+
+Other variance-related functions: 
+\code{\link{sk_corr_mat}()},
+\code{\link{sk_corr}()},
+\code{\link{sk_toep_mult}()},
+\code{\link{sk_var_mult}()},
+\code{\link{sk_var}()}
+}
+\concept{variance-related functions}

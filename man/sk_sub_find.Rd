@@ -42,8 +42,8 @@ case argument \code{gdim} must also be specified. This can be much faster with l
 
 # define a grid and example data
 gdim = c(50, 53)
-g = sk(gdim)
-g[] = sk_sim(g, modifyList(sk_pars(g), list(eps=1e-12)))
+pars = modifyList(sk_pars(gdim), list(eps=1e-12))
+g = sk_sim(gdim, pars)
 plot(g)
 
 # define a super-grid containing the original data and make sure we can find it
@@ -57,7 +57,7 @@ gdim_sg = sapply(floor( (gdim - 1) / spacing), function(x) sample.int(x, 1))
 ij_first = sapply(gdim - ( spacing * gdim_sg ), function(x) sample.int(x, 1))
 
 # find index of sub-grid lines and vectorized index of points
-ij_sg = Map(\(idx, r, n) seq(idx, by=r, length.out=n), idx=ij_first, r=spacing, n=gdim_sg)
+ij_sg = Map(function(idx, r, n) seq(idx, by=r, length.out=n), idx=ij_first, r=spacing, n=gdim_sg)
 names(ij_sg) = c('i', 'j')
 is_sg = sk_sub_idx(gdim, ij_sg, idx=FALSE)
 

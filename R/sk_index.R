@@ -39,9 +39,8 @@
 #'
 #' # example data
 #' gdim = c(50, 53)
-#' g = sk(gdim)
-#' pars = modifyList(sk_pars(g), list(eps=1e-6))
-#' g[] = sk_sim(g, pars)
+#' pars = modifyList(sk_pars(gdim), list(eps=1e-2))
+#' g = sk_sim(gdim, pars)
 #' plot(g)
 #'
 #' # upscale
@@ -60,20 +59,15 @@
 #' g_compare = sk_rescale(sk_rescale(g, down=c(5,3)), up=c(5,3))
 #' all.equal(g, g_compare)
 #'
-#' # multi-layer example with missing data
-#' n_pt = prod(gdim)
-#' n_layer = 3
-#'
-#' # generate some more data and omit 50% of it
-#' gval_multi = sk_sim(sk(list(gdim=gdim, gval=matrix(NA, n_pt, n_layer))), pars)
-#' idx_miss = sample.int(n_pt, round(0.5*n_pt))
-#' gval_multi[idx_miss,] = NA
+#' # multi-layer example with about 50% of points missing
+#' idx_miss = sample.int(length(g), round(0.5*length(g)))
+#' g_multi = sk_sim(gdim, pars, n_layer=3)
+#' g_multi[idx_miss,] = NA
 #'
 #' # plot third layer, then down-scaled and up-scaled versions
-#' g_sim_multi = sk(gdim=gdim, gval=gval_multi)
-#' sk_plot(g_sim_multi, layer=3)
-#' sk_plot(sk_rescale(g=g_sim_multi, down=2), layer=3)
-#' sk_plot(sk_rescale(g=g_sim_multi, up=2), layer=3)
+#' sk_plot(g_multi, layer=3)
+#' sk_plot(sk_rescale(g=g_multi, down=2), layer=3)
+#' sk_plot(sk_rescale(g=g_multi, up=2), layer=3)
 #'
 sk_rescale = function(g, up=NULL, down=NULL)
 {
@@ -587,8 +581,8 @@ sk_sub = function(g, ij_keep=NULL, ij_rem=NULL, idx=FALSE, mirror=FALSE)
 #'
 #' # define a grid and example data
 #' gdim = c(50, 53)
-#' g = sk(gdim)
-#' g[] = sk_sim(g, modifyList(sk_pars(g), list(eps=1e-12)))
+#' pars = modifyList(sk_pars(gdim), list(eps=1e-12))
+#' g = sk_sim(gdim, pars)
 #' plot(g)
 #'
 #' # define a super-grid containing the original data and make sure we can find it
@@ -602,7 +596,7 @@ sk_sub = function(g, ij_keep=NULL, ij_rem=NULL, idx=FALSE, mirror=FALSE)
 #' ij_first = sapply(gdim - ( spacing * gdim_sg ), function(x) sample.int(x, 1))
 #'
 #' # find index of sub-grid lines and vectorized index of points
-#' ij_sg = Map(\(idx, r, n) seq(idx, by=r, length.out=n), idx=ij_first, r=spacing, n=gdim_sg)
+#' ij_sg = Map(function(idx, r, n) seq(idx, by=r, length.out=n), idx=ij_first, r=spacing, n=gdim_sg)
 #' names(ij_sg) = c('i', 'j')
 #' is_sg = sk_sub_idx(gdim, ij_sg, idx=FALSE)
 #'

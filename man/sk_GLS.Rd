@@ -57,8 +57,7 @@ n = length(g_empty)
 pars = modifyList(sk_pars(g_empty, 'gau'), list(psill=2))
 
 # generate spatial noise
-g_noise = g_empty
-g_noise[] = sk_sim(g_noise, pars)
+g_noise = sk_sim(g_empty, pars)
 plot(g_noise)
 
 # generate some covariates
@@ -103,9 +102,8 @@ print(betas)
 sk_GLS(g_miss, pars, X=NA)
 
 # generate some extra noise for 10-layer example
-z_extra = lapply(seq(9), function(x) sk_sim(g_empty, pars))
-g_multi = g_empty
-g_multi[] = lm_actual + do.call(cbind, c(list(g_noise[]), z_extra))
+g_noise_multi = sk_sim(g_empty, pars, n_layer=10)
+g_multi = g_lm + g_noise_multi
 betas_complete = sk_GLS(g_multi, pars, X)
 print(betas_complete)
 print(betas)

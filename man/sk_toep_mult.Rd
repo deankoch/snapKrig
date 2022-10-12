@@ -81,6 +81,7 @@ base::toeplitz stats::fft
 Other variance-related functions: 
 \code{\link{sk_corr_mat}()},
 \code{\link{sk_corr}()},
+\code{\link{sk_sim}()},
 \code{\link{sk_var_mult}()},
 \code{\link{sk_var}()}
 }

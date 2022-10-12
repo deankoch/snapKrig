@@ -64,15 +64,15 @@ log-determinant \code{log_det}, and the quadratic form \code{quad_form}.
 # set up example grid, covariance parameters
 gdim = c(25, 12)
 n = prod(gdim)
-g_all = sk(gdim)
-pars = modifyList(sk_pars(g_all, 'gau'), list(psill=0.7, eps=5e-2))
+g_empty = sk(gdim)
+pars = modifyList(sk_pars(g_empty, 'gau'), list(psill=0.7, eps=5e-2))
 
 # generate some covariates and complete data
 n_betas = 3
 betas = rnorm(n_betas)
 X_all = cbind(1, matrix(rnorm(n*(n_betas-1)), n))
-z = as.vector( sk_sim(g_all) + (X_all \%*\% betas) )
-g_all[] = z
+g_all = sk_sim(g_empty, pars) + c(X_all \%*\% betas)
+z = g_all[]
 
 # two methods for likelihood
 LL_chol = sk_LL(pars, g_all, fac_method='chol')
@@ -92,6 +92,10 @@ abs( LL_direct - LL_eigen ) / max(LL_direct, LL_eigen)
 # repeat with pre-computed variance factorization
 fac_eigen = sk_var(g_all, pars, fac_method='eigen', sep=TRUE)
 sk_LL(pars, g_all, fac=fac_eigen) - LL_eigen
+
+# repeat with multi-layer example
+g_multi = g_all
+g_multi[] = matrix()
 
 # repeat with most data missing
 n_obs = 50

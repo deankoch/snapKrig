@@ -42,9 +42,8 @@ and \code{g} can be recovered from \code{g_fine} with \code{sk_rescale(g_fine, u
 
 # example data
 gdim = c(50, 53)
-g = sk(gdim)
-pars = modifyList(sk_pars(g), list(eps=1e-6))
-g[] = sk_sim(g, pars)
+pars = modifyList(sk_pars(gdim), list(eps=1e-2))
+g = sk_sim(gdim, pars)
 plot(g)
 
 # upscale
@@ -63,20 +62,15 @@ plot(sk_rescale(g, down=c(2,3)))
 g_compare = sk_rescale(sk_rescale(g, down=c(5,3)), up=c(5,3))
 all.equal(g, g_compare)
 
-# multi-layer example with missing data
-n_pt = prod(gdim)
-n_layer = 3
-
-# generate some more data and omit 50\% of it
-gval_multi = sk_sim(sk(list(gdim=gdim, gval=matrix(NA, n_pt, n_layer))), pars)
-idx_miss = sample.int(n_pt, round(0.5*n_pt))
-gval_multi[idx_miss,] = NA
+# multi-layer example with about 50\% of points missing
+idx_miss = sample.int(length(g), round(0.5*length(g)))
+g_multi = sk_sim(gdim, pars, n_layer=3)
+g_multi[idx_miss,] = NA
 
 # plot third layer, then down-scaled and up-scaled versions
-g_sim_multi = sk(gdim=gdim, gval=gval_multi)
-sk_plot(g_sim_multi, layer=3)
-sk_plot(sk_rescale(g=g_sim_multi, down=2), layer=3)
-sk_plot(sk_rescale(g=g_sim_multi, up=2), layer=3)
+sk_plot(g_multi, layer=3)
+sk_plot(sk_rescale(g=g_multi, down=2), layer=3)
+sk_plot(sk_rescale(g=g_multi, up=2), layer=3)
 
 }
 \seealso{

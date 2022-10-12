@@ -96,23 +96,23 @@ the desired units for distances in the plot (default for both is meters 'm')}
 
 # make example grid and reference covariance model
 gdim = c(10, 15)
-g_obs = sk(gdim)
-pars = sk_pars(g_obs, 'mat')
+g_empty = sk(gdim)
+pars = sk_pars(g_empty, 'mat')
 
 # plot a semivariance model
-sk_plot_semi(g_obs)
-sk_plot_semi(g_obs, pars)
+sk_plot_semi(g_empty)
+sk_plot_semi(g_empty, pars)
 
 # change annotations, sharpen ribbon border
-sk_plot_semi(g_obs, pars, main='title', xlab='x', ylab='y')
-sk_plot_semi(g_obs, pars, alpha_model_b=1, main='example title', xlab='x', ylab='y')
+sk_plot_semi(g_empty, pars, main='title', xlab='x', ylab='y')
+sk_plot_semi(g_empty, pars, alpha_model_b=1, main='example title', xlab='x', ylab='y')
 
 # input and output units are 'm' by default
-sk_plot_semi(g_obs, pars, unit_out='km')
-sk_plot_semi(g_obs, pars, unit_in='km', unit_out='km')
+sk_plot_semi(g_empty, pars, unit_out='km')
+sk_plot_semi(g_empty, pars, unit_in='km', unit_out='km')
 
 # generate sample data and sample semivariogram
-g_obs$gval = sk_sim(g_obs, pars)
+g_obs = sk_sim(g_obs, pars)
 vg = sk_sample_vg(g_obs)
 sk_plot_semi(vg)
 

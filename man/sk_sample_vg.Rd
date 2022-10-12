@@ -46,11 +46,11 @@ variogram. This and two other robust methods are implemented in \code{sk_plot_vg
 # make example grid and reference covariance model
 gdim = c(22, 15)
 n = prod(gdim)
-g_obs = sk(gdim)
-pars = sk_pars(g_obs, 'mat')
+g_empty = sk(gdim)
+pars = sk_pars(g_empty, 'mat')
 
 # generate sample data and sample semi-variogram
-g_obs[['gval']] = sk_sim(g=g_obs, pars)
+g_obs = sk_sim(g_empty, pars)
 vg = sk_sample_vg(g_obs)
 str(vg)
 
@@ -75,8 +75,7 @@ sk_plot_semi(vg, pars)
 ## example with multiple layers
 
 # generate five layers
-z_multi = sapply(seq(5), function(x) sk_sim(g=g_obs, pars))
-g_obs_multi = modifyList(g_obs, list(gval=z_multi, idx_grid=seq(n)))
+g_obs_multi = sk_sim(g_empty, pars, n_layer=5)
 
 # by default, a sub-sample of sqrt(n_layers) is selected
 vg = sk_sample_vg(g_obs_multi)

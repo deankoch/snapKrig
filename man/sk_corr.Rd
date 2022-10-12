@@ -76,6 +76,7 @@ max(abs( variance_matrix_example[['x']][,1L] - corr_x_example ))
 \seealso{
 Other variance-related functions: 
 \code{\link{sk_corr_mat}()},
+\code{\link{sk_sim}()},
 \code{\link{sk_toep_mult}()},
 \code{\link{sk_var_mult}()},
 \code{\link{sk_var}()}

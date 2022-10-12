@@ -373,12 +373,10 @@ sk_var = function(g, pars=NULL, scaled=FALSE, fac_method='none', X=NULL, fac=NUL
       if( is.matrix(g[['gval']]) ) stop('gval was a matrix (expected a vector)')
       is_obs = !is.na(g[['gval']])
 
-    } else {
-
       # when idx_grid supplied, we don't need to look at gval at all
-      is_obs = !is.na(g[['idx_grid']])
-      n = length(g[['idx_grid']])
-    }
+    } else { is_obs = !is.na(g[['idx_grid']]) }
+
+    n = length(is_obs)
   }
 
   # no-data case treated as complete

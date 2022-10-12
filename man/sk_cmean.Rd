@@ -46,14 +46,12 @@ structure \code{pars}, and same NA structure in the data). Note that the kriging
 not change in this case and only needs to be computed once.
 }
 \examples{
-# make example grid and data
-n = 25^2
-n_obs = 10
-g_obs = sk(sqrt(n))
-idx_obs = sample.int(n, n_obs)
-g_obs$gval[idx_obs] = rnorm(n_obs)
-pars = sk_pars('gau', g_obs)
-g_pred = sk_cmean(g_obs, pars)
+# make example grid and covariance parameters
+g = sk_sim(100)
+pars = sk_pars(g)
+g_pred = sk_cmean(g, pars)
+
+
 g_var = sk_cmean(g_obs, pars, makev=TRUE, quiet=TRUE)
 #g_obs |> sk_plot()
 #g_obs |> modifyList(list(gval=g_pred)) |> sk_plot()

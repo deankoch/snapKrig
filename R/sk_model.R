@@ -29,16 +29,21 @@
 #' or eigen-decomposition ('eigen'). A pre-computed factorization `fac` can be supplied by
 #' first calling `sk_var(..., scaled=TRUE)` (in which case `fac_method` is ignored).
 #'
-#' When `more=TRUE`, the function returns a list of diagnostics: a count of the
-#' number of observations, the likelihood function value, and its two major components; the
-#' log-determinant `log_det`, and the quadratic form `quad_form`.
+#' When `out='a'`, the function instead returns the AIC value and when `out='b'` it returns
+#' the BIC (see `stats::AIC`). This adjusts the likelihood for the number of covariance
+#' and trend parameters (and in the case of BIC, the sample size), producing an index that
+#' can be used for model comparison (lower is better).
+#'
+#' When `out='more'`, the function returns a list containing the log-likelihood and both
+#' information criteria, along with several diagnostics: the number of observations, the
+#' number of parameters, the log-determinant `log_det`, and the quadratic form `quad_form`.
 #'
 #' @param pars list of form returned by `sk_pars` (with entries 'y', 'x', 'eps', 'psill')
 #' @param g an sk grid (or list with entries 'gdim', 'gres', 'gval' and/or 'idx_grid')
 #' @param X numeric, vector, matrix, or NA, a fixed mean value, or matrix of linear predictors
 #' @param fac_method character, the factorization to use: 'chol' (default) or 'eigen'
 #' @param fac matrix or list, (optional) pre-computed covariance factorization
-#' @param more logical, indicates to return list with likelihood components
+#' @param out character, either 'l' (likelihood), 'a' (AIC), 'b' (BIC), or 'more' (see details)
 #' @param quiet logical indicating to suppress console output
 #'
 #' @return numeric, the likelihood of `pars` given `g_obs` and `X`, or list (if `more=TRUE`)
@@ -46,7 +51,7 @@
 #'
 #' @family likelihood functions
 #' @family variance-related functions
-#' @seealso sk sk_GLS sk_var
+#' @seealso sk sk_GLS sk_var stats::AIC
 #'
 #' @examples
 #' # set up example grid, covariance parameters
@@ -77,6 +82,10 @@
 #' # relative errors
 #' abs( LL_direct - LL_chol ) / max(LL_direct, LL_chol)
 #' abs( LL_direct - LL_eigen ) / max(LL_direct, LL_eigen)
+#'
+#' # get AIC or BIC directly
+#' sk_LL(pars, g_all, out='a')
+#' sk_LL(pars, g_all, out='b')
 #'
 #' # repeat with pre-computed variance factorization
 #' fac_eigen = sk_var(g_all, pars, fac_method='eigen', sep=TRUE)
@@ -163,14 +172,14 @@
 #' abs( LL_direct - LL_X_chol ) / max(LL_direct, LL_X_chol)
 #' abs( LL_direct - LL_X_eigen ) / max(LL_direct, LL_X_eigen)
 #'
-#' # return components of likelihood with more=TRUE
-#' LL_result = sk_LL(pars, g_all, X=X, more=TRUE)
-#' LL_result$LL - LL_X_chol
-#' LL_result$q - quad_form
-#' LL_result$d - log_det
-#' LL_result$n_obs - n
+#' # return detailed list of components with out='more'
+#' LL_result = sk_LL(pars, g_all, X=X, out='more')
+#' LL_result[['LL']] - LL_X_chol
+#' LL_result[['quad_form']] - quad_form
+#' LL_result[['log_det']] - log_det
+#' LL_result[['n_obs']] - n
 #'
-sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, more=FALSE)
+sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, out='l')
 {
   # count layers
   n_layer = ifelse(is.matrix(g[['gval']]), ncol(g[['gval']]), 1L)
@@ -218,16 +227,22 @@ sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, more=FAL
   } else { fac_method = ifelse(is.matrix(fac), 'chol', 'eigen') }
 
   # GLS estimate of mean based on predictors in X
+  n_X = 0L
   if(is.data.frame(X)) X = as.matrix(X)
   use_GLS = is.matrix(X) | anyNA(X)
-  if( use_GLS ) X = sk_GLS(g, pars, X=X, fac=fac, out='z')
+  if( use_GLS )
+  {
+    # count trend parameters (one for mean + one per covariate)
+    n_X = 1L
+    if( is.matrix(X) ) n_X = n_X + ncol(X)
+    X = sk_GLS(g, pars, X=X, fac=fac, out='z')
+  }
 
   # turn scalar and vector input into matrix X
   if( !is.matrix(X) ) X = matrix(X, ncol=1L)
   if( nrow(X) == 1 ) X = matrix(rep(X, n_obs), ncol=1L)
 
   # matrix of de-trended Gaussian random vectors to evaluate
-  #z_centered = matrix(z-X, ncol=n_layer)
   z_centered = sweep(z, 1, X)
 
   # Cholesky factor method is fastest
@@ -275,11 +290,29 @@ sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, more=FAL
     }
   }
 
-  # compute log likelihood, print to console then return
+  # compute log likelihood and optionally print to console
   log_likelihood = (-1/2) * ( n_layer * ( n_obs * log( 2 * pi ) + log_det ) + sum(quad_form) )
   if( !quiet ) cat( paste(round(log_likelihood, 5), '\n') )
-  if(more) return(list(LL=log_likelihood, q=quad_form, d=log_det, n_obs=n_obs, n_layer=n_layer))
-  return(log_likelihood)
+
+  # count number of parameters and compute AIC, BIC
+  n_pars  = ( length(unlist(pars)) - 2 ) + n_X
+  aic_out = ( -2 * log_likelihood ) + ( -2 * n_pars )
+  bic_out = ( -2 * log_likelihood ) + ( -log(n_obs * n_layer) * n_pars  )
+
+  # return requested info
+  if(startsWith(tolower(out), 'l')) return(log_likelihood)
+  if(startsWith(tolower(out), 'a')) return(aic_out)
+  if(startsWith(tolower(out), 'b')) return(bic_out)
+  if(startsWith(tolower(out), 'm')) return(list(LL = log_likelihood,
+                                                AIC = aic_out,
+                                                BIC = bic_out,
+                                                quad_form = quad_form,
+                                                log_det = n_layer * log_det,
+                                                n_obs = n_layer * n_obs,
+                                                n_pars = n_pars,
+                                                n_layer = n_layer))
+
+  stop('argument out must start with one of the letters: l, a, b, or m')
 }
 
 

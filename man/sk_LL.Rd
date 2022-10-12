@@ -4,15 +4,7 @@
 \alias{sk_LL}
 \title{Likelihood of covariance model \code{pars} given the data in sk grid \code{g}}
 \usage{
-sk_LL(
-  pars,
-  g,
-  X = 0,
-  fac_method = "chol",
-  fac = NULL,
-  quiet = TRUE,
-  more = FALSE
-)
+sk_LL(pars, g, X = 0, fac_method = "chol", fac = NULL, quiet = TRUE, out = "l")
 }
 \arguments{
 \item{pars}{list of form returned by \code{sk_pars} (with entries 'y', 'x', 'eps', 'psill')}
@@ -27,7 +19,7 @@ sk_LL(
 
 \item{quiet}{logical indicating to suppress console output}
 
-\item{more}{logical, indicates to return list with likelihood components}
+\item{out}{character, either 'l' (likelihood), 'a' (AIC), 'b' (BIC), or 'more' (see details)}
 }
 \value{
 numeric, the likelihood of \code{pars} given \code{g_obs} and \code{X}, or list (if \code{more=TRUE})
@@ -59,9 +51,14 @@ on this.
 or eigen-decomposition ('eigen'). A pre-computed factorization \code{fac} can be supplied by
 first calling \code{sk_var(..., scaled=TRUE)} (in which case \code{fac_method} is ignored).
 
-When \code{more=TRUE}, the function returns a list of diagnostics: a count of the
-number of observations, the likelihood function value, and its two major components; the
-log-determinant \code{log_det}, and the quadratic form \code{quad_form}.
+When \code{out='a'}, the function instead returns the AIC value and when \code{out='b'} it returns
+the BIC (see \code{stats::AIC}). This adjusts the likelihood for the number of covariance
+and trend parameters (and in the case of BIC, the sample size), producing an index that
+can be used for model comparison (lower is better).
+
+When \code{out='more'}, the function returns a list containing the log-likelihood and both
+information criteria, along with several diagnostics: the number of observations, the
+number of parameters, the log-determinant \code{log_det}, and the quadratic form \code{quad_form}.
 }
 \examples{
 # set up example grid, covariance parameters
@@ -92,6 +89,10 @@ LL_direct = (-1/2) * ( n * log( 2 * pi ) + log_det + quad_form )
 # relative errors
 abs( LL_direct - LL_chol ) / max(LL_direct, LL_chol)
 abs( LL_direct - LL_eigen ) / max(LL_direct, LL_eigen)
+
+# get AIC or BIC directly
+sk_LL(pars, g_all, out='a')
+sk_LL(pars, g_all, out='b')
 
 # repeat with pre-computed variance factorization
 fac_eigen = sk_var(g_all, pars, fac_method='eigen', sep=TRUE)
@@ -178,16 +179,16 @@ LL_direct = (-1/2) * ( n * log( 2 * pi ) + log_det + quad_form )
 abs( LL_direct - LL_X_chol ) / max(LL_direct, LL_X_chol)
 abs( LL_direct - LL_X_eigen ) / max(LL_direct, LL_X_eigen)
 
-# return components of likelihood with more=TRUE
-LL_result = sk_LL(pars, g_all, X=X, more=TRUE)
-LL_result$LL - LL_X_chol
-LL_result$q - quad_form
-LL_result$d - log_det
-LL_result$n_obs - n
+# return detailed list of components with out='more'
+LL_result = sk_LL(pars, g_all, X=X, out='more')
+LL_result[['LL']] - LL_X_chol
+LL_result[['quad_form']] - quad_form
+LL_result[['log_det']] - log_det
+LL_result[['n_obs']] - n
 
 }
 \seealso{
-sk sk_GLS sk_var
+sk sk_GLS sk_var stats::AIC
 
 Other likelihood functions: 
 \code{\link{sk_nLL}()}

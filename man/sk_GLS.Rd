@@ -17,23 +17,28 @@ sk_GLS(g, pars, X = NA, fac = NULL, fac_method = "eigen", out = "b")
 
 \item{fac_method}{character, factorization method: 'eigen' (default) or 'chol' (see \code{sk_var})}
 
-\item{out}{character, either 'b' (coefficients) or 'z' (linear predictor)}
+\item{out}{character, either 'b' (default), 'z', 's' (Xb as vector or sk grid), or 'a'}
 }
 \value{
 numeric vector, either b (default) or Xb (if \code{out='z'})
 }
 \description{
-Computes coefficients b of the linear predictor E(Z) = Xb using the GLS equation,
-the maximum likelihood estimator given sk grid data \code{g} covariance model \code{pars}.
-If \code{out='z'}, the function returns the product Xb instead of b.
+Computes coefficients b of the linear predictor E(Z) = Xb using the GLS equation
+for sk grid \code{g} and covariance model \code{pars}. If \code{out='z'}, the function returns
+the product Xb instead of b.
 }
 \details{
+This is the maximum likelihood estimator for the linear trend coefficients b if we
+assume the covariance parameters (in \code{pars}) are specified correctly.
+
 The GLS solution is: b = ( X^T V^{-1} X )^{-1} X^T V^{-1} z,
 
-where V is the covariance matrix for data z (the non-\code{NA} entries of \code{g[]}), and X
-is a matrix of covariates. V is generated from the covariance model specified by
-\code{pars} for the grid \code{g}. Operations with V^{-1} are computed using the
-factorization \code{fac}, or else as specified in \code{fac_method}.
+where V is the covariance matrix for data vector z (which is \code{g[!is.na(g)]}), and X
+is a matrix of covariates. V is generated from the covariance model \code{pars} with grid
+layout \code{g}.
+
+Operations with V^{-1} are computed using the factorization \code{fac}, or else as specified
+in \code{fac_method}.
 
 Argument \code{X} should provide matrix X without the intercept column (a vector of 1's).
 DO NOT include an intercept column in argument \code{X} or you will get collinearity errors
@@ -47,7 +52,11 @@ If \code{g[]} is a matrix (a multi-layer grid), the covariates in \code{X} are r
 for each layer. Layers are assumed mutually independent and the GLS equation is evaluated
 using the corresponding block-diagonal V. Note that this is equivalent to (but faster
 than) calling \code{sk_GLS} separately on each layer with the same \code{X} and averaging the
-resulting b estimates
+resulting b estimates.
+
+By default \code{out='b'} returns the estimated coefficients. Change this to \code{'z'} to return
+the linear predictor as a vector, or \code{'s'} to return it as an sk grid. \code{'a'} returns
+both (in a list) along with \code{X} and its factorization.
 }
 \examples{
 # set up example grid and covariance parameters
@@ -60,27 +69,34 @@ pars = modifyList(sk_pars(g_empty, 'gau'), list(psill=2))
 g_noise = sk_sim(g_empty, pars)
 plot(g_noise)
 
-# generate some covariates
+# generate more spatial noise to use as covariates
 n_betas = 3
 betas = rnorm(n_betas, 0, 10)
-X = matrix(rnorm(n*(n_betas-1)), n)
+g_X = sk_sim(g_empty, pars, n_layer=n_betas-1L)
+X = g_X[]
 X_all = cbind(1, X)
-lm_actual = as.vector(X_all \%*\% betas)
 g_lm = g_empty
-g_lm[] = lm_actual
+g_lm[] = as.vector(X_all \%*\% betas)
 plot(g_lm)
 
 # combine with noise to make "observed" data
 g_obs = g_lm + g_noise
+plot(g_obs)
 
 # find the GLS coefficients
 betas_est = sk_GLS(g_obs, pars, X)
 print(betas_est)
 print(betas)
 
-# compute trend as product of betas with X and intercept, or by setting out='z'
+# compute trend as product of betas with X and intercept
 lm_est = X_all \%*\% betas_est
 max( abs( sk_GLS(g_obs, pars, X, out='z') - lm_est ) )
+
+# set out='s' to return the vector as a grid object
+plot(sk_GLS(g_obs, pars, X, out='s'))
+
+# de-trend observations by subtracting linear predictor
+plot(g_obs - sk_GLS(g_obs, pars, X, out='s'))
 
 # repeat with pre-computed eigen factorization (same result but faster)
 fac_eigen = sk_var(g_obs, pars, fac_method='eigen', sep=TRUE)
@@ -119,5 +135,12 @@ sk_GLS(g_multi, pars, NA)
 }
 \seealso{
 sk
+
+Other variance-related functions: 
+\code{\link{sk_LL}()},
+\code{\link{sk_nLL}()},
+\code{\link{sk_sim}()},
+\code{\link{sk_var}()}
 }
 \concept{estimators}
+\concept{variance-related functions}

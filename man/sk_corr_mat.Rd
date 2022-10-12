@@ -69,14 +69,10 @@ cx_long < cx
 
 }
 \seealso{
-Other variance-related functions: 
-\code{\link{sk_LL}()},
+Other internal variance-related functions: 
 \code{\link{sk_corr}()},
-\code{\link{sk_nLL}()},
-\code{\link{sk_sim}()},
 \code{\link{sk_toep_mult}()},
-\code{\link{sk_var_mult}()},
-\code{\link{sk_var}()}
+\code{\link{sk_var_mult}()}
 }
-\concept{variance-related functions}
+\concept{internal variance-related functions}
 \keyword{internal}

@@ -300,17 +300,18 @@ sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, out='l')
   bic_out = ( -2 * log_likelihood ) + ( -log(n_obs * n_layer) * n_pars  )
 
   # return requested info
-  if(startsWith(tolower(out), 'l')) return(log_likelihood)
-  if(startsWith(tolower(out), 'a')) return(aic_out)
-  if(startsWith(tolower(out), 'b')) return(bic_out)
-  if(startsWith(tolower(out), 'm')) return(list(LL = log_likelihood,
-                                                AIC = aic_out,
-                                                BIC = bic_out,
-                                                quad_form = quad_form,
-                                                log_det = n_layer * log_det,
-                                                n_obs = n_layer * n_obs,
-                                                n_pars = n_pars,
-                                                n_layer = n_layer))
+  out = tolower(out)
+  if(startsWith(out, 'l')) return(log_likelihood)
+  if(startsWith(out, 'a')) return(aic_out)
+  if(startsWith(out, 'b')) return(bic_out)
+  if(startsWith(out, 'm')) return(list(LL = log_likelihood,
+                                       AIC = aic_out,
+                                       BIC = bic_out,
+                                       quad_form = quad_form,
+                                       log_det = n_layer * log_det,
+                                       n_obs = n_layer * n_obs,
+                                       n_pars = n_pars,
+                                       n_layer = n_layer))
 
   stop('argument out must start with one of the letters: l, a, b, or m')
 }
@@ -386,6 +387,10 @@ sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, out='l')
 #'
 sk_nLL = function(p, g_obs, pars_fix, X=0, iso=FALSE, quiet=TRUE, log_scale=FALSE)
 {
+  # note the grid object argument name is "g_obs" and not "g" (like in other functions)
+  # because there seems to be a name conflict somewhere in the use of ... with
+  # `stats::optim` that causes it to fail to copy arguments named "g"
+
   # transform back from log scale
   if(log_scale)
   {

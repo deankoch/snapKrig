@@ -78,14 +78,10 @@ max( abs( result_default - sk_toep_mult(y, z=z[idx_obs], x, idx_obs, gdim) ) )
 \seealso{
 base::toeplitz stats::fft
 
-Other variance-related functions: 
-\code{\link{sk_LL}()},
+Other internal variance-related functions: 
 \code{\link{sk_corr_mat}()},
 \code{\link{sk_corr}()},
-\code{\link{sk_nLL}()},
-\code{\link{sk_sim}()},
-\code{\link{sk_var_mult}()},
-\code{\link{sk_var}()}
+\code{\link{sk_var_mult}()}
 }
-\concept{variance-related functions}
+\concept{internal variance-related functions}
 \keyword{internal}

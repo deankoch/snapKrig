@@ -84,12 +84,9 @@ Other likelihood functions:
 \code{\link{sk_LL}()}
 
 Other variance-related functions: 
+\code{\link{sk_GLS}()},
 \code{\link{sk_LL}()},
-\code{\link{sk_corr_mat}()},
-\code{\link{sk_corr}()},
 \code{\link{sk_sim}()},
-\code{\link{sk_toep_mult}()},
-\code{\link{sk_var_mult}()},
 \code{\link{sk_var}()}
 }
 \concept{likelihood functions}

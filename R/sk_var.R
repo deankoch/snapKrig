@@ -35,7 +35,7 @@
 #' @export
 #'
 #' @keywords internal
-#' @family variance-related functions
+#' @family internal variance-related functions
 #'
 #' @examples
 #'
@@ -173,7 +173,7 @@ sk_corr = function(pars, d=NA)
 #' @export
 #'
 #' @keywords internal
-#' @family variance-related functions
+#' @family internal variance-related functions
 #'
 #' @examples
 #'
@@ -498,7 +498,7 @@ sk_var = function(g, pars=NULL, scaled=FALSE, fac_method='none', X=NULL, fac=NUL
 #' @export
 #'
 #' @keywords internal
-#' @family variance-related functions
+#' @family internal variance-related functions
 #' @seealso sk base::eigen base::chol
 #'
 #' @examples
@@ -748,7 +748,7 @@ sk_var_mult = function(g, pars, fac_method='eigen', fac=NULL, quad=FALSE, p=-1)
 #' @export
 #'
 #' @keywords internal
-#' @family variance-related functions
+#' @family internal variance-related functions
 #' @seealso base::toeplitz stats::fft
 #'
 #' @examples

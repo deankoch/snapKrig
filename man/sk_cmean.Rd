@@ -2,28 +2,31 @@
 % Please edit documentation in R/sk_estim.R
 \name{sk_cmean}
 \alias{sk_cmean}
-\title{Compute ordinary kriging predictor (or variance) for data on a grid}
+\title{Compute kriging predictor (or variance) for an sk grid}
 \usage{
 sk_cmean(
-  g_obs,
+  g,
   pars,
   X = NA,
-  fac = NULL,
-  out = "p",
+  what = "p",
+  out = "s",
   fac_method = "chol",
+  fac = NULL,
   quiet = FALSE
 )
 }
 \arguments{
-\item{g_obs}{list of form returned by \code{sk} (with entries 'gdim', 'gres', 'gval')}
+\item{g}{an sk grid or list accepted by \code{sk} (with entries 'gdim', 'gres', 'gval')}
 
 \item{pars}{list of form returned by \code{sk_pars} (with entries 'y', 'x', 'eps', 'psill')}
 
-\item{X}{numeric, vector, matrix, or NA: the mean, or its linear predictors}
+\item{X}{sk grid, numeric, vector, matrix, or NA: the mean, or its linear predictors}
+
+\item{what}{character, what to compute: one of 'p' (predictor), 'v' (variance), or 'm' (more)}
+
+\item{out}{character, the return object, either 's' (sk grid) or 'v' (vector)}
 
 \item{fac}{(optional) pre-computed factorization of covariance matrix scaled by partial sill}
-
-\item{out}{character, the return value, one of 'predictor', 'variance', or 'm'}
 
 \item{quiet}{logical indicating to suppress console output}
 }
@@ -31,30 +34,202 @@ sk_cmean(
 numeric matrix, the predicted values (or their variance)
 }
 \description{
-Evaluates the ordinary kriging equations in section 3 of Cressie (1993) over the
-grid defined in \code{g_obs}. These are the predicted values minimizing mean squared
-prediction error under the covariance model specified by \code{pars}.
+Evaluates the kriging prediction equations to find the expected value (mean) of
+the spatial process for \code{g} at all grid points, including unobserved ones.
 }
 \details{
-Set \code{makev=TRUE} to return the pointwise kriging variance. This takes approximately
-n_obs times longer to evaluate than \code{makev=FALSE}. A progress bar will be printed to
-console unless \code{quiet=TRUE}.
+This predicts a noiseless version of the random process from which grid \code{g} was
+sampled, conditional on the observed data, and possibly a set of covariates. It is
+optimal in the sense of minimizing mean squared prediction error under the covariance
+model specified by \code{pars}, and assuming the predictions are a linear combination of
+the observed data.
 
-The covariance factorization \code{fac} can be pre-computed using \code{sk_var(..., scaled=TRUE)}
-to speed up repeated calls where only the observed data values change (ie same covariance
-structure \code{pars}, and same NA structure in the data). Note that the kriging variance does
-not change in this case and only needs to be computed once.
+The estimation method is determined by \code{X}. Set this to \code{0} and supply a de-trended
+\code{g} to do simple kriging. Set it to \code{NA} to estimate a spatially uniform mean (ordinary
+kriging). Or pass covariates to \code{X}, either as multi-layer sk grid or matrix, to do
+universal kriging. See \code{sk_GLS} for details on specifying \code{X} in this case.
+
+Set \code{what='v'} to return the point-wise kriging variance. This usually takes much
+longer to evaluate than the prediction, but the computer memory demands are similar.
+A progress bar will be printed to console in this case unless \code{quiet=TRUE}.
+
+Technical notes
+
+All calculations returned by \code{sk_cmean} are exact. Our implementation is based on the
+variance decomposition suggested in section 3.4 (p. 153-155) of Cressie (1993), and uses a
+loop over eigen-vectors (for observed locations) to compute variance iteratively.
+
+In technical terms, \code{sk_cmean} estimates the mean of the signal process behind the data.
+The nugget effect (\code{eps}) is therefore added to the diagonals of the covariance matrix for
+the observed points, but NOT to the corresponding entries of the cross-covariance matrix.
+This has the effect of smoothing (de-noising) predictions at observed locations, which means
+\code{sk_cmean} is not an exact interpolator (unless \code{eps=0}). Rather it makes a correction to
+the observed data to make it consistent with the surrounding signal.
+
+This is a good thing - real spatial datasets are almost always noisy, and we are usually
+interested in the signal, and not some version of it that is distorted by error. For more
+on this see section 3 of Cressie (1993), and in particular the discussion in 3.2.1 on the
+nugget effect.
+
+The covariance factorization \code{fac} can be pre-computed using \code{sk_var} with arguments
+\code{scaled=TRUE} and (if computing variance) \code{fac_method='eigen'}. This will speed up repeated
+calls where only the observed data values change (same covariance structure \code{pars}, and same
+\code{NA} structure in the data). Note that the kriging variance does not change in this case and
+only needs to be computed once.
+
+reference: "Statistics for Spatial Data" by Noel Cressie (1993)
 }
 \examples{
+
+## set up very simple example problem
+
 # make example grid and covariance parameters
-g = sk_sim(100)
-pars = sk_pars(g)
-g_pred = sk_cmean(g, pars)
+g_all = sk_sim(10)
+pars = sk_pars(g_all)
+plot(g_all)
+
+# remove most of the data
+n = length(g_all)
+p_miss = 0.90
+is_miss = seq(n) \%in\% sample.int(n, round(p_miss*n))
+is_obs = !is_miss
+g_miss = g_all
+g_miss[is_miss] = NA
+plot(g_miss)
 
 
-g_var = sk_cmean(g_obs, pars, makev=TRUE, quiet=TRUE)
-#g_obs |> sk_plot()
-#g_obs |> modifyList(list(gval=g_pred)) |> sk_plot()
-#g_obs |> modifyList(list(gval=g_var)) |> sk_plot()
+## simple kriging
+
+# estimate the missing data conditional on what's left over
+g_simple = sk_cmean(g_miss, pars, X=0)
+plot(g_simple)
+
+# variance of the estimator
+g_simple_v = sk_cmean(g_miss, pars, X=0, what='v', quiet=TRUE)
+plot(g_simple_v)
+
+# get the same results with pre-computed variance
+var_pc = sk_var(g_miss, pars, scaled=TRUE, fac_method='eigen')
+g_simple_v_compare = sk_cmean(g_miss, pars, X=0, what='v', fac=var_pc, quiet=TRUE)
+max(abs(g_simple_v_compare - g_simple_v))
+
+## ordinary kriging
+
+# estimate spatially uniform mean - true value is 0
+sk_GLS(g_miss, pars, out='b')
+
+# ordinary kriging automatically adjusts for the trend
+g_ok = sk_cmean(g_miss, pars, X=NA)
+
+# additional uncertainty in estimation means variance goes up a bit
+g_ok_v = sk_cmean(g_miss, pars, X=NA, what='v', quiet=TRUE)
+range(g_ok_v - g_simple_v)
+
+
+## universal kriging
+
+# introduce some covariates
+n_betas = 3
+betas = rnorm(n_betas, 0, 10)
+g_X = sk_sim(g_all, pars, n_layer=n_betas-1L)
+g_lm_all = g_all + as.vector(cbind(1, g_X[]) \%*\% betas)
+g_lm_miss = g_lm_all
+g_lm_miss[is_miss] = NA
+
+# prediction
+g_uk = sk_cmean(g_lm_miss, pars, g_X)
+g_uk_v = sk_cmean(g_lm_miss, pars, g_X, what='v', quiet=TRUE)
+
+
+## repeat with special subgrid case (faster!)
+
+# make g_all a subgrid of a larger example
+g_super = sk_rescale(g_all, down=2)
+
+# re-generate the covariates for the larger extent
+g_X_super = sk_sim(g_super, pars, n_layer=n_betas-1L)
+g_lm_super = g_super + as.vector(cbind(1, g_X_super[]) \%*\% betas)
+
+# prediction
+g_super_uk = sk_cmean(g_lm_super, pars, g_X_super)
+g_super_uk_v = sk_cmean(g_lm_super, pars, g_X_super, what='v', quiet=TRUE)
+
+
+## verification
+
+# get observed variance and its inverse
+V_full = sk_var(g_all, pars)
+is_obs = !is.na(g_miss)
+Vo = V_full[is_obs, is_obs]
+Vo_inv = solve(Vo)
+
+# get cross covariance
+is_diag = as.logical(diag(nrow=length(g_all))[is_obs,])
+Vc = V_full[is_obs,]
+
+# nugget adjustment to diagonals (corrects the output at observed locations)
+Vc[is_diag] = Vc[is_diag] - pars[['eps']]
+
+# get covariates matrix and append intercept column
+X = g_X[]
+X_all = cbind(1, X)
+X_obs = X_all[is_obs,]
+
+# simple kriging the hard way
+z = g_miss[is_obs]
+z_trans = Vo_inv \%*\% z
+z_pred_simple = c(t(Vc) \%*\% z_trans)
+z_var_simple = pars[['psill']] - diag( t(Vc) \%*\% Vo_inv \%*\% Vc )
+
+# ordinary kriging the hard way
+x_trans = ( 1 - colSums( Vo_inv \%*\% Vc ) )
+m_ok = x_trans / sum(Vo_inv)
+z_pred_ok = c( (t(Vc) + m_ok) \%*\% z_trans )
+z_var_ok = z_var_simple + diag( x_trans \%*\% t(m_ok) )
+
+# universal kriging the hard way
+z_lm = g_lm_miss[is_obs]
+z_lm_trans = Vo_inv \%*\% z_lm
+x_lm_trans = X_all - t( t(X_obs) \%*\% Vo_inv \%*\% Vc )
+m_uk = x_lm_trans \%*\% solve(t(X_obs) \%*\% Vo_inv \%*\% X_obs)
+z_pred_uk = c( (t(Vc) + t(X_obs \%*\% t(m_uk)) ) \%*\% z_lm_trans )
+z_var_uk = z_var_simple + diag( x_lm_trans \%*\% t(m_uk) )
+
+# check that these results agree with sk_cmean
+max(abs(z_pred_simple - g_simple), na.rm=TRUE)
+max(abs(z_var_simple - g_simple_v))
+max(abs(z_pred_ok - g_ok), na.rm=TRUE)
+max(abs(z_var_ok - g_ok_v))
+max(abs(z_pred_uk - g_uk), na.rm=TRUE)
+max(abs(z_var_uk - g_uk_v))
+
+
+## repeat for subgrid case
+
+# rebuild matrices
+V_full = sk_var(g_super_uk, pars)
+is_obs = !is.na(g_super)
+Vo = V_full[is_obs, is_obs]
+Vo_inv = solve(Vo)
+is_diag = as.logical(diag(nrow=length(g_super))[is_obs,])
+Vc = V_full[is_obs,]
+Vc[is_diag] = Vc[is_diag] - pars[['eps']]
+X = g_X_super[]
+X_all = cbind(1, X)
+X_obs = X_all[is_obs,]
+z = g_miss[is_obs]
+
+# universal kriging the hard way
+z_var_simple = pars[['psill']] - diag( t(Vc) \%*\% Vo_inv \%*\% Vc )
+z_lm = g_lm_super[is_obs]
+z_lm_trans = Vo_inv \%*\% z_lm
+x_lm_trans = X_all - t( t(X_obs) \%*\% Vo_inv \%*\% Vc )
+m_uk = x_lm_trans \%*\% solve(t(X_obs) \%*\% Vo_inv \%*\% X_obs)
+z_pred_uk = c( (t(Vc) + t(X_obs \%*\% t(m_uk)) ) \%*\% z_lm_trans )
+z_var_uk = z_var_simple + diag( x_lm_trans \%*\% t(m_uk) )
+
+# verification
+max(abs(z_pred_uk - g_super_uk), na.rm=TRUE)
+max(abs(z_var_uk - g_super_uk_v))
 
 }

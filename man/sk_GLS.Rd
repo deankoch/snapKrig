@@ -2,7 +2,7 @@
 % Please edit documentation in R/sk_estim.R
 \name{sk_GLS}
 \alias{sk_GLS}
-\title{Generalized least squares (GLS) with Kronecker covariances}
+\title{Generalized least squares (GLS) with Kronecker covariances for sk grids}
 \usage{
 sk_GLS(g, pars, X = NA, out = "s", fac_method = "eigen", fac = NULL)
 }
@@ -137,6 +137,14 @@ b0 = sk_GLS(g_miss, pars, X=NA, out='b')
 X_obs = X[is_obs,]
 sk_GLS(g_miss, pars, X=X_obs)
 sk_GLS(g_miss, pars, X=X)
+
+# verify GLS results manually
+X_all_obs = cbind(1, X_obs)
+V = sk_var(g_miss, pars)
+z = g_miss[!is.na(g_miss)]
+X_trans = t(X_all_obs) \%*\% solve(V)
+betas_compare = solve( X_trans \%*\% X_all_obs ) \%*\% X_trans \%*\% z
+betas_compare - betas_est
 
 # generate some extra noise for 10-layer example
 g_noise_multi = sk_sim(g_empty, pars, n_layer=10)

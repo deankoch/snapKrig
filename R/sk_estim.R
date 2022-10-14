@@ -2,7 +2,7 @@
 # Dean Koch, 2022
 # Functions for parameter inference and spatial prediction
 
-#' Generalized least squares (GLS) with Kronecker covariances
+#' Generalized least squares (GLS) with Kronecker covariances for sk grids
 #'
 #' Computes coefficients b of the linear model E(Z) = Xb using the GLS equation
 #' for sk grid `g` and covariance model `pars`. By default the function returns the
@@ -133,6 +133,14 @@
 #' sk_GLS(g_miss, pars, X=X_obs)
 #' sk_GLS(g_miss, pars, X=X)
 #'
+#' # verify GLS results manually
+#' X_all_obs = cbind(1, X_obs)
+#' V = sk_var(g_miss, pars)
+#' z = g_miss[!is.na(g_miss)]
+#' X_trans = t(X_all_obs) %*% solve(V)
+#' betas_compare = solve( X_trans %*% X_all_obs ) %*% X_trans %*% z
+#' betas_compare - betas_est
+#'
 #' # generate some extra noise for 10-layer example
 #' g_noise_multi = sk_sim(g_empty, pars, n_layer=10)
 #' g_multi = g_lm + g_noise_multi
@@ -257,25 +265,58 @@ sk_GLS = function(g, pars, X=NA, out='s', fac_method='eigen', fac=NULL)
 }
 
 
-#' Compute ordinary kriging predictor (or variance) for data on a grid
+#' Compute kriging predictor (or variance) for an sk grid
 #'
-#' Evaluates the ordinary kriging equations in section 3 of Cressie (1993) over the
-#' grid defined in `g_obs`. These are the predicted values minimizing mean squared
-#' prediction error under the covariance model specified by `pars`.
+#' Evaluates the kriging prediction equations to find the expected value (mean) of
+#' the spatial process for `g` at all grid points, including unobserved ones.
 #'
-#' Set `makev=TRUE` to return the pointwise kriging variance. This takes approximately
-#' n_obs times longer to evaluate than `makev=FALSE`. A progress bar will be printed to
-#' console unless `quiet=TRUE`.
+#' This predicts a noiseless version of the random process from which grid `g` was
+#' sampled, conditional on the observed data, and possibly a set of covariates. It is
+#' optimal in the sense of minimizing mean squared prediction error under the covariance
+#' model specified by `pars`, and assuming the predictions are a linear combination of
+#' the observed data.
 #'
-#' The covariance factorization `fac` can be pre-computed using `sk_var(..., scaled=TRUE)`
-#' to speed up repeated calls where only the observed data values change (ie same covariance
-#' structure `pars`, and same NA structure in the data). Note that the kriging variance does
-#' not change in this case and only needs to be computed once.
+#' The estimation method is determined by `X`. Set this to `0` and supply a de-trended
+#' `g` to do simple kriging. Set it to `NA` to estimate a spatially uniform mean (ordinary
+#' kriging). Or pass covariates to `X`, either as multi-layer sk grid or matrix, to do
+#' universal kriging. See `sk_GLS` for details on specifying `X` in this case.
 #'
-#' @param g_obs list of form returned by `sk` (with entries 'gdim', 'gres', 'gval')
+#' Set `what='v'` to return the point-wise kriging variance. This usually takes much
+#' longer to evaluate than the prediction, but the computer memory demands are similar.
+#' A progress bar will be printed to console in this case unless `quiet=TRUE`.
+#'
+#'
+#' Technical notes
+#'
+#' All calculations returned by `sk_cmean` are exact. Our implementation is based on the
+#' variance decomposition suggested in section 3.4 (p. 153-155) of Cressie (1993), and uses a
+#' loop over eigen-vectors (for observed locations) to compute variance iteratively.
+#'
+#' In technical terms, `sk_cmean` estimates the mean of the signal process behind the data.
+#' The nugget effect (`eps`) is therefore added to the diagonals of the covariance matrix for
+#' the observed points, but NOT to the corresponding entries of the cross-covariance matrix.
+#' This has the effect of smoothing (de-noising) predictions at observed locations, which means
+#' `sk_cmean` is not an exact interpolator (unless `eps=0`). Rather it makes a correction to
+#' the observed data to make it consistent with the surrounding signal.
+#'
+#' This is a good thing - real spatial datasets are almost always noisy, and we are usually
+#' interested in the signal, and not some version of it that is distorted by error. For more
+#' on this see section 3 of Cressie (1993), and in particular the discussion in 3.2.1 on the
+#' nugget effect.
+#'
+#' The covariance factorization `fac` can be pre-computed using `sk_var` with arguments
+#' `scaled=TRUE` and (if computing variance) `fac_method='eigen'`. This will speed up repeated
+#' calls where only the observed data values change (same covariance structure `pars`, and same
+#' `NA` structure in the data). Note that the kriging variance does not change in this case and
+#' only needs to be computed once.
+#'
+#' reference: "Statistics for Spatial Data" by Noel Cressie (1993)
+#'
+#' @param g an sk grid or list accepted by `sk` (with entries 'gdim', 'gres', 'gval')
 #' @param pars list of form returned by `sk_pars` (with entries 'y', 'x', 'eps', 'psill')
-#' @param X numeric, vector, matrix, or NA: the mean, or its linear predictors
-#' @param out character, the return value, one of 'predictor', 'variance', or 'm'
+#' @param X sk grid, numeric, vector, matrix, or NA: the mean, or its linear predictors
+#' @param what character, what to compute: one of 'p' (predictor), 'v' (variance), or 'm' (more)
+#' @param out character, the return object, either 's' (sk grid) or 'v' (vector)
 #' @param fac (optional) pre-computed factorization of covariance matrix scaled by partial sill
 #' @param quiet logical indicating to suppress console output
 #'
@@ -283,79 +324,236 @@ sk_GLS = function(g, pars, X=NA, out='s', fac_method='eigen', fac=NULL)
 #' @export
 #'
 #' @examples
+#'
+#' ## set up very simple example problem
+#'
 #' # make example grid and covariance parameters
-#' g = sk_sim(100)
-#' pars = sk_pars(g)
-#' g_pred = sk_cmean(g, pars)
+#' g_all = sk_sim(10)
+#' pars = sk_pars(g_all)
+#' plot(g_all)
+#'
+#' # remove most of the data
+#' n = length(g_all)
+#' p_miss = 0.90
+#' is_miss = seq(n) %in% sample.int(n, round(p_miss*n))
+#' is_obs = !is_miss
+#' g_miss = g_all
+#' g_miss[is_miss] = NA
+#' plot(g_miss)
 #'
 #'
-#' g_var = sk_cmean(g_obs, pars, makev=TRUE, quiet=TRUE)
-#' #g_obs |> sk_plot()
-#' #g_obs |> modifyList(list(gval=g_pred)) |> sk_plot()
-#' #g_obs |> modifyList(list(gval=g_var)) |> sk_plot()
+#' ## simple kriging
 #'
-sk_cmean = function(g_obs, pars, X=NA, fac=NULL, out='p', fac_method='chol', quiet=FALSE)
+#' # estimate the missing data conditional on what's left over
+#' g_simple = sk_cmean(g_miss, pars, X=0)
+#' plot(g_simple)
+#'
+#' # variance of the estimator
+#' g_simple_v = sk_cmean(g_miss, pars, X=0, what='v', quiet=TRUE)
+#' plot(g_simple_v)
+#'
+#' # get the same results with pre-computed variance
+#' var_pc = sk_var(g_miss, pars, scaled=TRUE, fac_method='eigen')
+#' g_simple_v_compare = sk_cmean(g_miss, pars, X=0, what='v', fac=var_pc, quiet=TRUE)
+#' max(abs(g_simple_v_compare - g_simple_v))
+#'
+#' ## ordinary kriging
+#'
+#' # estimate spatially uniform mean - true value is 0
+#' sk_GLS(g_miss, pars, out='b')
+#'
+#' # ordinary kriging automatically adjusts for the trend
+#' g_ok = sk_cmean(g_miss, pars, X=NA)
+#'
+#' # additional uncertainty in estimation means variance goes up a bit
+#' g_ok_v = sk_cmean(g_miss, pars, X=NA, what='v', quiet=TRUE)
+#' range(g_ok_v - g_simple_v)
+#'
+#'
+#' ## universal kriging
+#'
+#' # introduce some covariates
+#' n_betas = 3
+#' betas = rnorm(n_betas, 0, 10)
+#' g_X = sk_sim(g_all, pars, n_layer=n_betas-1L)
+#' g_lm_all = g_all + as.vector(cbind(1, g_X[]) %*% betas)
+#' g_lm_miss = g_lm_all
+#' g_lm_miss[is_miss] = NA
+#'
+#' # prediction
+#' g_uk = sk_cmean(g_lm_miss, pars, g_X)
+#' g_uk_v = sk_cmean(g_lm_miss, pars, g_X, what='v', quiet=TRUE)
+#'
+#'
+#' ## repeat with special subgrid case (faster!)
+#'
+#' # make g_all a subgrid of a larger example
+#' g_super = sk_rescale(g_all, down=2)
+#'
+#' # re-generate the covariates for the larger extent
+#' g_X_super = sk_sim(g_super, pars, n_layer=n_betas-1L)
+#' g_lm_super = g_super + as.vector(cbind(1, g_X_super[]) %*% betas)
+#'
+#' # prediction
+#' g_super_uk = sk_cmean(g_lm_super, pars, g_X_super)
+#' g_super_uk_v = sk_cmean(g_lm_super, pars, g_X_super, what='v', quiet=TRUE)
+#'
+#'
+#' ## verification
+#'
+#' # get observed variance and its inverse
+#' V_full = sk_var(g_all, pars)
+#' is_obs = !is.na(g_miss)
+#' Vo = V_full[is_obs, is_obs]
+#' Vo_inv = solve(Vo)
+#'
+#' # get cross covariance
+#' is_diag = as.logical(diag(nrow=length(g_all))[is_obs,])
+#' Vc = V_full[is_obs,]
+#'
+#' # nugget adjustment to diagonals (corrects the output at observed locations)
+#' Vc[is_diag] = Vc[is_diag] - pars[['eps']]
+#'
+#' # get covariates matrix and append intercept column
+#' X = g_X[]
+#' X_all = cbind(1, X)
+#' X_obs = X_all[is_obs,]
+#'
+#' # simple kriging the hard way
+#' z = g_miss[is_obs]
+#' z_trans = Vo_inv %*% z
+#' z_pred_simple = c(t(Vc) %*% z_trans)
+#' z_var_simple = pars[['psill']] - diag( t(Vc) %*% Vo_inv %*% Vc )
+#'
+#' # ordinary kriging the hard way
+#' x_trans = ( 1 - colSums( Vo_inv %*% Vc ) )
+#' m_ok = x_trans / sum(Vo_inv)
+#' z_pred_ok = c( (t(Vc) + m_ok) %*% z_trans )
+#' z_var_ok = z_var_simple + diag( x_trans %*% t(m_ok) )
+#'
+#' # universal kriging the hard way
+#' z_lm = g_lm_miss[is_obs]
+#' z_lm_trans = Vo_inv %*% z_lm
+#' x_lm_trans = X_all - t( t(X_obs) %*% Vo_inv %*% Vc )
+#' m_uk = x_lm_trans %*% solve(t(X_obs) %*% Vo_inv %*% X_obs)
+#' z_pred_uk = c( (t(Vc) + t(X_obs %*% t(m_uk)) ) %*% z_lm_trans )
+#' z_var_uk = z_var_simple + diag( x_lm_trans %*% t(m_uk) )
+#'
+#' # check that these results agree with sk_cmean
+#' max(abs(z_pred_simple - g_simple), na.rm=TRUE)
+#' max(abs(z_var_simple - g_simple_v))
+#' max(abs(z_pred_ok - g_ok), na.rm=TRUE)
+#' max(abs(z_var_ok - g_ok_v))
+#' max(abs(z_pred_uk - g_uk), na.rm=TRUE)
+#' max(abs(z_var_uk - g_uk_v))
+#'
+#'
+#' ## repeat verification for subgrid case
+#'
+#' # rebuild matrices
+#' V_full = sk_var(g_super_uk, pars)
+#' is_obs = !is.na(g_super)
+#' Vo = V_full[is_obs, is_obs]
+#' Vo_inv = solve(Vo)
+#' is_diag = as.logical(diag(nrow=length(g_super))[is_obs,])
+#' Vc = V_full[is_obs,]
+#' Vc[is_diag] = Vc[is_diag] - pars[['eps']]
+#' X = g_X_super[]
+#' X_all = cbind(1, X)
+#' X_obs = X_all[is_obs,]
+#' z = g_miss[is_obs]
+#'
+#' # universal kriging the hard way
+#' z_var_simple = pars[['psill']] - diag( t(Vc) %*% Vo_inv %*% Vc )
+#' z_lm = g_lm_super[is_obs]
+#' z_lm_trans = Vo_inv %*% z_lm
+#' x_lm_trans = X_all - t( t(X_obs) %*% Vo_inv %*% Vc )
+#' m_uk = x_lm_trans %*% solve(t(X_obs) %*% Vo_inv %*% X_obs)
+#' z_pred_uk = c( (t(Vc) + t(X_obs %*% t(m_uk)) ) %*% z_lm_trans )
+#' z_var_uk = z_var_simple + diag( x_lm_trans %*% t(m_uk) )
+#'
+#' # verification
+#' max(abs(z_pred_uk - g_super_uk), na.rm=TRUE)
+#' max(abs(z_var_uk - g_super_uk_v))
+#'
+sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NULL, quiet=FALSE)
 {
-  # check for expected objects in list in g_obs
+  # determine output type (sk grid or vector)
+  is_sk = startsWith(out, 's')
+
+  # check for expected objects in list in g
   nm_expect = c('gdim', 'gres', 'gval')
   msg_expect = paste('g_obs must be a list with entries named', paste(nm_expect, collapse=', '))
-  if( !is.list(g_obs) | !all( nm_expect %in% names(g_obs) ) ) stop(msg_expect)
-  gdim = g_obs[['gdim']]
-  gres = g_obs[['gres']]
+  if( !is.list(g) | !all( nm_expect %in% names(g) ) ) stop(msg_expect)
+
+  # copy grid info but not values
+  g_out = g[c('gdim', 'gres')]
+  gdim_out = g[['gdim']]
+  gres_out = g[['gres']]
 
   # identify observed data points and copy their index
-  is_obs = is_obs_src = !is.na(g_obs[['gval']])
-  idx_obs = which( is_obs )
+  is_obs = is_obs_src = !is.na(g[['gval']])
+  idx_obs = which(is_obs)
 
   # copy non-NA data
-  z = g_obs[['gval']][is_obs]
-  if( is.null(z) ) stop('No non-NA values found in g_obs')
-  n_obs = length(z)
-  n = prod(gdim)
+  z_obs = g[['gval']][is_obs]
+  if( is.null(z_obs) ) stop('No non-NA values found in g')
+  n_obs = length(z_obs)
+  n_out = prod(gdim_out)
+
+  # extract covariates matrix from sk grid input
+  if( inherits(X, 'sk') )  X = matrix(X[], nrow=length(X))
 
   # initialize parameters and check if we are estimating linear predictor for the model
   use_GLS = anyNA(X) | is.matrix(X)
   if( !is.matrix(X) ) mu_GLS = X
-  m = rep(0, n)
+
+  # initialize GLS adjustment vector
+  m = rep(0, n_out)
 
   # construct first rows of the symmetric Toeplitz correlation matrices for y and x
-  cy = cy_obs = sqrt(pars[['psill']]) * sk_corr_mat(pars[['y']], gdim[['y']], gres[['y']], i=1)
-  cx = cx_obs = sqrt(pars[['psill']]) * sk_corr_mat(pars[['x']], gdim[['x']], gres[['x']], i=1)
+  cy = sqrt(pars[['psill']]) * sk_corr_mat(pars[['y']], gdim_out[['y']], gres_out[['y']], i=1)
+  cx = sqrt(pars[['psill']]) * sk_corr_mat(pars[['x']], gdim_out[['x']], gres_out[['x']], i=1)
 
   # set up factorization when it's not supplied. Variance mode forces eigen-decomposition
-  if( startsWith(out, 'v') ) fac_method = 'eigen'
-
-  # check for completeness and separability
-  is_sep = n == n_obs
+  if( startsWith(what, 'v') ) fac_method = 'eigen'
 
   # check for sub-grid structure and substitute simpler equivalent problem if possible
-  sg = sk_sub_find(is_obs, g_obs[['gdim']])
+  sg = sk_sub_find(is_obs, gdim_out)
   is_sg = !is.null(sg)
   if( is_sg )
   {
-    # extract sub-grid layout and find separable covariance eigen-decomposition
+    # console message indicating sub-grid size
+    if(!quiet) cat(paste0(paste(sg[['gdim']], collapse=' x '), 'complete sub-grid detected'))
+
+    # overwrite g with smaller sub-grid layout (original dimensions etc are already copied)
     fac_method = 'eigen'
-    g_obs = list(gval=z, gdim=sg[['gdim']], gres=g_obs[['gres']] * sg[['res_scale']])
-    if( is.null(fac) ) fac = sk_var(g_obs, pars, scaled=TRUE, fac_method=fac_method, sep=TRUE)
-    cy_obs = cy[ sg[['ij']][['y']] ]
-    cx_obs = cx[ sg[['ij']][['x']] ]
+    is_sep = TRUE
+    g = list(gval=z_obs, gdim=sg[['gdim']], gres=gres_out*sg[['res_scale']])
 
-    # g_obs should have no missing (NA) data points now
+    # g should have no missing (NA) data points now (original observed index stored in is_obs_src)
     is_obs = rep(TRUE, n_obs)
-    # (is_obs_src still contains original observed index)
-
-  } else {
-
-    # compute factorization (scaled=TRUE means partial sill is factored out)
-    if( is.null(fac) ) fac = sk_var(g_obs, pars, scaled=TRUE, fac_method=fac_method, sep=is_sep)
   }
 
+  # compute factorization (scaled=TRUE means partial sill is factored out)
+  if( is.null(fac) ) fac = sk_var(g, pars, scaled=TRUE, fac_method=fac_method, sep=is_sg)
+
   # transform the observed data by left-multiplying with inverse covariance
-  z_tilde = sk_var_mult(g_obs[['gval']][is_obs], pars, fac=fac)
+  z_tilde = sk_var_mult(z_obs, pars, fac=fac)
 
   # left-multiply by cross-covariance to get simple kriging predictor
-  z_p_tilde = sk_toep_mult(cy, z_tilde, cx, idx_obs, gdim) |> as.numeric()
-  if( !use_GLS & startsWith(out, 'p') ) return(as.numeric(X) + z_p_tilde)
+  z_p_tilde = as.numeric(sk_toep_mult(cy, z_tilde, cx, idx_obs, gdim_out))
+
+  # finished with simple kriging predictor
+  if( !use_GLS & startsWith(what, 'p') )
+  {
+    # as vector
+    z_out = as.numeric(X) + z_p_tilde
+    if(!is_sk) return(z_out)
+
+    # or return in an sk grid object
+    return(sk(modifyList(g_out, list(gval=z_out))))
+  }
 
   # compute GLS coefficients and resulting adjustments to predictor as needed
   if(use_GLS)
@@ -367,28 +565,48 @@ sk_cmean = function(g_obs, pars, X=NA, fac=NULL, out='p', fac_method='chol', qui
     }
 
     # find betas, predictor, and the data matrix with an intercept column
-    gls = sk_GLS(g_obs, pars, X=X_obs, fac=fac, fac_method=fac_method, out='a')
+    gls = sk_GLS(g, pars, X=X_obs, fac=fac, fac_method=fac_method, out='a')
     fac_X = gls[['fac_X']]
 
     # compute bias adjustment due to estimation of linear predictor
     X_p_tilde = gls[['x']] |>
       sk_var_mult(pars, fac=fac) |>
-      apply(2, \(x) sk_toep_mult(cy, x, cx, idx_obs, gdim))
+      apply(2, \(x) sk_toep_mult(cy, x, cx, idx_obs, gdim_out))
 
     # uncomment to get exact interpolator (and discontinuities at observations)
     #X_p_tilde[idx_obs,] = gls[['x']]
 
     # compute trend and 'm'
-    X_adj = cbind(rep(1, n), X) - X_p_tilde
+    X_adj = cbind(rep(1, n_out), X) - X_p_tilde
     mu_GLS = tcrossprod(X_adj, t(gls[['b']])) |> as.numeric()
-    if( startsWith(out, 'm') ) return( as.numeric(sk_var_mult( t(X_adj), pars, fac=fac_X)) )
+
+    # DO WE NEED THIS ANYMORE?
+    if( startsWith(what, 'm') ) return( as.numeric(sk_var_mult( t(X_adj), pars, fac=fac_X)) )
   }
 
-  # universal kriging predictor
-  if( startsWith(out, 'p') ) return( mu_GLS + z_p_tilde )
+  # universal (and ordinary) kriging predictor
+  if( startsWith(what, 'p') )
+  {
+    # as vector
+    z_out = mu_GLS + z_p_tilde
+    if(!is_sk) return(z_out)
+
+    # or return in an sk grid object
+    return(sk(modifyList(g_out, list(gval=z_out))))
+  }
+
+  # verify fac is an eigen-decomposition
+  msg_fac = 'Cholesky factorization (fac) not supported in what="v" mode'
+  if( !is.list(fac) ) stop(msg_fac)
+  if(is_sg)
+  {
+    # check that the correct factorization (componentwise, in a list) was supplied
+    if( !all( c('y', 'x') %in% names(fac) ) ) stop('supplied factorization was not separable')
+    if( !all( sapply(fac[c('y', 'x')], is.list) ) ) stop(msg_fac)
+  }
 
   # compute variance contribution from GLS (0 when not using GLS)
-  v_gls = numeric(n)
+  v_gls = numeric(n_out)
   if(use_GLS)
   {
     # small loop over eigen-values in fac_X, adding each contribution to running total in v_gls
@@ -404,39 +622,31 @@ sk_cmean = function(g_obs, pars, X=NA, fac=NULL, out='p', fac_method='chol', qui
   idx_ev = seq(n_obs)
   if(is_sg)
   {
-    # check that the correct factorization (componentwise, in a list) was supplied
-    if( !all( c('y', 'x') %in% names(fac) ) ) stop('supplied factorization was not separable')
-
     # compute eigenvalues for observed covariance matrix inverse
     ev_corr = kronecker(fac[['x']][['values']], fac[['y']][['values']])
     ev = 1 / ( (pars[['psill']] * ev_corr) + pars[['eps']] )
 
     # directly build and multiply the relatively small component covariance matrices
-    c_cross_y = sk_corr_mat(pars[['y']], gdim[['y']], gres[['y']], j=sg[['ij']][['y']])
-    c_cross_x = sk_corr_mat(pars[['x']], gdim[['x']], gres[['x']], j=sg[['ij']][['x']])
+    c_cross_y = sk_corr_mat(pars[['y']], gdim_out[['y']], gres_out[['y']], j=sg[['ij']][['y']])
+    c_cross_x = sk_corr_mat(pars[['x']], gdim_out[['x']], gres_out[['x']], j=sg[['ij']][['x']])
     add_y2 = ( c_cross_y %*% fac[['y']][['vectors']] )
     add_x2 = ( c_cross_x %*% fac[['x']][['vectors']] )
-
-    # a different ordering for the loop below (largest eigenvalues first)
-    idx_ev = order(ev)
   }
 
   # large loop over eigen-values of covariance matrix, iteratively adding to v_rem
-  v_rem = numeric(n)
+  v_rem = numeric(n_out)
   if(!quiet) pb = utils::txtProgressBar(max=n_obs, style=3)
-
   for(idx in seq(n_obs))
   {
     # update progress bar then change to reordered index
     if(!quiet) utils::setTxtProgressBar(pb, idx)
-    idx = idx_ev[idx]
 
     # non-separable case first
     if( !is_sg )
     {
       # eigen-values of inverse are scaled by psill, then slow multiplication with cross covariance
       ev = 1 / ( pars[['psill']] * fac[['values']][idx] )
-      v_add = ev * sk_toep_mult(cy, fac[['vectors']][, idx], cx, idx_obs, gdim)^2
+      v_add = ev * sk_toep_mult(cy, fac[['vectors']][, idx], cx, idx_obs, gdim_out)^2
 
     } else {
 
@@ -452,7 +662,20 @@ sk_cmean = function(g_obs, pars, X=NA, fac=NULL, out='p', fac_method='chol', qui
     v_rem = v_rem + as.vector(v_add)
   }
   if(!quiet) close(pb)
-  return(pars[['psill']] + pars[['eps']] + as.numeric(v_gls) - v_rem)
+
+  # kriging variance
+  if( startsWith(what, 'v') )
+  {
+    # as vector
+    z_out = pars[['psill']] + as.numeric(v_gls) - v_rem
+    #z_out = pars[['psill']] + pars[['eps']] + as.numeric(v_gls) - v_rem
+    if(!is_sk) return(z_out)
+
+    # or return in an sk grid object
+    return(sk(modifyList(g_out, list(gval=z_out))))
+  }
+
+  stop('argument "what" not recognized')
 }
 
 

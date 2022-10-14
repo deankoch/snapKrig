@@ -199,10 +199,13 @@ g_meuse_sf = sk_coords(g_meuse, out='sf')
 d2r_result = units::drop_units(st_distance(g_meuse_sf, meuse[['river_line']]))
 
 # include both distance and its square root
-meuse_predictors = scale(cbind(d2r_result, sqrt(d2r_result)))
+X = g_meuse
+X[] = scale(cbind(d2r_result, sqrt(d2r_result)))
+plot(X, layer=1)
+plot(X, layer=2)
 
 # copy the subset of predictors at observed response locations
-X = matrix(meuse_predictors[is_obs,], nrow=n_obs)
+#X = matrix(meuse_predictors[is_obs,], nrow=n_obs)
 
 
 #'
@@ -237,8 +240,7 @@ str(pars_UK)
 
 
 # GLS to estimate the (spatially varying) trend
-g_lm = g_empty
-g_lm[] = sk_GLS(g_meuse, pars_UK, X=meuse_predictors, out='z')
+g_lm = sk_GLS(g_meuse, pars_UK, X)
 plot(g_lm, main='estimated trend component')
 
 # g2 = g_meuse
@@ -260,8 +262,7 @@ plot(g_lm, main='estimated trend component')
 
 
 # compute expectation (UK kriging predictor)
-g_pred = g_empty
-g_pred[] = sk_cmean(g_meuse, pars_UK, X=meuse_predictors)
+g_pred = sk_cmean(g_meuse, pars_UK, X)
 
 
 #+ predictor_plot
@@ -282,13 +283,11 @@ plot(g_pred, zlim=zlim_pred, zlab='log(zinc)', main='kriging predictor')
 
 
 # prediction variance
-g_var = g_empty
-g_var[] = sk_cmean(g_meuse, pars_UK, X=meuse_predictors, out='v', quiet=TRUE)
+g_var = sk_cmean(g_meuse, pars_UK, X, what='v', quiet=TRUE)
 
 
 # plot
-zlim_var = c(pars_UK[['eps']], pars_UK[['eps']] + pars_UK[['psill']])
-sk_plot(g_var, main='kriging variance', zlim=zlim_var)
+plot(g_var, main='kriging variance', zlim=c(0, pars_UK[['psill']]))
 
 
 

@@ -1,7 +1,7 @@
 meuse_vignette
 ================
 Dean Koch
-2022-10-12
+2022-10-13
 
 **Mitacs UYRW project**
 
@@ -196,10 +196,22 @@ g_meuse_sf = sk_coords(g_meuse, out='sf')
 d2r_result = units::drop_units(st_distance(g_meuse_sf, meuse[['river_line']]))
 
 # include both distance and its square root
-meuse_predictors = scale(cbind(d2r_result, sqrt(d2r_result)))
+X = g_meuse
+X[] = scale(cbind(d2r_result, sqrt(d2r_result)))
+plot(X, layer=1)
+```
 
+![](https://github.com/deankoch/snapKrig/blob/master/vignettes/meuse_vignette_files/figure-gfm/make_distances-1.png)<!-- -->
+
+``` r
+plot(X, layer=2)
+```
+
+![](https://github.com/deankoch/snapKrig/blob/master/vignettes/meuse_vignette_files/figure-gfm/make_distances-2.png)<!-- -->
+
+``` r
 # copy the subset of predictors at observed response locations
-X = matrix(meuse_predictors[is_obs,], nrow=n_obs)
+#X = matrix(meuse_predictors[is_obs,], nrow=n_obs)
 ```
 
 Fit the model with the linear predictor included. This is called
@@ -246,8 +258,7 @@ str(pars_UK)
 
 ``` r
 # GLS to estimate the (spatially varying) trend
-g_lm = g_empty
-g_lm[] = sk_GLS(g_meuse, pars_UK, X=meuse_predictors, out='z')
+g_lm = sk_GLS(g_meuse, pars_UK, X)
 plot(g_lm, main='estimated trend component')
 ```
 
@@ -268,8 +279,7 @@ variance, under suitable assumptions.
 
 ``` r
 # compute expectation (UK kriging predictor)
-g_pred = g_empty
-g_pred[] = sk_cmean(g_meuse, pars_UK, X=meuse_predictors)
+g_pred = sk_cmean(g_meuse, pars_UK, X)
 ```
 
 ``` r
@@ -285,13 +295,11 @@ to compute than the kriging predictor
 
 ``` r
 # prediction variance
-g_var = g_empty
-g_var[] = sk_cmean(g_meuse, pars_UK, X=meuse_predictors, out='v', quiet=TRUE)
+g_var = sk_cmean(g_meuse, pars_UK, X, what='v', quiet=TRUE)
 
 
 # plot
-zlim_var = c(pars_UK[['eps']], pars_UK[['eps']] + pars_UK[['psill']])
-sk_plot(g_var, main='kriging variance', zlim=zlim_var)
+plot(g_var, main='kriging variance', zlim=c(0, pars_UK[['psill']]))
 ```
 
 ![](https://github.com/deankoch/snapKrig/blob/master/vignettes/meuse_vignette_files/figure-gfm/variance_plot-1.png)<!-- -->

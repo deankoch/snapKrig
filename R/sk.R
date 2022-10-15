@@ -160,8 +160,8 @@ sk = function(..., vals=TRUE)
 
   # handle terra and raster objects
   is_terra = inherits(g, 'SpatRaster')
-  is_raster = inherits(g, c('RasterLayer', 'RasterStack'))
-  if( is_terra | is_raster )
+  is_raster_or_terra = inherits(g, c('RasterLayer', 'RasterStack')) | is_terra
+  if( is_raster_or_terra )
   {
     # order in dimensions is y, x, like in sk
     gdim = dim(g)[1:2]
@@ -178,20 +178,18 @@ sk = function(..., vals=TRUE)
     nlyr_ = if(is_terra) terra::nlyr else raster::nlayers
     values_ = if(is_terra) terra::values else raster::getValues
 
-    # copy number of layers as needed
+    # copy CRS, number of layers, resolution, grid line locations
     if(vals) n_layer = nlyr_(g)
+    gcrs = crs_(g)
+    gres = res_(g)[2:1] # need this in order dy, dx
+    gyx = lapply( list( y = yFromRow_(g, seq(gdim[1])), x = xFromCol_(g, seq(gdim[2])) ), sort)
 
-    # initialize list without data
-    g = list(gdim = gdim,
-             gres = res_(g)[2:1], # (switched to order dy, dx)
-             gyx = lapply(list(y=yFromRow_(g, seq(gdim[1])), x=xFromCol_(g,  seq(gdim[2]))), sort),
-             crs = crs_(g),
-             gval = if(!vals) {NULL} else {
+    # copy vectorized data in correct order
+    gval = NULL
+    if(vals) gval = if(n_layer == 1) { values_(g)[idx_v] } else { values_(g)[idx_v,] }
 
-               if(n_layer == 1) { values_(g)[idx_v] } else { values_(g)[idx_v,] }
-
-               }
-             )
+    # initialize list
+    g = list(gdim=gdim, gres=gres, gyx=gyx, crs=crs_(g), gval=gval)
   }
 
   # handle matrix objects

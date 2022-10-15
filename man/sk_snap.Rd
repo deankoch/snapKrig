@@ -37,9 +37,9 @@ points are first transformed to the CRS of \code{g}. If one or both of \code{fro
 missing a CRS definition, the function assumes the same one is shared in both.
 
 \code{g} can be a raster geometry object (such as SpatRaster), in which case the function
-behaves like \code{terra::rasterize}. It can also be a matrix (supplying dimensions) or a
-list containing either \code{gdim} or\code{gres}, from which an appropriately spaced set of grid
-lines is derived, centered under the bounding box of the points.
+behaves like \code{terra::rasterize}, or an sk grid object. It can also be a matrix (supplying
+dimensions) or a list containing either \code{gdim} or\code{gres}, from which an appropriately
+spaced set of grid lines is derived, centered under the bounding box of the points.
 
 \code{crop_from} and \code{crop_g} control the extent of the output grid. If both are \code{FALSE}
 (the default) the function returns the smallest regular grid containing both \code{g}

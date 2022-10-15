@@ -126,9 +126,9 @@ sk_export = function(g, template='terra')
 #' missing a CRS definition, the function assumes the same one is shared in both.
 #'
 #' `g` can be a raster geometry object (such as SpatRaster), in which case the function
-#' behaves like `terra::rasterize`. It can also be a matrix (supplying dimensions) or a
-#' list containing either `gdim` or`gres`, from which an appropriately spaced set of grid
-#' lines is derived, centered under the bounding box of the points.
+#' behaves like `terra::rasterize`, or an sk grid object. It can also be a matrix (supplying
+#' dimensions) or a list containing either `gdim` or`gres`, from which an appropriately
+#' spaced set of grid lines is derived, centered under the bounding box of the points.
 #'
 #' `crop_from` and `crop_g` control the extent of the output grid. If both are `FALSE`
 #' (the default) the function returns the smallest regular grid containing both `g`
@@ -340,30 +340,39 @@ sk_snap = function(from, g=NULL, crop_from=FALSE, crop_g=FALSE, quiet=FALSE)
     }
   }
 
-  # find bounding box of destination grid template and reshape to list of min and max
-  g_bbox = lapply(sk_coords(g, out='list', corner=TRUE), range)
-  g_bds = lapply(list(min, max), function(f) sapply(g_bbox, f))
-
-  # find the offsets between the two bounding boxes
-  to_pad = Map(function(a, b) abs((a - b) %% g[['gres']]), a=from_bds, b=g_bds)
-  to_min = from_bds[[1]] - to_pad[[1]] + as.integer(to_pad[[1]] > (g[['gres']]/2)) * g[['gres']]
-  to_max = from_bds[[2]] - to_pad[[2]] + as.integer(to_pad[[2]] > (g[['gres']]/2)) * g[['gres']]
-
-  # crop the grid to the extent of g
-  if( !crop_g )
+  # in this case the output configuration should match g exactly
+  if(crop_from & !crop_g)
   {
-    # if not cropping, extend these grid lines to include all of g_bbox
-    to_min = pmin(to_min, sapply(g_bbox, min))
-    to_max = pmax(to_max, sapply(g_bbox, max))
+    # copy grid info from g
+    to_yx = g[['gyx']]
+    gdim_out = g[['gdim']]
+
+  } else {
+
+    # construct the grid line locations based on from
+
+    # find bounding box of destination grid template and reshape to list of min and max
+    g_bbox = lapply(sk_coords(g, out='list', corner=TRUE, quiet=TRUE), range)
+    g_bds = lapply(list(min, max), function(f) sapply(g_bbox, f))
+
+    # find the offsets between the two bounding boxes
+    to_pad = Map(function(a, b) abs((a - b) %% g[['gres']]), a=from_bds, b=g_bds)
+    to_min = from_bds[[1]] - to_pad[[1]] + as.integer(to_pad[[1]] > (g[['gres']]/2)) * g[['gres']]
+    to_max = from_bds[[2]] - to_pad[[2]] + as.integer(to_pad[[2]] > (g[['gres']]/2)) * g[['gres']]
+
+    # crop the grid to the extent of g
+    if( !crop_g )
+    {
+      # if not cropping, extend these grid lines to include all of g_bbox
+      to_min = pmin(to_min, sapply(g_bbox, min))
+      to_max = pmax(to_max, sapply(g_bbox, max))
+    }
+
+    # compute new grid line locations
+    to_yx = Map(function(a, b, r) seq(a, b, by=r), a=to_min, b=to_max, r=g[['gres']])
+    gdim_out = sapply(to_yx, length)
   }
 
-  # compute new grid line locations
-  to_yx = Map(function(a, b, r) seq(a, b, by=r), a=to_min, b=to_max, r=g[['gres']])
-  gdim_out = sapply(to_yx, length)
-
-  # # initialize the output grid list object
-  # g_out = sk(list(gyx=to_yx), vals=FALSE)
-  # if( !is.null(to_crs) ) g_out[['crs']] = to_crs
 
   # find cross-distance matrices for point coordinates and grid lines
   d_yx_all = Map(function(a, b) outer(a, b, '-')^2, a=from_yx, b=to_yx)

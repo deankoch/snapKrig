@@ -70,14 +70,15 @@ get_meuse = function(dfMaxLength = units::set_units(50, m))
 }
 
 # run a short CV analysis on Meuse: this randomly selects folds and runs model-fitting and prediction
-run_cv = function(g, X, n_fold=5, n_rep=25)
+run_cv = function(g, g_X, n_fold=5, n_rep=25)
 {
-  # g should be a blitzKrig grid list object, and X a corresponding covariates matrix
+  # g and X should be sk grid list objects, containing the response data and covariates matrix.
   # workflows tested: OK with defaults, UK with defaults, UK with anisotropy, UK with mat x mat
   # The function splits the data into n_fold folds (n_rep times) and runs kriging on each to
   # compute MSPE error on the test set
 
   # count covariates and describe models to fit
+  X = g_X[]
   n_lm = ncol(X)
   out_df = data.frame(name = c('fit_result_ok', 'fit_result_uk', 'fit_result_uk_gau', 'fit_result_uk_mat'),
                       covariance = c(rep('gau', 3), 'mat'),
@@ -89,7 +90,7 @@ run_cv = function(g, X, n_fold=5, n_rep=25)
                       MSPEb = 0)
 
   # count observations and number per fold
-  is_obs = !is.na(g[['gval']])
+  is_obs = !is.na(g)
   n_obs = sum(is_obs)
   n_per = floor(n_obs/n_fold)
 
@@ -116,7 +117,7 @@ run_cv = function(g, X, n_fold=5, n_rep=25)
     # wipe test data
     idx_test = idx_test_list[[i]]
     is_obs_train[idx_test] = FALSE
-    g_train[['gval']][idx_test] = NA
+    g_train[idx_test] = NA
 
     # loop over models
     for(j in seq(nrow(out_df)))
@@ -133,14 +134,15 @@ run_cv = function(g, X, n_fold=5, n_rep=25)
 
       # fit and predict
       fit_result = sk_fit(g_train, pars=pars, X=X_train, iso=iso, quiet=TRUE)
-      z_pred = sk_cmean(g, pars=fit_result[['pars']], X=X_test)
-      z_var = sk_cmean(g, pars=fit_result[['pars']], X=X_test, out='v', quiet=TRUE)
-      z_pred_b = exp(z_pred + z_var/2)
+      g_pred = sk_cmean(g, pars=fit_result[['pars']], X=X_test)
+      g_var = sk_cmean(g, pars=fit_result[['pars']], X=X_test, what='v', quiet=TRUE)
+      g_pred_b = exp(z_pred + z_var/2)
 
       # standardized residuals
-      z_res = z_pred[idx_test] - g[['gval']][idx_test]
-      z_res_std = z_res / sqrt(z_var[idx_test])
-      z_res_b = z_pred_b[idx_test] - exp(g[['gval']][idx_test])
+      g_res = g_pred - g
+      z_res = g_res[idx_test]
+      z_res_std = g_res[idx_test] / sqrt(g_var[idx_test])
+      z_res_b = g_pred_b[idx_test] - exp(g[idx_test])
 
       # MSPE, MSDR and likelihood on test set
       results_list[[i]][j, 'MSPE'] = mean(z_res^2)
@@ -161,7 +163,7 @@ run_cv = function(g, X, n_fold=5, n_rep=25)
 
   # format model names and add number of parameters
   out_df['covariance'] = sapply(out_df['covariance'], function(k) paste(k, 'x', k))
-  out_df['parameters'] = 1 + out_df['covariates'] + out_df['parameters']
+  out_df['parameters'] = out_df['covariates'] + out_df['parameters']
 
   close(pb)
   return(out_df)

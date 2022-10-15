@@ -20,7 +20,7 @@
 #'
 #' * `crs`: character, the WKT representation of the CRS for the grid (optional)
 #' * `gval`: numeric vector or matrix, the grid data
-#' * `is_na`: logical vector indicating NA entries in the grid data
+#' * `is_obs`: logical vector indicating non-NA entries in the grid data
 #' * `idx_grid`: length-n numeric vector mapping rows of `gval` to grid points
 #'
 #' Supply some/all of these elements (including at least one of `gdim` or `gyx`) as named
@@ -40,13 +40,13 @@
 #' be either a numeric vector (`gdim`), a matrix, or a raster object.
 #'
 #' Empty grids - with all data `NA` - can be initialized by setting `vals=FALSE`, in which case
-#' `gval` and `is_na` will be absent from the returned list). Otherwise `gval` is the
+#' `gval` will be absent from the returned list). Otherwise `gval` is the
 #' column-vectorized grid data, either as a numeric vector (single layer case only) or as a
-#' matrix with grid data in columns. `gval` is always accompanied by `is_na`, which supplies
+#' matrix with grid data in columns. `gval` is always accompanied by `is_obs`, which supplies
 #' an index of `NA` entries (or rows)
 #'
 #' A sparse representation is used when `gval` is a matrix, where only the non-`NA` entries (or
-#' rows) are stored. `idx_grid` in this case contains `NA`'s were `is_na` is `TRUE`, and
+#' rows) are stored. `idx_grid` in this case contains `NA`'s were `is_obs` is `FALSE`, and
 #' otherwise contains the integer index of the corresponding row in `gval`. In the matrix case
 #' it is assumed that each layer (ie column) has the same `NA` structure. `idx_grid` is only
 #' computed for the first layer. If a point is missing from one layer, it should be missing
@@ -221,15 +221,15 @@ sk = function(..., vals=TRUE)
 #' Make a sk grid object
 #'
 #' This constructs a "sk" object from a named list containing at least the element `gdim`
-#' or `gyx`. Users can optionally provide other list elements `gres`, `gval`, `crs`, and
-#' `idx_grid`.
+#' or `gyx`. Users can optionally provide other list elements `gres`, `gval`, `crs`, `is_obs`,
+#' and `idx_grid`.
 #'
 #' Input classes and lengths are checked before returning. `gdim` and `gres` are length-2
 #' vectors (with y and x elements) but they can each be specified by a single number, as
 #' shorthand to use the same value for y and x. `gval` should be a matrix or vector of grid
 #' data, and `crs` should be a character string (the WKT representation).
 #'
-#' @param g list with any of the six named arguments mentioned above (`gdim`, etc)
+#' @param g list with any of the seven named arguments mentioned above (`gdim`, etc)
 #'
 #' @return a "sk" object
 #' @export
@@ -282,13 +282,13 @@ sk_make = function(g)
   # check for values and sparse representation index
   any_gval = !is.null(g[['gval']])
   is_sparse = !is.null(g[['idx_grid']])
-  na_mapped = !is.null(g[['is_na']])
+  na_mapped = !is.null(g[['is_obs']])
 
   # check gval input when it is supplied
   if(!any_gval)
   {
     # drop unneeded indexing vectors
-    g[['is_na']] = NULL
+    g[['is_obs']] = NULL
     g[['idx_grid']] = NULL
 
   } else {
@@ -350,7 +350,7 @@ sk_make = function(g)
     if(is_sparse) g[['idx_grid']] = as.integer(g[['idx_grid']])
 
     # check class of na indicator vector
-    if(na_mapped) g[['is_na']] = as.logical(g[['is_na']])
+    if(na_mapped) g[['is_obs']] = as.logical(g[['is_obs']])
 
   }
 
@@ -362,7 +362,7 @@ sk_make = function(g)
 #' Check compatibility of entries in a sk grid object, and fill in any missing ones
 #'
 #' This constructs the object and fills missing entries. It then does some sanity checks
-#' and computes the index of NA points (in list entry `is_na`).
+#' and computes the index of NA points (in list entry `is_obs`).
 #'
 #' The function removes/introduces `idx_grid` depending on whether `gval` is a vector
 #' (single-layer case) or a matrix (usually a multi-layer case). If `idx_grid` is missing
@@ -390,7 +390,7 @@ sk_make = function(g)
 sk_validate = function(g, res_tol=1e-6)
 {
   # order of list entries in the output
-  nm_order = c('gdim', 'gres', 'gyx', 'crs', 'gval', 'idx_grid', 'is_na')
+  nm_order = c('gdim', 'gres', 'gyx', 'crs', 'gval', 'idx_grid', 'is_obs')
 
   # check class of g
   if(!is.list(g)) stop('g must be a list')
@@ -404,7 +404,7 @@ sk_validate = function(g, res_tol=1e-6)
 
   # check for grid point values and sparse representation index
   any_gval = !is.null(g[['gval']])
-  na_mapped = !is.null(g[['is_na']])
+  na_mapped = !is.null(g[['is_obs']])
   is_indexed = !is.null(g[['idx_grid']])
   is_multi = is.matrix(g[['gval']])
   if( is_indexed & !is_multi ) stop('gval must be a matrix when idx_grid is supplied')
@@ -447,22 +447,22 @@ sk_validate = function(g, res_tol=1e-6)
   gyx_error = abs(as.numeric(sapply(g[['gyx']], function(r) diff(r)[1])) - g[['gres']])
   if( any( (gyx_error / g[['gres']]) > res_tol) ) stop('resolution (gres) not consistent with gyx')
 
-  # compute is_na and check idx_grid as needed
+  # compute is_obs and check idx_grid as needed
   n = as.integer(prod(g[['gdim']]))
-  if( !any_gval ) { g[['is_na']] = !logical(n) } else {
+  if( !any_gval ) { g[['is_obs']] = logical(n) } else {
 
     # length of grid values vector
     n_grid = length(g[['gval']])
 
-    if(!is_indexed) { g[['is_na']] = is.na(g[['gval']]) } else {
+    if(!is_indexed) { g[['is_obs']] = !is.na(g[['gval']]) } else {
 
       # sparse representation
       n_grid = length(g[['idx_grid']])
       n_obs = nrow(g[['gval']])
 
       # check for wrong number of NAs in indexing grid
-      g[['is_na']] = is.na(g[['idx_grid']])
-      if( (n_grid - n_obs) != sum(g[['is_na']]) ) stop('gval and idx_grid are incompatible')
+      g[['is_obs']] = !is.na(g[['idx_grid']])
+      if( (n_grid - n_obs) != sum(!g[['is_obs']]) ) stop('gval and idx_grid are incompatible')
     }
 
     # check for wrong length in gval (or idx_grid) given gdim

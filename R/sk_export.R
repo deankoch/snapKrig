@@ -475,7 +475,7 @@ sk_coords = function(g, out='matrix', corner=FALSE, na_omit=FALSE, quiet=FALSE)
 {
   # unpack input and check for empty grids
   g = sk(g)
-  is_empty = all(g[['is_na']])
+  is_empty = !any(g[['is_obs']])
   if(is_empty) na_omit = FALSE
 
   # take subset of corner points if requested

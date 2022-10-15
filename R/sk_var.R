@@ -361,8 +361,8 @@ sk_var = function(g, pars=NULL, scaled=FALSE, fac_method='none', X=NULL, fac=NUL
   # extract NA index and number of grid points
   if(inherits(g, 'sk'))
   {
-    # we have these generics for sk objects
-    is_obs = !is.na(g)
+    # extract the grid info
+    is_obs = g[['is_obs']]
     n = length(g)
 
   } else {
@@ -372,10 +372,10 @@ sk_var = function(g, pars=NULL, scaled=FALSE, fac_method='none', X=NULL, fac=NUL
     {
       # copy the NA index directly if it was supplied
       if( is.matrix(g[['gval']]) ) stop('gval was a matrix (expected a vector)')
-      is_obs = if(is.null(g[['is_na']])) !is.na(g[['gval']]) else !g[['is_na']]
+      is_obs = if(is.null(g[['is_obs']])) !is.na(g[['gval']]) else g[['is_obs']]
 
       # when idx_grid supplied, we can get NA index faster from it
-    } else { is_obs = if(is.null(g[['is_na']])) !is.na(g[['idx_grid']]) else !g[['is_na']] }
+    } else { is_obs = if(is.null(g[['is_obs']])) !is.na(g[['idx_grid']]) else g[['is_obs']] }
 
     n = length(is_obs)
   }
@@ -585,8 +585,8 @@ sk_var_mult = function(g, pars, fac_method='eigen', fac=NULL, quad=FALSE, p=-1)
   {
     # unpack non-NA values from list g into a matrix z
     g = sk(g)
+    is_obs = g[['is_obs']]
     n_layer = ifelse(is.matrix(g[['gval']]), ncol(g[['gval']]), 1L)
-    is_obs = !is.na(g)
     z = matrix(g[['gval']][is_obs], ncol=n_layer)
 
     # complete and empty cases trigger separability option below

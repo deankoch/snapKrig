@@ -32,7 +32,7 @@ and optionally,
 \itemize{
 \item \code{crs}: character, the WKT representation of the CRS for the grid (optional)
 \item \code{gval}: numeric vector or matrix, the grid data
-\item \code{is_na}: logical vector indicating NA entries in the grid data
+\item \code{is_obs}: logical vector indicating non-NA entries in the grid data
 \item \code{idx_grid}: length-n numeric vector mapping rows of \code{gval} to grid points
 }
 
@@ -53,13 +53,13 @@ If a single unnamed argument is supplied (and it is not a list) the function exp
 be either a numeric vector (\code{gdim}), a matrix, or a raster object.
 
 Empty grids - with all data \code{NA} - can be initialized by setting \code{vals=FALSE}, in which case
-\code{gval} and \code{is_na} will be absent from the returned list). Otherwise \code{gval} is the
+\code{gval} will be absent from the returned list). Otherwise \code{gval} is the
 column-vectorized grid data, either as a numeric vector (single layer case only) or as a
-matrix with grid data in columns. \code{gval} is always accompanied by \code{is_na}, which supplies
+matrix with grid data in columns. \code{gval} is always accompanied by \code{is_obs}, which supplies
 an index of \code{NA} entries (or rows)
 
 A sparse representation is used when \code{gval} is a matrix, where only the non-\code{NA} entries (or
-rows) are stored. \code{idx_grid} in this case contains \code{NA}'s were \code{is_na} is \code{TRUE}, and
+rows) are stored. \code{idx_grid} in this case contains \code{NA}'s were \code{is_obs} is \code{FALSE}, and
 otherwise contains the integer index of the corresponding row in \code{gval}. In the matrix case
 it is assumed that each layer (ie column) has the same \code{NA} structure. \code{idx_grid} is only
 computed for the first layer. If a point is missing from one layer, it should be missing

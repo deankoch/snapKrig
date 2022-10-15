@@ -333,7 +333,7 @@ print.sk = function(x, ...)
   gdim_msg = paste(paste(x[['gdim']], collapse=' x '))
 
   # message about completeness
-  n_miss = sum(x[['is_na']])
+  n_miss = sum(!x[['is_obs']])
   if(is.null(n_miss)) {complete_msg = 'not validated\n'} else {
 
     n = prod(x[['gdim']])
@@ -390,7 +390,7 @@ summary.sk = function(x, ...)
 
   # check grid size and number of NAs
   n = length(x)
-  n_miss = sum(x[['is_na']])
+  n_miss = sum(!x[['is_obs']])
   n_obs = n - n_miss
 
   # check range
@@ -516,8 +516,8 @@ is.na.sk = function(x)
   if( is.null(x[['gval']]) ) return( !logical(n) )
 
   # return the pre-computed NAs index or tell the user to validate
-  if(is.null(x[['is_na']])) stop('invalid sk object. Pass it to sk_validate first')
-  return(x[['is_na']])
+  if(is.null(x[['is_obs']])) stop('invalid sk object. Pass it to sk_validate first')
+  return(!x[['is_obs']])
 }
 
 #' Check for presence of grid points with missing data (NAs)
@@ -541,8 +541,8 @@ anyNA.sk = function(x)
   if( is.null(x[['gval']]) ) return(TRUE)
 
   # check the pre-computed NAs index or tell the user to validate
-  if(is.null(x[['is_na']])) stop('invalid sk object. Pass it to sk_validate first')
-  return(any(x[['is_na']]))
+  if(is.null(x[['is_obs']])) stop('invalid sk object. Pass it to sk_validate first')
+  return(all(x[['is_obs']]))
 }
 
 #' Calculate the mean value in a grid

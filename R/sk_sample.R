@@ -178,13 +178,13 @@ sk_sample_pt = function(g, n=1e2, lag_max=0, interval=1L, over=FALSE)
   # unpack the grid object
   g = sk(g)
   gdim = g[['gdim']]
+  is_obs = g[['is_obs']]
 
   # extract only the first layer from multi-layer objects
   if( !is.null(g[['idx_grid']]) ) { z = g[['gval']][g[['idx_grid']], 1L] } else { z = g[['gval']] }
 
   # identify non-missing points in grid
   if( is.null(z) ) z = rep(0L, prod(gdim))
-  is_obs = !is.na(z)
 
   # all-missing case treated as all-observed
   if( !any(is_obs) ) is_obs = rep(TRUE, length(is_obs))
@@ -364,7 +364,7 @@ sk_sample_vg = function(g, n_pp=1e4, idx=NULL, n_bin=25, n_layer_max=NA, quiet=F
   is_multi = !is.null(g[['idx_grid']])
   if(is_multi) { z = g[['gval']][g[['idx_grid']], 1L] } else { z = g[['gval']] }
   if( is.null(z) ) stop('g must have element "gval" (the data vector)')
-  n = sum(!is.na(z))
+  n = sum(!is.na(z)) # fix me
 
   # the number of sample points required to get n point pairs, the inverse of f(n)=(n^2-n)/2
   n_obs = min(floor( (1 + sqrt(1 + 8*n_pp)) / 2 ), sum(!is.na(z)))

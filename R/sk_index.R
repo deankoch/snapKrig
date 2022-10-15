@@ -91,7 +91,7 @@ sk_rescale = function(g, up=NULL, down=NULL)
 
     # re-scale mapping vector to get new grid and mapping from the old
     g_result = sk_rescale(g_first, up=up, down=down)
-    is_obs_first = !is.na(g_result)
+    is_obs_first = g_result[['is_obs']]
     idx_keep = g_result[is_obs_first]
 
     # copy gval, omitting rows no longer mapped to grid (applies only to up-scaling)
@@ -629,10 +629,10 @@ sk_sub_find = function(g, gdim=NULL)
   # open various grid objects with sk
   if(!is.logical(g))
   {
-    # overwrite g with logical NAs indicator, copying gdim first
+    # overwrite g with logical indicating non-NA data, copying gdim first
     g = sk(g)
     gdim = dim(g)
-    g = !is.na(g)
+    g = g[['is_obs']]
 
   } else {
 

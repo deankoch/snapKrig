@@ -38,6 +38,7 @@
 #' information criteria, along with several diagnostics: the number of observations, the
 #' number of parameters, the log-determinant `log_det`, and the quadratic form `quad_form`.
 #'
+#'
 #' @param pars list of form returned by `sk_pars` (with entries 'y', 'x', 'eps', 'psill')
 #' @param g an sk grid (or list with entries 'gdim', 'gres', 'gval' and/or 'idx_grid')
 #' @param X numeric, vector, matrix, or NA, a fixed mean value, or matrix of linear predictors
@@ -200,6 +201,8 @@
 #'
 sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, out='l')
 {
+  #TODO: an an iso option to reduce number of pars by 1 when ranges were constrained to equal one another
+
   # count layers
   n_layer = ifelse(is.matrix(g[['gval']]), ncol(g[['gval']]), 1L)
 
@@ -207,7 +210,7 @@ sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, out='l')
   if(inherits(g, 'sk'))
   {
     # generics for sk objects to extract non-NA data
-    is_obs = !is.na(g)
+    is_obs = g[['is_obs']]
     z = matrix(g[is_obs], ncol=n_layer)
 
   } else {
@@ -218,7 +221,7 @@ sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, out='l')
       if( is.matrix(g[['gval']]) ) stop('gval was a matrix (expected a vector)')
 
       # identify observed data points and copy their index
-      is_obs = if(is.null(g[['is_na']])) !is.na(g[['gval']]) else !g[['is_na']]
+      is_obs = if(is.null(g[['is_obs']])) !is.na(g[['gval']]) else g[['is_obs']]
 
       # extract from vector to represent as 1-column matrix
       z = matrix(g[['gval']][is_obs], ncol=1L)
@@ -227,7 +230,7 @@ sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, out='l')
 
       # copy matrix
       if( !is.matrix(g[['gval']]) ) stop('gval was a vector (expected a matrix)')
-      is_obs = if(is.null(g[['is_na']])) !is.na(g[['idx_grid']]) else !g[['is_na']]
+      is_obs = if(is.null(g[['is_obs']])) !is.na(g[['idx_grid']]) else g[['is_obs']]
       z = g[['gval']]
     }
   }

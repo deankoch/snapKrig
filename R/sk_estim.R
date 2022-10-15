@@ -176,14 +176,14 @@ sk_GLS = function(g, pars, X=NA, out='s', fac_method='eigen', fac=NULL)
   if(is_multi)
   {
     # identify non-NA points and extract them as matrix
-    is_obs = if(is.null(g[['is_na']])) !is.na(g[['idx_grid']]) else !g[['is_na']]
+    is_obs = if(is.null(g[['is_obs']])) !is.na(g[['idx_grid']]) else g[['is_obs']]
     n_layer = ncol(g[['gval']])
     z = g[['gval']]
 
   } else {
 
     # copy non-NA data as a 1-column matrix
-    is_obs = if(is.null(g[['is_na']])) !is.na(g[['gval']]) else !g[['is_na']]
+    is_obs = if(is.null(g[['is_obs']])) !is.na(g[['gval']]) else g[['is_obs']]
     z = matrix(g[['gval']][is_obs], ncol=1L)
   }
 
@@ -207,7 +207,7 @@ sk_GLS = function(g, pars, X=NA, out='s', fac_method='eigen', fac=NULL)
 
   } else {
 
-    # unpack sk grid X
+    # unpack sk grid X as matrix
     if(inherits(X, 'sk')) X = X[!is.na(X)]
 
     # check for invalid input to X
@@ -493,14 +493,14 @@ sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NUL
   if( !is.list(g) | !all( nm_expect %in% names(g) ) ) stop(msg_expect)
 
   # copy grid info but not values
-  g_out = g[c('gdim', 'gres')]
+  g_out = g[c('gdim', 'gres', 'crs')]
   gdim_out = g[['gdim']]
   gres_out = g[['gres']]
 
   # TODO add multi-layer support
 
   # identify observed data points and copy their index
-  is_obs = if(is.null(g[['is_na']])) !is.na(g[['gval']]) else !g[['is_na']]
+  is_obs = is_obs_src = if(is.null(g[['is_obs']])) !is.na(g[['gval']]) else g[['is_obs']]
   idx_obs = which(is_obs)
   n_out = prod(gdim_out)
 

@@ -7,15 +7,15 @@
 sk_make(g)
 }
 \arguments{
-\item{g}{list with any of the six named arguments mentioned above (\code{gdim}, etc)}
+\item{g}{list with any of the seven named arguments mentioned above (\code{gdim}, etc)}
 }
 \value{
 a "sk" object
 }
 \description{
 This constructs a "sk" object from a named list containing at least the element \code{gdim}
-or \code{gyx}. Users can optionally provide other list elements \code{gres}, \code{gval}, \code{crs}, and
-\code{idx_grid}.
+or \code{gyx}. Users can optionally provide other list elements \code{gres}, \code{gval}, \code{crs}, \code{is_obs},
+and \code{idx_grid}.
 }
 \details{
 Input classes and lengths are checked before returning. \code{gdim} and \code{gres} are length-2

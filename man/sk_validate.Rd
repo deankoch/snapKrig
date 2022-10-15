@@ -4,10 +4,12 @@
 \alias{sk_validate}
 \title{Check compatibility of entries in a sk grid object, and fill in any missing ones}
 \usage{
-sk_validate(g)
+sk_validate(g, res_tol = 1e-06)
 }
 \arguments{
 \item{g}{a "sk" object or a list accepted by \code{sk_make}}
+
+\item{res_tol}{positive numeric, tolerance validating resolution (see details)}
 }
 \value{
 a validated "sk" object
@@ -23,6 +25,11 @@ and \code{gval} is a matrix, it is assumed to contain all grid-points (including
 
 The function also assigns dimension names in the order 'y', 'x' (unless otherwise
 specified) for \code{gdim}, \code{gres}, and \code{gyx}.
+
+\code{res_tol} is used to check if the resolution \code{gres} is consistent with the spacing
+of the grid lines. Only the spacing of the first two lines is computed - if the
+relative error along either dimensions is greater \code{res_tol}, the function throws
+an error.
 }
 \examples{
 

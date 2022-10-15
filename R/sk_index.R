@@ -98,6 +98,7 @@ sk_rescale = function(g, up=NULL, down=NULL)
     g_result[is_obs_first] = seq_along(idx_keep)
     g_result[['idx_grid']] = g_result[]
     g_result[['gval']] = g[['gval']][idx_keep,]
+    g_result[['crs']] = g[['crs']]
 
     # validate before returning
     return(sk_validate(g_result))
@@ -119,7 +120,8 @@ sk_rescale = function(g, up=NULL, down=NULL)
     # build and return the sk sub-grid
     return(sk(gdim = stats::setNames(sapply(ij_values, length), c('y', 'x')),
               gyx = Map(function(yx, idx) yx[idx], yx=g[['gyx']], idx=ij_values),
-              gval = g[ sk_sub_idx(gdim, ij_values, idx=TRUE) ]))
+              gval = g[ sk_sub_idx(gdim, ij_values, idx=TRUE) ],
+              crs = g[['crs']]))
   }
 
   # check for invalid down-scaling arguments
@@ -497,7 +499,7 @@ sk_sub = function(g, ij_keep=NULL, ij_rem=NULL, idx=FALSE, mirror=FALSE)
     # return either the grid line indices or the sub-grid itself as a sk object
     if(idx) return( list(rem=ij_rem, keep=ij_keep) )
     gyx_new = Map(function(gl, i) gl[i], gl=g[['gyx']], i=sub_result[['ij']])
-    return(sk(gdim=gdim_new, gyx=gyx_new, gval=g[is_sub]))
+    return(sk(gdim=gdim_new, gyx=gyx_new, gval=g[is_sub], crs=g[['crs']]))
   }
 
   # indicator for NA's as a matrix representation of the grid data

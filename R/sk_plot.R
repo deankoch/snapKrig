@@ -25,7 +25,7 @@
 #' or a vector of break points delineating bins (passed to `graphics::image`). Note that a set
 #' of `n` bins has `n+1` break points.
 #'
-#' `pal` should be one of the palette names returned by `graphics::hcl.pals`, or else a
+#' `pal` should be one of the palette names returned by `grDevices::hcl.pals`, or else a
 #' vector of color names with length one fewer than the number of break points.
 #'
 #' If the data are all `NA`, the function omits the heatmap and legend, and draws grid lines

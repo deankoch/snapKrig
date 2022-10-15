@@ -277,7 +277,7 @@ Ops.sk = function(e1, e2)
 #' @examples
 #'
 #' # make test example and verify common summary stats
-#' g = sk_validate(list(gval=1+abs(rnorm(4^2)), gdim=4, gres=0.5))
+#' g = sk(gval=1+abs(rnorm(4^2)), gdim=4, gres=0.5)
 #' sum(g) == sum(g[])
 #' min(g) == min(g[])
 #' max(g) == max(g[])
@@ -459,6 +459,7 @@ summary.sk = function(x, ...)
 #'
 #' @return nothing
 #' @export
+#' @seealso sk_plot
 #'
 #' @examples
 #' g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))

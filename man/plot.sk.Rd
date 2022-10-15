@@ -21,3 +21,6 @@ A wrapper for sk_plot
 g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
 plot(g)
 }
+\seealso{
+sk_plot
+}

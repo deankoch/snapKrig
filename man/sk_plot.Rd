@@ -42,7 +42,7 @@ If the data are continuous, \code{breaks} can either be the desired number of bi
 or a vector of break points delineating bins (passed to \code{graphics::image}). Note that a set
 of \code{n} bins has \code{n+1} break points.
 
-\code{pal} should be one of the palette names returned by \code{graphics::hcl.pals}, or else a
+\code{pal} should be one of the palette names returned by \code{grDevices::hcl.pals}, or else a
 vector of color names with length one fewer than the number of break points.
 
 If the data are all \code{NA}, the function omits the heatmap and legend, and draws grid lines

@@ -204,7 +204,7 @@ max(abs(z_pred_uk - g_uk), na.rm=TRUE)
 max(abs(z_var_uk - g_uk_v))
 
 
-## repeat for subgrid case
+## repeat verification for subgrid case
 
 # rebuild matrices
 V_full = sk_var(g_super_uk, pars)

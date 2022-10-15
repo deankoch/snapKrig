@@ -478,12 +478,18 @@ sk_GLS = function(g, pars, X=NA, out='s', fac_method='eigen', fac=NULL)
 #'
 sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NULL, quiet=FALSE)
 {
-  # determine output type (sk grid or vector)
+  ## validate inputs
+
+  # determine output type - sk grid or vector, prediction or variance)
   is_sk = startsWith(out, 's')
+  is_var = startsWith(what, 'v')
+
+  # variance mode forces eigen-decomposition
+  if( startsWith(what, 'v') ) fac_method = 'eigen'
 
   # check for expected objects in list in g
   nm_expect = c('gdim', 'gres', 'gval')
-  msg_expect = paste('g_obs must be a list with entries named', paste(nm_expect, collapse=', '))
+  msg_expect = paste('g must be a list with entries', paste(nm_expect, collapse=', '))
   if( !is.list(g) | !all( nm_expect %in% names(g) ) ) stop(msg_expect)
 
   # copy grid info but not values
@@ -491,63 +497,62 @@ sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NUL
   gdim_out = g[['gdim']]
   gres_out = g[['gres']]
 
+  # TODO add multi-layer support
+
   # identify observed data points and copy their index
   is_obs = is_obs_src = !is.na(g[['gval']])
   idx_obs = which(is_obs)
+  n_out = prod(gdim_out)
 
   # copy non-NA data
   z_obs = g[['gval']][is_obs]
   if( is.null(z_obs) ) stop('No non-NA values found in g')
   n_obs = length(z_obs)
-  n_out = prod(gdim_out)
 
   # extract covariates matrix from sk grid input
-  if( inherits(X, 'sk') )  X = matrix(X[], nrow=length(X))
+  if(inherits(X, 'sk'))  X = matrix(X[], nrow=length(X))
 
-  # initialize parameters and check if we are estimating linear predictor for the model
+  ## variance calculations
+
+  # Check if estimating a deterministic trend, initialize the trend vector
   use_GLS = anyNA(X) | is.matrix(X)
   if( !is.matrix(X) ) mu_GLS = X
-
-  # initialize GLS adjustment vector
-  m = rep(0, n_out)
 
   # construct first rows of the symmetric Toeplitz correlation matrices for y and x
   cy = sqrt(pars[['psill']]) * sk_corr_mat(pars[['y']], gdim_out[['y']], gres_out[['y']], i=1)
   cx = sqrt(pars[['psill']]) * sk_corr_mat(pars[['x']], gdim_out[['x']], gres_out[['x']], i=1)
 
-  # set up factorization when it's not supplied. Variance mode forces eigen-decomposition
-  if( startsWith(what, 'v') ) fac_method = 'eigen'
-
   # check for sub-grid structure and substitute simpler equivalent problem if possible
   sg = sk_sub_find(is_obs, gdim_out)
-  is_sg = !is.null(sg)
-  if( is_sg )
+  is_subgrid = !is.null(sg)
+  if(is_subgrid)
   {
     # console message indicating sub-grid size
-    if(!quiet) cat(paste0(paste(sg[['gdim']], collapse=' x '), 'complete sub-grid detected'))
+    msg_dim = paste(sg[['gdim']], collapse=' x ')
+    if(!quiet) cat(paste(msg_dim, 'complete sub-grid detected\n'))
 
     # overwrite g with smaller sub-grid layout (original dimensions etc are already copied)
     fac_method = 'eigen'
     is_sep = TRUE
     g = list(gval=z_obs, gdim=sg[['gdim']], gres=gres_out*sg[['res_scale']])
 
-    # g should have no missing (NA) data points now (original observed index stored in is_obs_src)
+    # original observed index stored in is_obs_src
     is_obs = rep(TRUE, n_obs)
   }
 
   # compute factorization (scaled=TRUE means partial sill is factored out)
-  if( is.null(fac) ) fac = sk_var(g, pars, scaled=TRUE, fac_method=fac_method, sep=is_sg)
+  if( is.null(fac) ) fac = sk_var(g, pars, scaled=TRUE, fac_method=fac_method, sep=is_subgrid)
 
-  # transform the observed data by left-multiplying with inverse covariance
+  ## kriging predictor
+
+  # de-noise observed data by left-multiplying inverse covariance
   z_tilde = sk_var_mult(z_obs, pars, fac=fac)
 
   # left-multiply by cross-covariance to get simple kriging predictor
   z_p_tilde = as.numeric(sk_toep_mult(cy, z_tilde, cx, idx_obs, gdim_out))
-
-  # finished with simple kriging predictor
-  if( !use_GLS & startsWith(what, 'p') )
+  if( !( use_GLS | is_var) )
   {
-    # as vector
+    # finished with simple kriging predictor - return as vector
     z_out = as.numeric(X) + z_p_tilde
     if(!is_sk) return(z_out)
 
@@ -555,37 +560,40 @@ sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NUL
     return(sk(modifyList(g_out, list(gval=z_out))))
   }
 
-  # compute GLS coefficients and resulting adjustments to predictor as needed
+  # compute GLS coefficients and resulting adjustments to predictor
   if(use_GLS)
   {
-    # make a copy of the observed locations in X
-    if( !anyNA(X) ) { X_obs = matrix(X[is_obs_src,], n_obs) } else {
+    # copy covariates
+    if( anyNA(X) )
+    {
+      # any NAs in covariates matrix leads to ordinary kriging
       X = NULL
       X_obs = NA
+
+    } else {
+
+      # copy only subset at observed points
+      X_obs = matrix(X[is_obs_src,], n_obs)
     }
 
     # find betas, predictor, and the data matrix with an intercept column
-    gls = sk_GLS(g, pars, X=X_obs, fac=fac, fac_method=fac_method, out='a')
-    fac_X = gls[['fac_X']]
+    gls_result = sk_GLS(g, pars, X=X_obs, fac=fac, fac_method=fac_method, out='a')
+    fac_X = gls_result[['fac_X']]
 
     # compute bias adjustment due to estimation of linear predictor
-    X_p_tilde = gls[['x']] |>
-      sk_var_mult(pars, fac=fac) |>
-      apply(2, \(x) sk_toep_mult(cy, x, cx, idx_obs, gdim_out))
+    X_p_tilde = apply(sk_var_mult(gls_result[['x']], pars, fac=fac),
+                      MARGIN=2,
+                      function(x) sk_toep_mult(cy, x, cx, idx_obs, gdim_out))
 
-    # uncomment to get exact interpolator (and discontinuities at observations)
-    #X_p_tilde[idx_obs,] = gls[['x']]
-
-    # compute trend and 'm'
+    # adjusted covariates used here and in first variance loop below
     X_adj = cbind(rep(1, n_out), X) - X_p_tilde
-    mu_GLS = tcrossprod(X_adj, t(gls[['b']])) |> as.numeric()
 
-    # DO WE NEED THIS ANYMORE?
-    if( startsWith(what, 'm') ) return( as.numeric(sk_var_mult( t(X_adj), pars, fac=fac_X)) )
+    # estimate trend
+    mu_GLS = as.numeric( tcrossprod(X_adj, t(gls_result[['b']])) )
   }
 
-  # universal (and ordinary) kriging predictor
-  if( startsWith(what, 'p') )
+  # finished with universal and ordinary kriging predictor
+  if( !is_var )
   {
     # as vector
     z_out = mu_GLS + z_p_tilde
@@ -595,32 +603,34 @@ sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NUL
     return(sk(modifyList(g_out, list(gval=z_out))))
   }
 
-  # verify fac is an eigen-decomposition
+  # verify that fac is an eigen-decomposition
   msg_fac = 'Cholesky factorization (fac) not supported in what="v" mode'
   if( !is.list(fac) ) stop(msg_fac)
-  if(is_sg)
+  if(is_subgrid)
   {
-    # check that the correct factorization (componentwise, in a list) was supplied
+    # check that the correct factorization was supplied (component-wise, in a list)
     if( !all( c('y', 'x') %in% names(fac) ) ) stop('supplied factorization was not separable')
     if( !all( sapply(fac[c('y', 'x')], is.list) ) ) stop(msg_fac)
   }
 
-  # compute variance contribution from GLS (0 when not using GLS)
+  # initialize variance contribution from GLS (0 in simple kriging case)
   v_gls = numeric(n_out)
   if(use_GLS)
   {
-    # small loop over eigen-values in fac_X, adding each contribution to running total in v_gls
-    for(idx in seq_along(fac_X[['values']]))
+    # loop over eigen-values of X^T V^-1 X
+    for(idx in seq_along(gls_result[['fac_X']][['values']]))
     {
-      # eigen-values of inverse scaled by psill
-      ev = 1 / ( pars[['psill']] * fac_X[['values']][idx] )
-      v_gls[] = v_gls[] + ev * tcrossprod(fac_X[['vectors']][,idx], X_adj)^2
+      # copy eigen-values of inverse scaled by psill
+      ev = 1 / ( pars[['psill']] * gls_result[['fac_X']][['values']][idx] )
+
+      # multiply by adjusted covariates matrix and add square to running total in v_gls
+      v_gls[] = v_gls[] + ev * tcrossprod(gls_result[['fac_X']][['vectors']][,idx], X_adj)^2
     }
   }
 
-  # use a more efficient method when observed points form a sub-grid
+  # prepare a more efficient method for below when the observed points form a sub-grid
   idx_ev = seq(n_obs)
-  if(is_sg)
+  if(is_subgrid)
   {
     # compute eigenvalues for observed covariance matrix inverse
     ev_corr = kronecker(fac[['x']][['values']], fac[['y']][['values']])
@@ -633,45 +643,44 @@ sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NUL
     add_x2 = ( c_cross_x %*% fac[['x']][['vectors']] )
   }
 
-  # large loop over eigen-values of covariance matrix, iteratively adding to v_rem
-  v_rem = numeric(n_out)
+  # large loop over eigen-values of covariance matrix builds result iteratively
+  v_spat = numeric(n_out)
   if(!quiet) pb = utils::txtProgressBar(max=n_obs, style=3)
   for(idx in seq(n_obs))
   {
-    # update progress bar then change to reordered index
-    if(!quiet) utils::setTxtProgressBar(pb, idx)
-
-    # non-separable case first
-    if( !is_sg )
+    # separable case first
+    if( is_subgrid )
     {
-      # eigen-values of inverse are scaled by psill, then slow multiplication with cross covariance
-      ev = 1 / ( pars[['psill']] * fac[['values']][idx] )
-      v_add = ev * sk_toep_mult(cy, fac[['vectors']][, idx], cx, idx_obs, gdim_out)^2
-
-    } else {
-
       # column indices in component correlation matrices corresponding to eigen-value idx
       idx_yx = sk_vec2mat(idx, sg[['gdim']], out='list')
 
-      # kronecker product of component columns to get large column vector
+      # Kronecker product of component columns to get large column vector
       add_yx = ( pars[['psill']] * kronecker(add_x2[, idx_yx[['j']]], add_y2[, idx_yx[['i']]]) )^2
       v_add = ev[idx] * add_yx
+
+    } else {
+
+      # eigen-values of inverse scaled by psill
+      ev = 1 / ( pars[['psill']] * fac[['values']][idx] )
+
+      # slow multiplication of eigen-vector with cross covariance
+      v_add = ev * sk_toep_mult(cy, fac[['vectors']][, idx], cx, idx_obs, gdim_out)^2
     }
 
-    # add to total
-    v_rem = v_rem + as.vector(v_add)
+    # add result to running total
+    v_spat = v_spat + as.vector(v_add)
+    if(!quiet) utils::setTxtProgressBar(pb, idx)
   }
   if(!quiet) close(pb)
 
-  # kriging variance
-  if( startsWith(what, 'v') )
+  # finished with kriging variance
+  if(is_var)
   {
-    # as vector
-    z_out = pars[['psill']] + as.numeric(v_gls) - v_rem
-    #z_out = pars[['psill']] + pars[['eps']] + as.numeric(v_gls) - v_rem
+    # notice nugget effect not added to noiseless prediction
+    z_out = pars[['psill']] + as.numeric(v_gls) - v_spat
     if(!is_sk) return(z_out)
 
-    # or return in an sk grid object
+    # return the sk grid
     return(sk(modifyList(g_out, list(gval=z_out))))
   }
 

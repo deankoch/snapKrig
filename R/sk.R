@@ -357,7 +357,13 @@ sk_make = function(g)
 #' The function also assigns dimension names in the order 'y', 'x' (unless otherwise
 #' specified) for `gdim`, `gres`, and `gyx`.
 #'
+#' `res_tol` is used to check if the resolution `gres` is consistent with the spacing
+#' of the grid lines. Only the spacing of the first two lines is computed - if the
+#' relative error along either dimensions is greater `res_tol`, the function throws
+#' an error.
+#'
 #' @param g a "sk" object or a list accepted by `sk_make`
+#' @param res_tol positive numeric, tolerance validating resolution (see details)
 #'
 #' @return a validated "sk" object
 #' @export
@@ -367,7 +373,7 @@ sk_make = function(g)
 #'
 #' sk_validate(list(gdim=10, gres=0.5))
 #' sk_validate(list(gval=rnorm(10^2), gdim=10, gres=0.5))
-sk_validate = function(g)
+sk_validate = function(g, res_tol=1e-6)
 {
   # order of list entries in the output
   nm_order = c('gdim', 'gres', 'gyx', 'crs', 'gval', 'idx_grid', 'n_missing')
@@ -424,7 +430,7 @@ sk_validate = function(g)
 
   # and for resolution
   gyx_error = abs(as.numeric(sapply(g[['gyx']], function(r) diff(r)[1])) - g[['gres']])
-  if( any(gyx_error > .Machine[['double.eps']]) ) stop('resolution (gres) not consistent with gyx')
+  if( any( (gyx_error / g[['gres']]) > res_tol) ) stop('resolution (gres) not consistent with gyx')
 
   # compute n_missing and check idx_grid as needed
   n = as.integer(prod(g[['gdim']]))

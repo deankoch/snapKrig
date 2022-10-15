@@ -21,8 +21,8 @@ Auto-printing
 \details{
 Prints dimensions and indicates if the grid has values assigned
 
-This prints "(not validated)" if the sk object has no \code{n_missing} entry.
-This is to remind users to run \code{sk_validate}.
+This prints "(not validated)" if the sk object has no \code{is_na} entry,
+to remind users to run \code{sk_validate}.
 }
 \examples{
 sk_make(list(gdim=10, gres=0.5))

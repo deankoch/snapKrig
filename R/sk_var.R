@@ -370,11 +370,12 @@ sk_var = function(g, pars=NULL, scaled=FALSE, fac_method='none', X=NULL, fac=NUL
     # for non sk lists we access elements directly
     if( is.null(g[['idx_grid']]) )
     {
+      # copy the NA index directly if it was supplied
       if( is.matrix(g[['gval']]) ) stop('gval was a matrix (expected a vector)')
-      is_obs = !is.na(g[['gval']])
+      is_obs = if(is.null(g[['is_na']])) !is.na(g[['gval']]) else !g[['is_na']]
 
-      # when idx_grid supplied, we don't need to look at gval at all
-    } else { is_obs = !is.na(g[['idx_grid']]) }
+      # when idx_grid supplied, we can get NA index faster from it
+    } else { is_obs = if(is.null(g[['is_na']])) !is.na(g[['idx_grid']]) else !g[['is_na']] }
 
     n = length(is_obs)
   }

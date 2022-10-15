@@ -160,8 +160,8 @@
       x[['idx_grid']] = NULL
     }
 
-    # check validity, update n_missing, etc then return
-    return(sk_validate(sk_make(x)))
+    # check validity, update is_na, etc then return
+    return(sk(x))
   }
 }
 
@@ -194,8 +194,8 @@ Math.sk = function(x, ...)
   # dispatch to next method when generic makes sense for a grid dataset
   if(.Generic %in% generic_ok)
   {
-    # replace the data values and return the sk object
-    return( modifyList(x, list(gval=get(.Generic)(x[], ...))) )
+    # replace the data values and return the validated sk object
+    return( sk(modifyList(x, list(gval=get(.Generic)(x[], ...)))) )
 
   } else { stop(paste(.Generic, 'not defined for "sk" objects')) }
 }
@@ -260,7 +260,7 @@ Ops.sk = function(e1, e2)
   }
 
   # dispatch to default method then replace the data values in output sk object
-  return( modifyList(g_out, list(gval=get(.Generic)(e1, e2))) )
+  return( sk(modifyList(g_out, list(gval=get(.Generic)(e1, e2)))) )
 }
 
 #'
@@ -315,8 +315,8 @@ Summary.sk = function(..., na.rm=FALSE)
 #'
 #' Prints dimensions and indicates if the grid has values assigned
 #'
-#' This prints "(not validated)" if the sk object has no `n_missing` entry.
-#' This is to remind users to run `sk_validate`.
+#' This prints "(not validated)" if the sk object has no `is_na` entry,
+#' to remind users to run `sk_validate`.
 #'
 #' @param x a sk object
 #' @param ... ignored
@@ -333,7 +333,7 @@ print.sk = function(x, ...)
   gdim_msg = paste(paste(x[['gdim']], collapse=' x '))
 
   # message about completeness
-  n_miss = x[['n_missing']]
+  n_miss = sum(x[['is_na']])
   if(is.null(n_miss)) {complete_msg = 'not validated\n'} else {
 
     n = prod(x[['gdim']])
@@ -390,7 +390,7 @@ summary.sk = function(x, ...)
 
   # check grid size and number of NAs
   n = length(x)
-  n_miss = x[['n_missing']]
+  n_miss = sum(x[['is_na']])
   n_obs = n - n_miss
 
   # check range
@@ -515,9 +515,9 @@ is.na.sk = function(x)
   n = length(x)
   if( is.null(x[['gval']]) ) return( !logical(n) )
 
-  # identify multi-layer rasters
-  is_multi = is.matrix(x[['gval']])
-  if( is_multi ) { return(is.na(x[['idx_grid']])) } else { return(is.na(x[])) }
+  # return the pre-computed NAs index or tell the user to validate
+  if(is.null(x[['is_na']])) stop('invalid sk object. Pass it to sk_validate first')
+  return(x[['is_na']])
 }
 
 #' Check for presence of grid points with missing data (NAs)
@@ -540,13 +540,9 @@ anyNA.sk = function(x)
   # handle empty grids
   if( is.null(x[['gval']]) ) return(TRUE)
 
-  # identify multi-layer rasters
-  is_multi = is.matrix(x[['gval']])
-
-  # call the default method on the vectors
-  if( is_multi ) {  return( anyNA(x[['idx_grid']]) ) } else {
-   return( anyNA(x[]) )
-  }
+  # check the pre-computed NAs index or tell the user to validate
+  if(is.null(x[['is_na']])) stop('invalid sk object. Pass it to sk_validate first')
+  return(any(x[['is_na']]))
 }
 
 #' Calculate the mean value in a grid

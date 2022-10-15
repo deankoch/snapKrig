@@ -151,7 +151,7 @@
 #'
 #' # or pass a covariates grid (or matrix) to de-trend automatically
 #' LL_dtr - sk_LL(pars, g_obs, X=NA)
-#' LL_X_dtr - sk_LL(pars, g_obs, g_X)
+#' LL_X_dtr - sk_LL(pars, g_obs, X=g_X)
 #'
 #' # note that this introduce new unknown parameter(s), so AIC and BIC increase (worsen)
 #' sk_LL(pars, g_obs, X=NA, out='a') > sk_LL(pars, g_obs_dtr, X=0, out='a')
@@ -215,16 +215,19 @@ sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, out='l')
     # handle non-sparse input
     if( is.null(g[['idx_grid']]) )
     {
-      # extract from vector, represent as 1-column matrix
       if( is.matrix(g[['gval']]) ) stop('gval was a matrix (expected a vector)')
-      is_obs = !is.na(g[['gval']])
+
+      # identify observed data points and copy their index
+      is_obs = if(is.null(g[['is_na']])) !is.na(g[['gval']]) else !g[['is_na']]
+
+      # extract from vector to represent as 1-column matrix
       z = matrix(g[['gval']][is_obs], ncol=1L)
 
     } else {
 
       # copy matrix
       if( !is.matrix(g[['gval']]) ) stop('gval was a vector (expected a matrix)')
-      is_obs = !is.na(g[['idx_grid']])
+      is_obs = if(is.null(g[['is_na']])) !is.na(g[['idx_grid']]) else !g[['is_na']]
       z = g[['gval']]
     }
   }

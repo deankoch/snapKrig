@@ -16,7 +16,7 @@ a validated "sk" object
 }
 \description{
 This constructs the object and fills missing entries. It then does some sanity checks
-and computes the number of missing grid points (in list entry \code{n_missing}).
+and computes the index of NA points (in list entry \code{is_na}).
 }
 \details{
 The function removes/introduces \code{idx_grid} depending on whether \code{gval} is a vector

@@ -176,14 +176,14 @@ sk_GLS = function(g, pars, X=NA, out='s', fac_method='eigen', fac=NULL)
   if(is_multi)
   {
     # identify non-NA points and extract them as matrix
-    is_obs = !is.na(g[['idx_grid']])
+    is_obs = if(is.null(g[['is_na']])) !is.na(g[['idx_grid']]) else !g[['is_na']]
     n_layer = ncol(g[['gval']])
     z = g[['gval']]
 
   } else {
 
     # copy non-NA data as a 1-column matrix
-    is_obs = as.vector(!is.na(g[['gval']]))
+    is_obs = if(is.null(g[['is_na']])) !is.na(g[['gval']]) else !g[['is_na']]
     z = matrix(g[['gval']][is_obs], ncol=1L)
   }
 
@@ -500,7 +500,7 @@ sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NUL
   # TODO add multi-layer support
 
   # identify observed data points and copy their index
-  is_obs = is_obs_src = !is.na(g[['gval']])
+  is_obs = if(is.null(g[['is_na']])) !is.na(g[['gval']]) else !g[['is_na']]
   idx_obs = which(is_obs)
   n_out = prod(gdim_out)
 

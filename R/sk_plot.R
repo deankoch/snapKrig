@@ -266,7 +266,7 @@ sk_plot = function(g, gdim=NULL, ...)
 
   # copy the vectorized data
   z = g[]
-  z_is_na = is.na(z)
+  z_is_na = is.na(g)
   na_image = all(z_is_na)
 
   # coerce logical > character > factor

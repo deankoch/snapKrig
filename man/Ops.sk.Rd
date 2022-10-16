@@ -35,6 +35,7 @@ summary( cos(g)^2 + sin(g)^2 )
 
 # create a logical grid indicating points satisfying a condition
 plot(g < 0)
+all( !(g > 0) == (g[] < 0) )
 
 # test negation
 all( (-g)[] == -(g[]) )

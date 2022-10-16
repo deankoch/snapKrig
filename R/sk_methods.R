@@ -73,8 +73,11 @@
   # character indices specify sub-lists
   if(is.character(i)) { return(NextMethod()) } else {
 
-    # calls with [] return all data so we specify all indices
+    # calls with [] should return all data so we specify all indices
     if(is.null(i)) i = seq_along(x)
+
+    # convert logical sk grids to indices
+    if( inherits(i, 'sk') ) i = as.logical(i[])
 
     # handle empty gval
     if( is.null(x[['gval']]) ) return( rep(NA_real_, length(i)) )
@@ -134,6 +137,9 @@
 
   # character indices specify sub-lists (handled by default method for lists)
   if(is.character(i)) { NextMethod() } else {
+
+    # convert logical sk grids to indices
+    if( inherits(i, 'sk') ) i = as.logical(i[])
 
     # numeric indices are for the vectorized grid values
     if( !is_multi )
@@ -228,6 +234,7 @@ Math.sk = function(x, ...)
 #'
 #' # create a logical grid indicating points satisfying a condition
 #' plot(g < 0)
+#' all( !(g > 0) == (g[] < 0) )
 #'
 #' # test negation
 #' all( (-g)[] == -(g[]) )
@@ -241,10 +248,17 @@ Ops.sk = function(e1, e2)
     e1 = e1[]
   }
 
-  # handle missing e2 in calls like `-g` and `+g`
+  # handle missing e2 in calls like `!g` and `-g`
   if(nargs() == 1L)
   {
-    # produces 0 +/- e2
+    # single argument case
+    if(.Generic == '!')
+    {
+      # dispatch to default method then replace the data values in output sk object
+      return( sk(modifyList(g_out, list(gval=get(.Generic)(e1)))) )
+    }
+
+    # first argument is implied to be zero (as in `-e1`)
     e2 = e1
     e1 = 0
 

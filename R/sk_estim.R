@@ -493,7 +493,7 @@ sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NUL
   if( !is.list(g) | !all( nm_expect %in% names(g) ) ) stop(msg_expect)
 
   # copy grid info but not values
-  g_out = g[c('gdim', 'gres', 'crs')]
+  g_out = g[c('gdim', 'gres', 'crs', 'gyx')]
   gdim_out = g[['gdim']]
   gres_out = g[['gres']]
 

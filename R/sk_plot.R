@@ -57,13 +57,17 @@
 #'
 #' \describe{
 #'
-#' \item{adj, leg_just}{ numeric in [0,1]: respectively, the horizontal justification
+#' \item{adj, leg_just}{numeric in [0,1]: respectively, the horizontal justification
 #' of the title and vertical justification of the color bar legend (default 0.5 for both) }
 #'
 #' \item{asp}{ numeric or NA: the aspect ratio parameter passed to graphics::image (default 1) }
 #'
-#' \item{axes, leg}{ logical: respectively indicates to draw axes (y and x, or i and j),
+#' \item{axes, leg}{logical: respectively indicates to draw axes (y and x, or i and j),
 #' the color bar legend (default TRUE)}
+#'
+#' \item{axes_w, leg_w, lab_w, main_w, oma_w}{numeric: respectively, the number of lines of
+#' margin to reserve for axes (default 2), legend (default 5), axis labels (default 2), main
+#' title (default 2), and outer white-space (default 0.5)}
 #'
 #' \item{breaks}{numeric (vector) or character vector: the color break points (see details)}
 #'
@@ -89,8 +93,9 @@
 #' a legend title to put over the color bar, and axis titles for dimensions y and x.
 #' Setting to '' omits both the label and its margin space}
 #'
-#' \item{minimal}{logical: removes all annotation (except as otherwise specified by
-#' `axes` and/or `leg`)}
+#' \item{minimal}{logical: produces a stripped down plot showing only the grid data. This
+#' omits all annotation (unless otherwise specified by `axes` and/or `leg`) and removes
+#' all margin space (unless otherwise specified by `leg_w` and/or `mar_w`)}
 #'
 #' \item{pal}{character (vector): one of `graphics::hcl.pals` (default 'Spectral') or a
 #'  vector of colors}
@@ -190,31 +195,62 @@
 sk_plot = function(g, gdim=NULL, ...)
 {
   ###################################################################################
-  ## set up default parameters
+  ## case by case defaults
 
-  # upper limit on dimensions to pass to graphics::image
+  # upper limit on grid dimensions (if exceeded, the function upscales)
   px_max = 2e3
 
-  # different defaults for ij and minimal modes
+  # determine if we are in ij and/or minimal mode, and whether legend is requested
   ij = ifelse( is.null( list(...)[['ij']] ), is.matrix(g), list(...)[['ij']])
   minimal = ifelse( is.null( list(...)[['minimal']] ), FALSE, list(...)[['minimal']])
-  axes = leg = !minimal
-  ylab = ifelse(ij, 'row i', 'y')
-  xlab = ifelse(ij, 'column j', 'x')
-  zlab = ifelse(ij, expression(z[ij]), 'z(x,y)')
-  if(minimal) xlab = ylab = ''
-  col_box = ifelse(minimal, NA, 'black')
-  pal = ifelse(ij, 'Inferno', 'Spectral')
-  x_ontop = ij
+  leg = ifelse( is.null( list(...)[['leg']] ), !minimal, list(...)[['leg']])
 
-  # unpack the rest of the user-defined plot arguments and/or set defaults
-  zlim = list(...)[['zlim']]
-  breaks = list(...)[['breaks']]
+  # default plot styling
+  ylab = 'y'
+  xlab = 'x'
+  zlab = 'z(x,y)'
+  pal = 'Spectral'
+  col_box = 'black'
+  axes = TRUE
+
+  # adjusted defaults for matrix plot (ij mode)
+  if(ij)
+  {
+    ylab = 'row i'
+    xlab = 'column j'
+    zlab = expression(z[ij])
+    pal = 'Inferno'
+  }
+
+  # adjusted defaults for minimal mode
+  if(minimal)
+  {
+    xlab = ''
+    ylab = ''
+    col_box = NA
+    leg = FALSE
+    axes = FALSE
+  }
+
+  ###################################################################################
+  ## set more defaults and overwrite with any user-defined plot arguments
+
+  # check for title and axis labels
   main = ifelse( is.null( list(...)[['main']] ), '', list(...)[['main']])
-  asp = ifelse( is.null( list(...)[['asp']] ), 1, list(...)[['asp']])
-  axes = ifelse( is.null( list(...)[['axes']] ), axes, list(...)[['axes']])
   ylab = ifelse( is.null( list(...)[['ylab']] ), ylab, list(...)[['ylab']])
   xlab = ifelse( is.null( list(...)[['xlab']] ), xlab, list(...)[['xlab']])
+  has_main = nchar(main) > 0
+  has_ylab = nchar(ylab) > 0
+  has_xlab = nchar(xlab) > 0
+
+  # leave these NULL for now if not supplied by user
+  zlim = list(...)[['zlim']]
+  breaks = list(...)[['breaks']]
+
+  # lots more defaults, some of which depend on the above
+  asp = ifelse( is.null( list(...)[['asp']] ), 1, list(...)[['asp']])
+  axes = ifelse( is.null( list(...)[['axes']] ), axes, list(...)[['axes']])
+  axes_w = ifelse( is.null( list(...)[['axes_w']] ), ifelse(axes, 2, 0), list(...)[['axes_w']])
   cex = ifelse( is.null( list(...)[['cex']] ), 1, list(...)[['cex']])
   cex.main = ifelse( is.null( list(...)[['cex.main']] ), cex, list(...)[['cex.main']])
   cex.y = ifelse( is.null( list(...)[['cex.y']] ), cex, list(...)[['cex.y']])
@@ -226,14 +262,22 @@ sk_plot = function(g, gdim=NULL, ...)
   col_grid = ifelse( is.null( list(...)[['col_grid']] ), NA, list(...)[['col_grid']])
   col_invert = ifelse( is.null( list(...)[['col_invert']] ), FALSE, list(...)[['col_invert']])
   col_rev = ifelse( is.null( list(...)[['col_rev']] ), TRUE, list(...)[['col_rev']])
+  col_w = ifelse( is.null( list(...)[['col_w']] ), 0.7, list(...)[['col_w']])
   pal = ifelse( is.null( list(...)[['pal']] ), pal, list(...)[['pal']])
   layer = ifelse( is.null( list(...)[['layer']] ), 1L, list(...)[['layer']])
-  leg = ifelse( is.null( list(...)[['leg']] ), leg, list(...)[['leg']])
   leg_just = ifelse( is.null( list(...)[['leg_just']] ), 0.5, list(...)[['leg_just']])
+  oma_w = ifelse( is.null( list(...)[['oma_w']] ), 0.5, list(...)[['oma_w']])
+  lab_w = ifelse( is.null( list(...)[['lab_w']] ), 2, list(...)[['lab_w']])
+  leg_w = ifelse( is.null( list(...)[['leg_w']] ), ifelse(leg, 5, 0), list(...)[['leg_w']])
+  main_w = ifelse( is.null( list(...)[['main_w']] ), ifelse(has_main, 2, 0), list(...)[['main_w']])
   zlab = ifelse( is.null( list(...)[['zlab']] ), zlab, list(...)[['zlab']])
   adj = ifelse( is.null( list(...)[['adj']] ), 0.5, list(...)[['adj']])
-  x_ontop = ifelse( is.null( list(...)[['x_ontop']] ), x_ontop, list(...)[['x_ontop']])
+  x_ontop = ifelse( is.null( list(...)[['x_ontop']] ), ij, list(...)[['x_ontop']])
   reset = ifelse( is.null( list(...)[['reset']] ), FALSE, list(...)[['reset']])
+
+  # additional settings that depend on the above: where to put the axess
+  axis_s = c(y=2L, x=ifelse(x_ontop, 3L, 1L))
+
 
   ###################################################################################
   ## process input data
@@ -250,44 +294,56 @@ sk_plot = function(g, gdim=NULL, ...)
   # convert matrix and raster to sk
   g = sk(g)
 
-  # slice multi-layer input
+  # slice off one layer of multi-layer input
   is_multi = is.matrix(g[['gval']])
   if( is_multi )
   {
-    # keep only the specified layer
+    # overwrite with the specified layer
     g[['gval']] = as.vector(g[, layer])
     g[['idx_grid']] = NULL
   }
 
-  # upscale as needed then copy grid dimensions
+  # upscale as needed then overwrite new grid dimensions
   up_fac = ceiling( dim(g)/px_max )
   if( any( up_fac > 1 ) ) g = sk_rescale(g, up=up_fac)
   gdim = dim(g)
+
+  # compute row-first ordering expected by graphics/grDevices
+  idx_image = matrix(seq_along(g), gdim)[gdim['y']:1, ]
 
   # copy the vectorized data
   z = g[]
   z_is_na = is.na(g)
   na_image = all(z_is_na)
 
-  # coerce logical > character > factor
-  if( !na_image & is.logical(z) ) z = tolower(as.character(z))
-  if( is.character(z) ) z = as.factor(z)
-
-  # convert factor to integer
-  if( is.factor(z) )
+  # handle logical, character, integer types
+  if(!na_image)
   {
-    # convert factor to integer and preserve names in `breaks`
-    bins = sort(unique(z))
-    z = match(z, bins)
-    if( is.null(breaks) ) breaks = as.character(bins)
+    # coerce logical to integer
+    bool_image = is.logical(z)
+    if( bool_image )
+    {
+      z = as.integer(z)
+      if( is.null(breaks) ) breaks = c('false', 'true')
+    }
+
+    # coerce factor and character to integer, preserving names in `breaks`
+    if( is.character(z) ) z = as.factor(z)
+    if( is.factor(z) )
+    {
+      # this can be slow for large vectors
+      bins = sort(unique(z))
+      z = match(z, bins)
+      if( is.null(breaks) ) breaks = as.character(bins)
+    }
   }
+
+  # construct matrix representation expected by graphics/grDevices
+  z_image = matrix(z[idx_image], rev(gdim), byrow=TRUE)
+
 
   ###################################################################################
   ## call graphics::image
-
-  # vertical flip and row-first ordering expected by graphics/grDevices
-  idx_image = matrix(seq_along(g), gdim)[gdim['y']:1, ]
-  z_image = matrix(z[idx_image], rev(gdim), byrow=TRUE)
 
   # find limits from data if they are not all NA
   if( !na_image ) { if( is.null(zlim) ) zlim = range(z_image, na.rm=TRUE) } else {
@@ -313,29 +369,24 @@ sk_plot = function(g, gdim=NULL, ...)
   discrete_image = !na_image & is.integer(z_image)
   if( discrete_image )
   {
-    # a better default palette for small numbers of categories
+    # use a better default palette for small numbers of categories
     if( is.null( list(...)[['pal']] ) ) pal = 'Zissou'
 
-    # find unique values in the data
-    z_range = range(z_image, na.rm=TRUE)
-    z_lvl = z_range[1]:z_range[2]
-    n_lvl = 1L + diff(z_range)
+    # discretize z limits and find unique levels for color scale
+    zlim = c(ceiling(zlim[1]), floor(zlim[2]))
+    z_lvl = as.numeric(zlim[1]:zlim[2])
+
+    # add padding so extremes are included
+    zlim = zlim + c(-0.5, 0.5)
 
     # character input to `breaks` interpreted as labels (else use integers, and `breaks` ignored)
     z_label = as.character(z_lvl)
     if( is.character(breaks) ) z_label = breaks
-
-    # discretize z limits, add padding so extremes are included
-    zlim = c( ceiling(zlim[1]), floor(zlim[2]) ) + c(-1, 1)/2
-
-    # place breaks at and (midway) between each integer; midpoint breaks are passed to image
-    breaks_all = seq(zlim[1], zlim[2], length.out=1L+2*diff(zlim))
-    is_labeled = seq_along(breaks_all) %in% ( 2L * seq(n_lvl) )
-    breaks = breaks_all[!is_labeled]
+    breaks = length(z_lvl)
 
     # set gray-scale for unary/binary cases
-    if( n_lvl == 1 ) pal = 'grey10'
-    if( n_lvl == 2 & !any(z_is_na) ) pal = c('grey90', 'grey10')
+    if( breaks == 1 ) pal = '#1A1A1A'
+    if( breaks == 2 & !any(z_is_na) ) pal = c('#E5E5E5', '#1A1A1A')
 
   } else {
 
@@ -343,6 +394,7 @@ sk_plot = function(g, gdim=NULL, ...)
     if( is.null(breaks) ) breaks = 1e3
     z_lvl = pretty(zlim)
     z_label = as.character(z_lvl)
+
   }
 
   # set up a color palette
@@ -352,42 +404,39 @@ sk_plot = function(g, gdim=NULL, ...)
   if( col_invert ) pal = rgb( ( 255 - t(col2rgb(pal)) ) / 255 )
 
   # define margins with space for color bar, axes, titles
-  has_main = nchar(main) > 0
-  x_nline = 2.1 + axes + ( nchar(xlab) > 0 ) + ( x_ontop & has_main )
-  y_nline = 2.1 + axes + ( nchar(ylab) > 0 )
-  mar_new = c(bottom = ifelse(x_ontop, 1.1, x_nline),
-              left = y_nline,
-              top = ifelse(x_ontop, x_nline, 1.1 + has_main),
-              right = ifelse(leg, 5.1, 1.1))
+  mar_new = c(bottom = ( axes_w * (!x_ontop) ) + ( lab_w * has_xlab ),
+              left = axes_w + ( lab_w * has_ylab ),
+              top = ( ( axes_w + ( lab_w * has_xlab) ) * x_ontop ) + ( main_w * has_main ),
+              right = leg_w)
 
   # set new graphical parameters but keep a backup
   if(reset) par_existing = par(no.readonly=TRUE)
-  par(mar=mar_new, oma=c(0,0,0,0))
+  par(mar=mar_new, oma=rep(oma_w, 4L))
 
   # draw the raster plot without axes or annotations
   graphics::image(g[['gyx']], z=z_image, axes=FALSE, ann=FALSE, xpd=NA,
-                   asp=asp, useRaster=!discrete_image, zlim=zlim, col=pal, breaks=breaks)
+                   asp=asp, useRaster=TRUE, zlim=zlim, col=pal, breaks=breaks)
+
 
   ###################################################################################
   ## draw annotations
 
   # compute bounding box of image
   plot_bbox = list(min=sapply(g[['gyx']], min), max=sapply(g[['gyx']], max))
-  half_pixel = sapply(g[['gyx']], \(yx) diff(yx[1:2])) / 2
+  half_pixel = sapply(g[['gyx']], function(yx) diff(yx[1:2])) / 2
 
   # position and draw axes and tick marks
-  axis_s = c(y=2L, x=ifelse(x_ontop, 3L, 1L))
   if(axes)
   {
     # axes are snapped to raster image edge
     axis_xy = rev(plot_bbox[['min']] - half_pixel)
 
     # find row and column indices for tick mark locations, then y/x coordinates
-    tick_pos = tick_lab = lapply(g[['gyx']], \(yx) pretty(range(yx)))
+    tick_pos = tick_lab = lapply(g[['gyx']], function(yx) pretty(range(yx)))
     if(ij)
     {
       # force labeling of first and last row/column in matrices and set new default labels
-      tick_ij = lapply(gdim, \(d) unique(round(c(1, seq(1,d, length.out=5), d))))
+      tick_ij = lapply(gdim, function(d) unique(round(c(1, seq(1,d, length.out=5), d))))
       tick_lab = modifyList(tick_ij, list( y = gdim['y'] + 1 - tick_ij[['y']] ))
       tick_pos = Map(\(yx, idx) yx[idx], yx=g[['gyx']], idx=tick_ij)
 
@@ -399,7 +448,7 @@ sk_plot = function(g, gdim=NULL, ...)
       lwd_axis = 0
     }
 
-    # draw axes and tick marks, looping over c(y, x)
+    # draw axes and tick marks (loop is over y, x)
     Map(\(s, a, lab, yx, cex) graphics::axis(s, at=a, labels=lab, pos=yx,
                                         lwd=lwd_axis, lwd.ticks=1, cex.axis=cex),
         s = axis_s,
@@ -409,11 +458,15 @@ sk_plot = function(g, gdim=NULL, ...)
         cex = c(cex.y, cex.x))
   }
 
+  # title and axis label line positions
+  main_nline = par('mar')[3] - 0.7 * main_w
+  y_nline = par('mar')[2L] - 0.7 * lab_w
+  x_nline = par('mar')[ axis_s['x'] ] - ( main_w * (ij & x_ontop) ) - 0.7 * lab_w
+
   # print any titles
-  title_line = ifelse(x_ontop, x_nline-1, 1)
-  graphics::mtext(main, side=3, line=title_line, font=2, xpd=NA, adj=adj, cex=cex.main)
-  graphics::mtext(ylab, side=axis_s['y'], line=y_nline-1.5, xpd=NA, cex=cex.y)
-  graphics::mtext(xlab, side=axis_s['x'], line=x_nline-1.5-(ij & has_main), xpd=NA, cex=cex.x)
+  graphics::mtext(main, side=3, line=main_nline, font=2, xpd=NA, adj=adj, cex=cex.main)
+  graphics::mtext(ylab, side=axis_s['y'], line=y_nline, xpd=NA, cex=cex.y)
+  graphics::mtext(xlab, side=axis_s['x'], line=x_nline, xpd=NA, cex=cex.x)
 
   # finding bounding box for the image
   bmin = plot_bbox[['min']] - half_pixel
@@ -443,7 +496,7 @@ sk_plot = function(g, gdim=NULL, ...)
   if(leg)
   {
     # set x coordinates with width equal to height of one line of text
-    bar_x = bmax['x'] + x_line * c(1,2)
+    bar_x = bmax['x'] + ( col_w * x_line * c(1,2) )
 
     # set y coordinates, attempting to match breaks to line height
     n_bin = length(breaks) - 1

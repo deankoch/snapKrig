@@ -111,6 +111,8 @@
 #' }
 #'
 #' @export
+#' @seealso sk
+#' @family plotting functions
 #'
 #' @examples
 #' # example grid
@@ -191,6 +193,16 @@
 #' z_char = rep(c('foo', 'bar'), n/2)
 #' z_char[sample.int(n, n/2)] = NA
 #' sk_plot(z_char, gdim)
+#'
+#' # multi-pane plot
+#' g_sim = sk_sim(c(100, 50), n_layer=3)
+#' split.screen(c(1,3))
+#' screen(1)
+#' plot(g_sim, main='layer 1', layer=1, minimal=T, col_box='black')
+#' screen(2)
+#' plot(g_sim, main='layer 2', layer=2, minimal=T, col_box='black')
+#' screen(3)
+#' plot(g_sim, main='layer 3', layer=3, minimal=T, col_box='black')
 #'
 sk_plot = function(g, gdim=NULL, ...)
 {
@@ -493,13 +505,14 @@ sk_plot = function(g, gdim=NULL, ...)
   if( !is.na(col_box) ) graphics::rect(bmin['x'], bmin['y'], bmax['x'], bmax['y'], border=col_box)
 
   # add a color bar legend
+  # TODO: add option to draw this invisibly
   if(leg)
   {
     # set x coordinates with width equal to height of one line of text
     bar_x = bmax['x'] + ( col_w * x_line * c(1,2) )
 
     # set y coordinates, attempting to match breaks to line height
-    n_bin = length(breaks) - 1
+    n_bin = length(breaks) - 1L
     n_pad = 2L
     n_y_line_max = floor( ( bmax['y'] - bmin['y'] ) / y_line ) - 2L * n_pad
     n_y_line = pmax(pmin(n_bin, n_y_line_max), 2)
@@ -543,9 +556,13 @@ sk_plot = function(g, gdim=NULL, ...)
 
 #' Plot the covariance structure of a snapKrig model
 #'
-#' Visualization of the footprint of a covariance kernel as a heatmap of size
-#' `g$gdim`, where each grid cell is colored according to its covariance with
+#' Visualization of the footprint of a covariance kernel as a heatmap of approximate
+#' size `dim(g)`, where each grid cell is colored according to its covariance with
 #' the central grid point.
+#'
+#' If `g` is not supplied, the function sets a default with dimensions 100 x 100.
+#' A default resolution is computed such that the maximum nugget-free covariance along
+#' the outer edge of the plot is 5% of `pars$psill`.
 #'
 #' When `simple=FALSE` (the default), covariance parameters are printed in the
 #' title and axis labels with values rounded to 3 decimal places. This can be
@@ -559,33 +576,58 @@ sk_plot = function(g, gdim=NULL, ...)
 #' @return the same as `sk_plot`
 #'
 #' @export
+#' @seealso sk sk_pars
+#' @family plotting functions
 #'
 #' @examples
 #' gdim = c(100, 100)
-#' pars = sk_pars(gdim, 'mat')
-#' sk_plot_pars(pars, gdim)
+#' g = sk(gdim)
+#' pars = sk_pars(g, 'mat')
+#'
+#' # plot with default grid
+#' sk_plot_pars(pars)
+#'
+#' # plot with a predefined grid
+#' sk_plot_pars(pars, g)
 #'
 #' # zoom in/out by passing a grid object with suitably modified resolution
-#' g = sk(gdim)
-#' sk_plot_pars(pars, g)
-#' sk_plot_pars(pars, modifyList(g, list(gres=2*g$gres)))
-#' sk_plot_pars(pars, modifyList(g, list(gres=0.2*g$gres)))
+#' gres = g[['gres']]
+#' sk_plot_pars(pars, sk(gdim=gdim, gres=0.5*gres))
+#' sk_plot_pars(pars, sk(gdim=gdim, gres=2*gres))
 #'
-#' # change other plot style settings
-#' sk_plot_pars(pars, modifyList(g, list(gres=0.5*g$gres)), simple=TRUE)
-#' sk_plot_pars(pars, modifyList(g, list(gres=0.5*g$gres)), minimal=TRUE, col_invert=TRUE)
+#' # change plot style settings (all parameters of sk_plot accepted)
+#' sk_plot_pars(pars, simple=TRUE)
+#' sk_plot_pars(pars, minimal=TRUE)
 #'
-sk_plot_pars = function(pars, g, simple=FALSE, ...)
+sk_plot_pars = function(pars, g=NULL, simple=FALSE, ...)
 {
-  g = sk(g)
-  gdim = g[['gdim']]
+  # if a grid is not supplied, the function sets a default based on range parameters
+  if( !is.null(g) ) { g = sk(g) } else {
+
+    # approximate the range at which correlation is around 0.05
+    c_target = sqrt(0.05) * pars[['psill']]
+    d_max = 100 * max(sapply(pars[c('y', 'x')], function(p) p[['kp']]['rho']))
+    d_test = seq(0, d_max, length.out=1e3)
+    dist_score = sapply(pars[c('y', 'x')], function(p) sk_corr(p, d_test) - c_target)
+    d_target = d_test[which.min(rowSums(dist_score))]
+
+    # by default plot 5 times the largest range
+    if( !(d_target > 0) ) stop('invalid range parameter(s)')
+
+    # set default plot dimensions and compute resolution
+    gdim = c(100, 100)
+    g = sk(gdim=gdim, gres=d_target/gdim)
+  }
+
+  # copy important parameters
+  gdim = dim(g)
   gres = g[['gres']]
   psill = pars[['psill']]
   eps = pars[['eps']]
 
-  # increment dimensions to get a central row and column
+  # increment dimensions to get odd number (having a central row and column)
   gdim = gdim + 1 - (g[['gdim']] %% 2)
-  ij_mid = floor(gdim/2)
+  ij_mid = 1L + floor(gdim/2)
 
   # construct the required rows of the correlation matrices
   cy = sk_corr_mat(pars[['y']], gdim[['y']], gres[['y']], i=ij_mid['y'])
@@ -593,13 +635,15 @@ sk_plot_pars = function(pars, g, simple=FALSE, ...)
 
   # find the covariance values and create a grid list object for them
   cov_values = eps + psill * as.vector(kronecker(cx, cy))
-  gyx = Map(\(ij, r) r * c( (-ij):ij ), ij=ij_mid, r=gres)
-  g_plot = modifyList(g, list(gdim=gdim, gval=cov_values, gyx=gyx, idx_grid=NULL))
+  g_plot = sk(gdim=gdim, gres=gres, gval=cov_values)
+
+  # replace grid line positions with displacement variable
+  g_plot[['gyx']] = Map(function(gyx, ij) gyx - ij + 1L, gyx=g_plot[['gyx']], ij=ij_mid)
 
   # make a plot title
   titles = sk_to_string(pars)
-  ylab = paste('y distance', ifelse(simple, '', titles[['kp']][['y']]))
-  xlab = paste('x distance', ifelse(simple, '', titles[['kp']][['x']]))
+  ylab = paste('y displacement', ifelse(simple, '', titles[['kp']][['y']]))
+  xlab = paste('x displacement', ifelse(simple, '', titles[['kp']][['x']]))
   main = ifelse(simple, paste(titles[['k']]), paste(titles[['main']]))
   zlab = expression(V[ij])
 
@@ -670,6 +714,8 @@ sk_plot_pars = function(pars, g, simple=FALSE, ...)
 #'
 #' \item{leg_main}{character: title for the sample bin legend (default 'model')}
 #'
+#' \item{lwd}{numeric: line width for the model semi-variance}
+#'
 #' \item{main}{character: a title}
 #'
 #' \item{n_bin, n_test}{integer: respectively, the number of distance bins for the sample
@@ -711,11 +757,11 @@ sk_plot_pars = function(pars, g, simple=FALSE, ...)
 #' sk_plot_semi(g_empty, pars, unit_in='km', unit_out='km')
 #'
 #' # generate sample data and sample semivariogram
-#' g_obs = sk_sim(g_obs, pars)
+#' g_obs = sk_sim(g_empty, pars)
 #' vg = sk_sample_vg(g_obs)
 #' sk_plot_semi(vg)
 #'
-#' # different aggregation methods
+#' # different aggregation methods produce variety of results
 #' sk_plot_semi(vg, fun='root_median')
 #' sk_plot_semi(vg, fun='root_mean')
 #' sk_plot_semi(vg, fun='classical') # default
@@ -726,13 +772,13 @@ sk_plot_pars = function(pars, g, simple=FALSE, ...)
 #' sk_plot_semi(vg, pars, d_max=10)
 #' sk_plot_semi(vg, pars, d_max=10, n_bin=1e2)
 #'
-#' # add dashed line for sample variance (this tends to underestimate the sill)
+#' # add dashed line for half sample variance (this tends to underestimate the sill)
 #' sk_plot_semi(vg, pars)
 #' sample_var = var(g_obs[['gval']], na.rm=TRUE)
-#' abline(h=sample_var, lty='dashed')
+#' abline(h=sample_var/2, lty='dashed')
 #'
 #' # initial call with reset=FALSE, then use add=TRUE to overlay the same model with a green fill
-#' sk_plot_semi(vg, pars, reset=FALSE)
+#' sk_plot_semi(vg, pars, lwd=2, reset=FALSE)
 #' sk_plot_semi(vg, pars, add=TRUE, col_model='green', alpha_model_b=0)
 #'
 #' # overlay several models with varying nugget effect
@@ -766,6 +812,7 @@ sk_plot_semi = function(vg, pars=NULL, add=FALSE, fun='classical', ...)
   n_bin = ifelse( is.null( list(...)[['n_bin']] ), NA, list(...)[['n_bin']])
   reset = ifelse( is.null( list(...)[['reset']] ), TRUE, list(...)[['reset']])
   bty = ifelse( is.null( list(...)[['bty']] ), 'n', list(...)[['bty']])
+  lwd = ifelse( is.null( list(...)[['lwd']] ), 1, list(...)[['lwd']])
 
   # set up the more complicated defaults
   d_max = list(...)[['d_max']]
@@ -903,7 +950,7 @@ sk_plot_semi = function(vg, pars=NULL, add=FALSE, fun='classical', ...)
     y_out = c(sv_max, rev(sv_min))
     col_model_fill = grDevices::adjustcolor(col_model, alpha.f=alpha_model)
     col_model_border = grDevices::adjustcolor(col_model, alpha.f=alpha_model_b)
-    graphics::polygon(x_out, y_out, col=col_model_fill, border=col_model_border)
+    graphics::polygon(x_out, y_out, col=col_model_fill, border=col_model_border, lwd=lwd)
 
     # add a legend
     if(!add & input_vg) legend(x=2*x_line + par('usr')[2], y=plot_max/2 - y_line,

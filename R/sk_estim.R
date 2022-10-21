@@ -949,11 +949,37 @@ sk_optim = function(g_obs, pars='gau', X=0, iso=FALSE, control=list(), quiet=FAL
 
   # get default initial values and bounds data frame
   pars_df = sk_bds(pars_fix, g_obs)[nm_fit,]
+  nm_expect = rownames(pars_df)
 
-  # then overwrite with any user supplied settings
-  if( !is.null(lower) ) pars_df[['lower']] = lower
-  if( !is.null(initial) ) pars_df[['initial']] = initial
-  if( !is.null(upper) ) pars_df[['upper']] = upper
+  # overwrite default lower bounds any user supplied settings
+  if( !is.null(lower) )
+  {
+    # check for valid names then replace only the named arguments
+    lower_nm = names(lower)
+    is_nm_valid = all(lower_nm %in% nm_expect)
+    if( !is_nm_valid | is.null(lower_nm) ) names(lower) = nm_expect[seq_along(lower)]
+    pars_df[names(lower), 'lower'] = lower
+  }
+
+  # do the same for initials
+  if( !is.null(initial) )
+  {
+    # check for valid names then replace only the named arguments
+    initial_nm = names(initial)
+    is_nm_valid = all(initial_nm %in% nm_expect)
+    if( !is_nm_valid | is.null(initial_nm) ) names(initial) = nm_expect[seq_along(initial)]
+    pars_df[names(initial), 'initial'] = initial
+  }
+
+  # and for uppers
+  if( !is.null(upper) )
+  {
+    # check for valid names then replace only the named arguments
+    upper_nm = names(upper)
+    is_nm_valid = all(upper_nm %in% nm_expect)
+    if( !is_nm_valid | is.null(upper_nm) ) names(upper) = nm_expect[seq_along(upper)]
+    pars_df[names(upper), 'upper'] = upper
+  }
 
   # switch to log-scale if requested
   if(log_scale)

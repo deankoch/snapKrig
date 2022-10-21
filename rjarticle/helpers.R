@@ -80,14 +80,16 @@ run_cv = function(g, g_X, n_fold=5, n_rep=25)
   # count covariates and describe models to fit
   X = g_X[]
   n_lm = ncol(X)
-  out_df = data.frame(name = c('fit_result_ok', 'fit_result_uk', 'fit_result_uk_gau', 'fit_result_uk_mat'),
+  out_df = data.frame(name = paste0('fit_result_', c('ok', 'uk', 'uk_gau', 'uk_mat')),
                       covariance = c(rep('gau', 3), 'mat'),
                       covariates = c(0, rep(n_lm, 3)),
                       isotropic = c(TRUE, TRUE, FALSE, FALSE),
                       parameters = 1 + 2 + c(1, 1, 2, 4),
                       MSDR = 0,
                       MSPE = 0,
-                      MSPEb = 0)
+                      MSPEb = 0,
+                      AIC = 0,
+                      BIC = 0)
 
   # count observations and number per fold
   is_obs = !is.na(g)
@@ -132,22 +134,28 @@ run_cv = function(g, g_X, n_fold=5, n_rep=25)
         X_test = X
       }
 
-      # fit and predict
+      # fit and compute information scores on training set
       fit_result = sk_fit(g_train, pars=pars, X=X_train, iso=iso, quiet=TRUE)
+      aic_train = sk_LL(fit_result[['pars']], g_train, X=X_train, quiet=TRUE, out='a')
+      bic_train = sk_LL(fit_result[['pars']], g_train, X=X_train, quiet=TRUE, out='b')
+
+      # predict and compute variance, transform to original scale
       g_pred = sk_cmean(g, pars=fit_result[['pars']], X=X_test)
       g_var = sk_cmean(g, pars=fit_result[['pars']], X=X_test, what='v', quiet=TRUE)
-      g_pred_b = exp(z_pred + z_var/2)
+      g_pred_b = exp(g_pred + g_var/2)
 
-      # standardized residuals
+      # standardized residuals on test set
       g_res = g_pred - g
       z_res = g_res[idx_test]
       z_res_std = g_res[idx_test] / sqrt(g_var[idx_test])
       z_res_b = g_pred_b[idx_test] - exp(g[idx_test])
 
-      # MSPE, MSDR and likelihood on test set
+      # compute mean squares store results
       results_list[[i]][j, 'MSPE'] = mean(z_res^2)
       results_list[[i]][j, 'MSDR'] = mean(z_res_std^2)
       results_list[[i]][j, 'MSPEb'] = mean(z_res_b^2)
+      results_list[[i]][j, 'AIC'] = aic_train
+      results_list[[i]][j, 'BIC'] = bic_train
     }
   }
 
@@ -155,6 +163,8 @@ run_cv = function(g, g_X, n_fold=5, n_rep=25)
   out_df['MSDR'] = rowMeans(do.call(cbind, lapply(results_list, function(x) x['MSDR'])))
   out_df['MSPE'] = rowMeans(do.call(cbind, lapply(results_list, function(x) x['MSPE'])))
   out_df['MSPEb'] = rowMeans(do.call(cbind, lapply(results_list, function(x) x['MSPEb'])))
+  out_df['AIC'] = rowMeans(do.call(cbind, lapply(results_list, function(x) x['AIC'])))
+  out_df['BIC'] = rowMeans(do.call(cbind, lapply(results_list, function(x) x['BIC'])))
 
   # take square roots
   out_df['rMSDR'] = sqrt(rowMeans(do.call(cbind, lapply(results_list, function(x) x['MSDR']))))

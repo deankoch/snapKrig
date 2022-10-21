@@ -77,16 +77,16 @@ make_inputs = function(eg_pts, eg_rast, dir_storage, p_cv, n_rep)
 
     # snap training data to high resolution grid (for use by snapKrig)
     idx_res_fit = which( sapply(output_gdim_test, function(d) all(d > n_in)) )[1]
-    training_grid = bk_snap(training_pts, output_gdim_test[[idx_res_fit]], quiet=TRUE)
+    training_grid = sk_snap(training_pts, output_gdim_test[[idx_res_fit]], quiet=TRUE)
 
     # write the input files for each of the output grid sizes
     for(j in seq(output_n_test))
     {
       # define output grid (with test data included) to get big enough extent
-      output_grid = bk_snap(pts, output_gdim_test[[j]], quiet=TRUE)
+      output_grid = sk_snap(pts, output_gdim_test[[j]], quiet=TRUE)
 
       # overwrite with only the training points
-      output_grid = bk_snap(training_pts, output_grid, quiet=TRUE)
+      output_grid = sk_snap(training_pts, output_grid, quiet=TRUE)
 
       # save results to disk
       saveRDS(list(idx_test = idx_test,
@@ -109,8 +109,8 @@ make_inputs = function(eg_pts, eg_rast, dir_storage, p_cv, n_rep)
   for(i in idx_in) {
 
     # copy training sub-grid
-    training_grid = bk_grid(eg_rast[[i]])
-    training_pts = bk_coords(training_grid, out='sf', quiet=TRUE)
+    training_grid = sk(eg_rast[[i]])
+    training_pts = sk_coords(training_grid, out='sf', quiet=TRUE)
     n_in = prod(training_grid[['gdim']])
     name_in = paste0('treed_', n_in)
     cat(paste0(name_in, '...'))
@@ -131,10 +131,10 @@ make_inputs = function(eg_pts, eg_rast, dir_storage, p_cv, n_rep)
     for(j in seq_along(idx_out_i))
     {
       # define output grid (with test data included) to get big enough extent
-      output_grid_complete = bk_grid( eg_rast[[ idx_out_i[j] ]] )
+      output_grid_complete = sk( eg_rast[[ idx_out_i[j] ]] )
 
       # copy with only the training points snapped
-      output_grid = bk_snap(training_pts, output_grid_complete, quiet=TRUE)
+      output_grid = sk_snap(training_pts, output_grid_complete, quiet=TRUE)
 
       # skip test points in this case
       if( p_cv == 0 )
@@ -146,7 +146,7 @@ make_inputs = function(eg_pts, eg_rast, dir_storage, p_cv, n_rep)
 
         # (excludes points shared with training set)
         idx_test = is.na(output_grid[['gval']])
-        testing_pts = bk_coords(output_grid_complete, out='sf', quiet=TRUE)[idx_test,]
+        testing_pts = sk_coords(output_grid_complete, out='sf', quiet=TRUE)[idx_test,]
       }
 
       # save results to disk

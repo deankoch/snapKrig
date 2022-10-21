@@ -1,7 +1,7 @@
 
 # fits a model to grid g; returns parameters and execution time, or any errors
 # (pts and initial argument ignored)
-sk_bench_fit = function(g, pts, n_rep=10, initial=NULL, timeout=60)
+snapKrig_bench_fit = function(g, pts, n_rep=10, initial=NULL, timeout=60)
 {
   # pts argument ignored
 
@@ -34,7 +34,7 @@ sk_bench_fit = function(g, pts, n_rep=10, initial=NULL, timeout=60)
 
 # runs ordinary kriging on g with parameters pars; returns execution time, or any errors
 # (pts argument ignored)
-sk_bench_OK = function(g, pts, pars, n_rep=10, out='p', timeout=60)
+snapKrig_bench_OK = function(g, pts, pars, n_rep=10, out='p', timeout=60)
 {
   # out = 'p' for prediction or 'v' for variance
 

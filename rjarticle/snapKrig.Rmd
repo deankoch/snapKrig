@@ -391,15 +391,9 @@ all_results = list(ok=fit_result_ok,
                 uk_mat=fit_result_uk_mat,
                 uk_gxp=fit_result_uk_gxp)
 
+# check likelihood, AIC and BIC for all models
 all_uk = sapply(all_results[-1], \(p) sk_LL(p[['pars']], g, X, out='m'))
 all_results_df = cbind(ok=sk_LL(all_results[[1]][['pars']], g, out='m'), all_uk)
-
-# check likelihood, AIC and BIC for all models
-sk_LL(fit_result_uk_gau$pars, g, out='a')
-sk_LL(fit_result_uk_gau$pars, g, out='a')
-sk_LL(fit_result_uk_gau$pars, g, out='a')
-sk_LL(fit_result_uk_gau$pars, g, out='a')
-sk_LL(fit_result_uk_gau$pars, g, out='a')
 
 ```
 

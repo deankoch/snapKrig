@@ -24,8 +24,8 @@ run_benchmark = function(inputs_df, dir_storage, pkg_test, n_rep, timeout, n_max
   # begin long loop over input files to fill results_df and write outputs
   results_df = data.frame()
 
-  for(i in 20:80)
-  #for(i in seq(nrow(inputs_df)))
+  #for(i in 20:80)
+  for(i in seq(nrow(inputs_df)))
   {
     # index of all output grids for this example
     name_in = inputs_df[i, 'name_in']
@@ -77,12 +77,12 @@ run_benchmark = function(inputs_df, dir_storage, pkg_test, n_rep, timeout, n_max
           is_snapKrig = ( results_df[['pkg']] == 'snapKrig' ) & ( results_df[['name_in']] == name_in )
           if(!any(is_snapKrig)) stop('snapKrig model fitting results expected but not found')
           prev_result = readRDS(results_df[ which(is_snapKrig)[1], 'path_out'])
-          bk_pars = prev_result[['fit_result']][['result']][['pars']]
+          sk_pars = prev_result[['fit_result']][['result']][['pars']]
           rm(prev_result)
 
           # copy to snapKrig fitted values to initial values vector
-          range_initial = bk_pars[['y']][['kp']]
-          psill_initial = bk_pars[['psill']]
+          range_initial = sk_pars[['y']][['kp']]
+          psill_initial = sk_pars[['psill']]
           initial = c(psill=psill_initial, range_initial)
         }
 
@@ -167,7 +167,7 @@ run_benchmark = function(inputs_df, dir_storage, pkg_test, n_rep, timeout, n_max
           if(!is.null(testing_pts))
           {
             # extract predictions and calculate MSPE
-            OK_rast = bk_export(OK_pred_result[['result']])
+            OK_rast = sk_export(OK_pred_result[['result']])
             OK_diff = testing_pts[['gval']] - terra::extract(OK_rast, testing_pts)[,2]
             OK_err = mean(OK_diff^2, na.rm=TRUE)
           }

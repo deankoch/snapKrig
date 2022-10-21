@@ -105,7 +105,7 @@ sk_bds = function(pars, g, var_obs=NULL, var_mult=2)
   g = sk(g)
 
   # compute sample variance if not supplied, or set to default 1 when there is no data
-  if( is.null(var_obs) ) var_obs = ifelse(is.null(g[['gval']]), 1, var(g[], na.rm=TRUE))
+  if( is.null(var_obs) ) var_obs = ifelse(is.null(g[['gval']]), 1, var(g[], na.rm=TRUE)) / 2
   if( is.na(var_obs) ) var_obs = 1
 
   # set up bounds for variance components

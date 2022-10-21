@@ -80,26 +80,27 @@ sk_export = function(g, template='terra')
   # terra is preferred when available
   if( template == 'terra' )
   {
+    # initialize raster
     r_ext = terra::ext(do.call(c, rev(yx_bbox)))
     r_out = terra::rast(extent=r_ext, resolution=rev(g[['gres']]), crs=g[['crs']], nlyr=n_layer)
-    if( n_layer == 1 ) { r_out = terra::setValues(r_out, as.matrix(g)) } else {
 
-      # multi-layer assignments require a different vectorization ordering!
-      idx_reorder = t(matrix(seq_along(g), dim(g)))
-      r_out = terra::setValues(r_out, g[idx_reorder,])
-    }
+    # reorder values then write to cells
+    idx_reorder = t(matrix(seq_along(g), dim(g)))
+    r_out = terra::init(r_out, as.matrix(g)[idx_reorder])
     return(r_out)
   }
 
   # revert to raster if requested
   if( template == 'raster' )
   {
-    # attempt to use raster if terra unavailable
+    # initialize raster
     r_ext = raster::extent(do.call(c, rev(yx_bbox)))
     r_out = raster::raster(ext=r_ext, resolution=rev(g[['gres']]), crs=g[['crs']])
 
     # warn about lack of support for RasterStack output
     if(n_layer > 1) warning('only the first layer was exported')
+
+    # write values to cells
     if( !is.null(g[['gval']]) ) r_out = raster::setValues(r_out, as.matrix(g))
     return(r_out)
   }

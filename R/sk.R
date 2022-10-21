@@ -413,6 +413,9 @@ sk_validate = function(g, res_tol=1e-6)
   if( !all( nm_dim %in% names(g[['gdim']]) ) ) stop('unknown names in gdim (expected "y", "x")')
   g[['gdim']] = g[['gdim']][nm_dim]
 
+  # check for either grid dimension == 1
+  if( !all(g[['gdim']] > 1) ) stop('grid must have two or more grid lines along each dimension')
+
   # when grid resolution is missing calculate it from gyx or else set up default
   if( is.null(g[['gres']]) )
   {

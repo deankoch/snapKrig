@@ -347,9 +347,9 @@ print.sk = function(x, ...)
   gdim_msg = paste(paste(x[['gdim']], collapse=' x '))
 
   # message about completeness
-  n_miss = sum(!x[['is_obs']])
-  if(is.null(n_miss)) {complete_msg = 'not validated\n'} else {
+  if(is.null(x[['is_obs']])) {complete_msg = 'not validated\n'} else {
 
+    n_miss = sum(!x[['is_obs']])
     n = prod(x[['gdim']])
     complete_msg = 'incomplete\n'
     if( n_miss == n ) complete_msg = 'empty\n'

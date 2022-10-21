@@ -820,7 +820,7 @@ sk_fit = function(g_obs, pars=NULL, X=NA, iso=TRUE, initial=NULL, quiet=FALSE,
   #v = var(g[['gval']], na.rm=TRUE)
   result_optim = sk_optim(g_obs, pars, X=X, iso=iso, quiet=quiet,
                              lower=lower, initial=initial, upper=upper)
-  pars_out = result_optim[['pars']]
+  #pars_out = result_optim[['pars']]
 
   # # check sequence of likely psill substitutions
   # psill_test = ( 2^(seq(5) - 3) ) * pars_out[['psill']]
@@ -1041,7 +1041,11 @@ sk_optim = function(g_obs, pars='gau', X=0, iso=FALSE, control=list(), quiet=FAL
   if(!quiet) cat(paste('\n', optim_out[['message']]))
 
   # revert to initial value if optimize/optim result was not an improvement
-  if(bds_nLL[['initial']] < obj_val) pars_fitted_v = pars_df[['initial']]
+  if(bds_nLL[['initial']] < obj_val)
+  {
+    pars_fitted_v = pars_df[['initial']]
+    warning('initial values had best likelihood score)')
+  }
   # TODO: further checking if upper/lower bounds were also better
 
   # reshape as list and transform back if fitting on log-scale
@@ -1053,9 +1057,10 @@ sk_optim = function(g_obs, pars='gau', X=0, iso=FALSE, control=list(), quiet=FAL
     pars_fitted = sk_pars_update(pars_fitted, exp(sk_pars_update(pars_fitted)))
   }
 
-  # return parameters list and data frame in a list
+  # add bounds data frame as attribute of output parameter list
   df_order = c('lower', 'initial', 'fitted', 'upper')
-  return(list(pars=pars_fitted, df=pars_df[df_order], obj=obj_val))
+  attr(pars_fitted, 'bds') = pars_df[df_order]
+  return(pars_fitted)
 }
 
 

@@ -4,7 +4,7 @@
 \alias{sk_snap}
 \title{Snap a set of points to a "sk" grid}
 \usage{
-sk_snap(from, g = NULL, crop_from = FALSE, crop_g = FALSE, quiet = FALSE)
+sk_snap(from, g = nrow(from), crop_from = FALSE, crop_g = FALSE, quiet = FALSE)
 }
 \arguments{
 \item{from}{matrix, data frame, or points object from \code{sp} or \code{sf}, the source points}
@@ -40,6 +40,8 @@ missing a CRS definition, the function assumes the same one is shared in both.
 behaves like \code{terra::rasterize}, or an sk grid object. It can also be a matrix (supplying
 dimensions) or a list containing either \code{gdim} or\code{gres}, from which an appropriately
 spaced set of grid lines is derived, centered under the bounding box of the points.
+If \code{g} is not supplied, it is automatically set to equal \code{nrow(from)}, so that there
+there is one grid line along each dimension for each input point.
 
 \code{crop_from} and \code{crop_g} control the extent of the output grid. If both are \code{FALSE}
 (the default) the function returns the smallest regular grid containing both \code{g}

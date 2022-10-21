@@ -4,7 +4,7 @@
 \alias{sk_plot_pars}
 \title{Plot the covariance structure of a snapKrig model}
 \usage{
-sk_plot_pars(pars, g, simple = FALSE, ...)
+sk_plot_pars(pars, g = NULL, simple = FALSE, ...)
 }
 \arguments{
 \item{pars}{list of the form returned by \code{sk_pars} with entries 'y', 'x', ('eps', 'psill')}
@@ -17,11 +17,15 @@ sk_plot_pars(pars, g, simple = FALSE, ...)
 the same as \code{sk_plot}
 }
 \description{
-Visualization of the footprint of a covariance kernel as a heatmap of size
-\code{g$gdim}, where each grid cell is colored according to its covariance with
+Visualization of the footprint of a covariance kernel as a heatmap of approximate
+size \code{dim(g)}, where each grid cell is colored according to its covariance with
 the central grid point.
 }
 \details{
+If \code{g} is not supplied, the function sets a default with dimensions 100 x 100.
+A default resolution is computed such that the maximum nugget-free covariance along
+the outer edge of the plot is 5\% of \code{pars$psill}.
+
 When \code{simple=FALSE} (the default), covariance parameters are printed in the
 title and axis labels with values rounded to 3 decimal places. This can be
 customized by passing arguments 'main', 'ylab', 'xlab' (and any others
@@ -29,17 +33,29 @@ accepted \code{sk_plot} apart from \code{gdim}).
 }
 \examples{
 gdim = c(100, 100)
-pars = sk_pars(gdim, 'mat')
-sk_plot_pars(pars, gdim)
+g = sk(gdim)
+pars = sk_pars(g, 'mat')
+
+# plot with default grid
+sk_plot_pars(pars)
+
+# plot with a predefined grid
+sk_plot_pars(pars, g)
 
 # zoom in/out by passing a grid object with suitably modified resolution
-g = sk(gdim)
-sk_plot_pars(pars, g)
-sk_plot_pars(pars, modifyList(g, list(gres=2*g$gres)))
-sk_plot_pars(pars, modifyList(g, list(gres=0.2*g$gres)))
+gres = g[['gres']]
+sk_plot_pars(pars, sk(gdim=gdim, gres=0.5*gres))
+sk_plot_pars(pars, sk(gdim=gdim, gres=2*gres))
 
-# change other plot style settings
-sk_plot_pars(pars, modifyList(g, list(gres=0.5*g$gres)), simple=TRUE)
-sk_plot_pars(pars, modifyList(g, list(gres=0.5*g$gres)), minimal=TRUE, col_invert=TRUE)
+# change plot style settings (all parameters of sk_plot accepted)
+sk_plot_pars(pars, simple=TRUE)
+sk_plot_pars(pars, minimal=TRUE)
 
 }
+\seealso{
+sk sk_pars
+
+Other plotting functions: 
+\code{\link{sk_plot}()}
+}
+\concept{plotting functions}

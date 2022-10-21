@@ -73,6 +73,8 @@ the transparency of the fill color for circles and ribbons (default 0.3), and th
 
 \item{leg_main}{character: title for the sample bin legend (default 'model')}
 
+\item{lwd}{numeric: line width for the model semi-variance}
+
 \item{main}{character: a title}
 
 \item{n_bin, n_test}{integer: respectively, the number of distance bins for the sample
@@ -112,11 +114,11 @@ sk_plot_semi(g_empty, pars, unit_out='km')
 sk_plot_semi(g_empty, pars, unit_in='km', unit_out='km')
 
 # generate sample data and sample semivariogram
-g_obs = sk_sim(g_obs, pars)
+g_obs = sk_sim(g_empty, pars)
 vg = sk_sample_vg(g_obs)
 sk_plot_semi(vg)
 
-# different aggregation methods
+# different aggregation methods produce variety of results
 sk_plot_semi(vg, fun='root_median')
 sk_plot_semi(vg, fun='root_mean')
 sk_plot_semi(vg, fun='classical') # default
@@ -127,13 +129,13 @@ sk_plot_semi(vg, pars)
 sk_plot_semi(vg, pars, d_max=10)
 sk_plot_semi(vg, pars, d_max=10, n_bin=1e2)
 
-# add dashed line for sample variance (this tends to underestimate the sill)
+# add dashed line for half sample variance (this tends to underestimate the sill)
 sk_plot_semi(vg, pars)
 sample_var = var(g_obs[['gval']], na.rm=TRUE)
-abline(h=sample_var, lty='dashed')
+abline(h=sample_var/2, lty='dashed')
 
 # initial call with reset=FALSE, then use add=TRUE to overlay the same model with a green fill
-sk_plot_semi(vg, pars, reset=FALSE)
+sk_plot_semi(vg, pars, lwd=2, reset=FALSE)
 sk_plot_semi(vg, pars, add=TRUE, col_model='green', alpha_model_b=0)
 
 # overlay several models with varying nugget effect

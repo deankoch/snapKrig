@@ -46,7 +46,7 @@ ij_list = list(i=6, j=3)
 # sk_sub_idx returns a logical vector indexing the point (or the index itself)
 is_pt = sk_sub_idx(gdim, ij_list)
 idx_sub = sk_sub_idx(gdim, ij_list, idx=TRUE)
-sk_plot(is_pt, gdim, col_grid='white', zlab='index', breaks=c('other', idx_sub))
+sk_plot(is_pt, gdim, col_grid='white', ij=T,  zlab='index', breaks=c('other', idx_sub))
 
 # equivalent call when ij_list is a single point
 sk_mat2vec(ij_list, gdim) == idx_sub
@@ -54,8 +54,8 @@ sk_mat2vec(ij_list, gdim) == idx_sub
 # if i or j are omitted from ij, the function returns the full row or column
 is_col2 = sk_sub_idx(gdim, ij_list['i'])
 is_row3 = sk_sub_idx(gdim, ij_list['j'])
-sk_plot(is_col2, gdim, col_grid='white', breaks=c('other', paste('row', ij_list['i'])))
-sk_plot(is_row3, gdim, col_grid='white', breaks=c('other', paste('col', ij_list['j'])))
+sk_plot(is_col2, gdim, col_grid='white', ij=T, breaks=c('other', paste('row', ij_list['i'])))
+sk_plot(is_row3, gdim, col_grid='white', ij=T, breaks=c('other', paste('col', ij_list['j'])))
 
 # indices in column-vectorized order
 sk_sub_idx(gdim, list(i=2), idx=TRUE)
@@ -65,15 +65,15 @@ sk_sub_idx(gdim, idx=TRUE) # call without arguments returns all indices
 # bigger sub-grid example
 origin_sg = c(5, 2) # assign i,j of top left point
 gdim_sg = c(3, 4) # sub-grid dimensions (make sure this fits in gdim!)
-ij_list = stats::setNames(Map(\(d, o) o + seq(d) - 1, gdim_sg, origin_sg), c('i', 'j'))
+ij_list = list(i = origin_sg[1] + seq(gdim_sg[1]) - 1, j = origin_sg[2] + seq(gdim_sg[2]) - 1)
 is_sg = sk_sub_idx(gdim, ij=ij_list)
-sk_plot(is_sg, gdim, col_grid='white', zlab='sub-grid')
+sk_plot(is_sg, gdim, col_grid='white', ij=TRUE, zlab='sub-grid')
 
 # plot the index values: column major vectorization with y descending, x ascending
 idx_sg = sk_sub_idx(gdim, ij=ij_list, idx=TRUE)
 vec_order = rep(NA, prod(gdim))
 vec_order[is_sg] = as.character(idx_sg)
-sk_plot(vec_order, gdim, col_grid='black', zlab='vector idx')
+sk_plot(vec_order, gdim, col_grid='black', ij=TRUE, zlab='vector idx')
 
 # example with j indices supplied in reverse (descending) order
 ij_list_xflip = modifyList(ij_list, list(j=rev(ij_list[['j']])))
@@ -87,7 +87,7 @@ idx_sg_xflip = sk_sub_idx(gdim, ij=ij_list_xflip, idx=TRUE, nosort=TRUE)
 all.equal(sort(idx_sg), sort(idx_sg_xflip))
 all.equal(idx_sg, idx_sg_xflip)
 vec_order[is_sg] = as.character(idx_sg_xflip)
-sk_plot(vec_order, gdim, col_grid='black', zlab='vector index')
+sk_plot(vec_order, gdim, col_grid='black', ij=TRUE, zlab='vector index')
 
 }
 \seealso{

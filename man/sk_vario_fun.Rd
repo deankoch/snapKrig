@@ -15,21 +15,21 @@ sk_vario_fun(pars, d = NULL)
 data frame (for list \code{d}) or numeric vector (for vector \code{d}) of variogram values
 }
 \description{
-Computes the value of the variogram function \code{v}, defined by covariance model \code{pars}
+Computes the value of the variogram function v, defined by covariance model \code{pars}
 at the component y and x lags supplied in \code{d}.
 }
 \details{
-By definition \code{v} is Var( Z(s1) - Z(s2) ), where s1 and s2 are a pair of spatial
+By definition v is Var( Z(s1) - Z(s2) ), where s1 and s2 are a pair of spatial
 locations, and Z is the spatial process value. \code{snapKrig} assumes that Z is second-order
-stationary, which means that \code{v} only depends on the relative displacement s1-s2.
-\code{v} in this case is equal to twice the covariance function. \code{sk_vario_fun} computes
+stationary, which means that v only depends on the relative displacement s1-s2.
+v in this case is equal to twice the covariance function. \code{sk_vario_fun} computes
 the covariance function as the sum of \code{eps} and \code{psill} times 1 minus the correlation
 function for the supplied distances.
 
-NOTE: \code{v} is twice the semi-variogram, usually denoted by greek letter gamma. Variogram
-\code{v} is therefore often written 2\emph{gamma. This can (and does) lead to confusion in the
+NOTE: v is twice the semi-variogram, usually denoted by greek letter gamma. Variogram
+v is therefore often written 2\emph{gamma. This can (and does) lead to confusion in the
 literature about whether to include a factor 2 in downstream calculations.
-This function multiplies the covariance function by 2, returning the variogram \code{v}
+This function multiplies the covariance function by 2, returning the variogram v
 (ie 2}gamma), NOT the semi-variogram.
 
 If \code{d} is a list, its 'y' and 'x' components should supply the y and x component distances.

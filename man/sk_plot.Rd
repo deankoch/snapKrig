@@ -65,13 +65,17 @@ The following style parameters are optional:
 
 \describe{
 
-\item{adj, leg_just}{ numeric in \link{0,1}: respectively, the horizontal justification
+\item{adj, leg_just}{numeric in \link{0,1}: respectively, the horizontal justification
 of the title and vertical justification of the color bar legend (default 0.5 for both) }
 
 \item{asp}{ numeric or NA: the aspect ratio parameter passed to graphics::image (default 1) }
 
-\item{axes, leg}{ logical: respectively indicates to draw axes (y and x, or i and j),
+\item{axes, leg}{logical: respectively indicates to draw axes (y and x, or i and j),
 the color bar legend (default TRUE)}
+
+\item{axes_w, leg_w, lab_w, main_w, oma_w}{numeric: respectively, the number of lines of
+margin to reserve for axes (default 2), legend (default 5), axis labels (default 2), main
+title (default 2), and outer white-space (default 0.5)}
 
 \item{breaks}{numeric (vector) or character vector: the color break points (see details)}
 
@@ -97,8 +101,9 @@ ticks (0 to omit, default 1)}
 a legend title to put over the color bar, and axis titles for dimensions y and x.
 Setting to '' omits both the label and its margin space}
 
-\item{minimal}{logical: removes all annotation (except as otherwise specified by
-\code{axes} and/or \code{leg})}
+\item{minimal}{logical: produces a stripped down plot showing only the grid data. This
+omits all annotation (unless otherwise specified by \code{axes} and/or \code{leg}) and removes
+all margin space (unless otherwise specified by \code{leg_w} and/or \code{mar_w})}
 
 \item{pal}{character (vector): one of \code{graphics::hcl.pals} (default 'Spectral') or a
 vector of colors}
@@ -194,4 +199,21 @@ z_char = rep(c('foo', 'bar'), n/2)
 z_char[sample.int(n, n/2)] = NA
 sk_plot(z_char, gdim)
 
+# multi-pane plot
+g_sim = sk_sim(c(100, 50), n_layer=3)
+split.screen(c(1,3))
+screen(1)
+plot(g_sim, main='layer 1', layer=1, minimal=T, col_box='black')
+screen(2)
+plot(g_sim, main='layer 2', layer=2, minimal=T, col_box='black')
+screen(3)
+plot(g_sim, main='layer 3', layer=3, minimal=T, col_box='black')
+
 }
+\seealso{
+sk
+
+Other plotting functions: 
+\code{\link{sk_plot_pars}()}
+}
+\concept{plotting functions}

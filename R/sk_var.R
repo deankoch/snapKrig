@@ -453,7 +453,7 @@ sk_var = function(g, pars=NULL, scaled=FALSE, fac_method='none', X=NULL, fac=NUL
   if(fac_method == 'chol') return( t( chol( psill * cy_obs * cx_obs + eps * diag(rep(1, n_obs)) ) ) )
 
   # fac_method='eigen': compute eigen-decomposition of correlation matrix
-  eigen_result = eigen(cy_obs*cx_obs, symmetric=TRUE)
+  eigen_result = eigen(cy_obs * cx_obs, symmetric=TRUE)
   eigen_result[['values']] = ( psill * eigen_result[['values']] ) + eps
   return(eigen_result)
 }

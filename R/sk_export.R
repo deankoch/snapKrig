@@ -129,6 +129,8 @@ sk_export = function(g, template='terra')
 #' behaves like `terra::rasterize`, or an sk grid object. It can also be a matrix (supplying
 #' dimensions) or a list containing either `gdim` or`gres`, from which an appropriately
 #' spaced set of grid lines is derived, centered under the bounding box of the points.
+#' If `g` is not supplied, it is automatically set to equal `nrow(from)`, so that there
+#' there is one grid line along each dimension for each input point.
 #'
 #' `crop_from` and `crop_g` control the extent of the output grid. If both are `FALSE`
 #' (the default) the function returns the smallest regular grid containing both `g`
@@ -243,7 +245,7 @@ sk_export = function(g, template='terra')
 #'
 #' }
 #'
-sk_snap = function(from, g=NULL, crop_from=FALSE, crop_g=FALSE, quiet=FALSE)
+sk_snap = function(from, g=nrow(from), crop_from=FALSE, crop_g=FALSE, quiet=FALSE)
 {
   # set up more appropriate grid lines later when input g doesn't specify them
   gres_input = NULL

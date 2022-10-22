@@ -100,6 +100,10 @@
 #' \item{pal}{character (vector): one of `graphics::hcl.pals` (default 'Spectral') or a
 #'  vector of colors}
 #'
+#' \item{pxmax}{integer: the maximum number of pixels to draw along each dimension
+#' (default 2000). If either x or y dimension exceeds this limit, the grid is up-scaled
+#' before plotting}
+#'
 #' \item{reset}{logical: indicates to restore original graphical parameters after plot is
 #'  finished (default TRUE)}
 #'
@@ -209,9 +213,6 @@ sk_plot = function(g, gdim=NULL, ...)
   ###################################################################################
   ## case by case defaults
 
-  # upper limit on grid dimensions (if exceeded, the function upscales)
-  px_max = 2e3
-
   # determine if we are in ij and/or minimal mode, and whether legend is requested
   ij = ifelse( is.null( list(...)[['ij']] ), is.matrix(g), list(...)[['ij']])
   minimal = ifelse( is.null( list(...)[['minimal']] ), FALSE, list(...)[['minimal']])
@@ -286,6 +287,8 @@ sk_plot = function(g, gdim=NULL, ...)
   adj = ifelse( is.null( list(...)[['adj']] ), 0.5, list(...)[['adj']])
   x_ontop = ifelse( is.null( list(...)[['x_ontop']] ), ij, list(...)[['x_ontop']])
   reset = ifelse( is.null( list(...)[['reset']] ), FALSE, list(...)[['reset']])
+  px_max = ifelse( is.null( list(...)[['px_max']] ), 2e3, list(...)[['px_max']])
+
 
   # additional settings that depend on the above: where to put the axess
   axis_s = c(y=2L, x=ifelse(x_ontop, 3L, 1L))

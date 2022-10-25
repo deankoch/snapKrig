@@ -86,8 +86,8 @@
 #'
 #' \item{layer}{integer: the layer (column) to plot (default 1)}
 #'
-#' \item{lwd_axis, lwd_ticks}{numeric: respectively, line widths for the axis lines and
-#' ticks (0 to omit, default 1)}
+#' \item{lwd_axis, lwd_ticks, lwd_grid}{numeric: respectively, line widths for the axis
+#' lines, ticks, and grid lines (default 1)}
 #'
 #' \item{main, zlab, ylab, xlab}{character: respectively, a title to put on top in bold,
 #' a legend title to put over the color bar, and axis titles for dimensions y and x.
@@ -271,8 +271,11 @@ sk_plot = function(g, gdim=NULL, ...)
   cex.z = ifelse( is.null( list(...)[['cex.z']] ), cex, list(...)[['cex.z']])
   lwd_axis = ifelse( is.null( list(...)[['lwd_axis']] ), 1, list(...)[['lwd_axis']])
   lwd_ticks = ifelse( is.null( list(...)[['lwd_ticks']] ), 1, list(...)[['lwd_ticks']])
+  lwd_grid = ifelse( is.null( list(...)[['lwd_grid']] ), 1, list(...)[['lwd_grid']])
   col_box = ifelse( is.null( list(...)[['col_box']] ), col_box, list(...)[['col_box']])
   col_grid = ifelse( is.null( list(...)[['col_grid']] ), NA, list(...)[['col_grid']])
+  col_grid_y = ifelse( is.null( list(...)[['col_grid_y']] ), col_grid, list(...)[['col_grid_y']])
+  col_grid_x = ifelse( is.null( list(...)[['col_grid_x']] ), col_grid, list(...)[['col_grid_x']])
   col_invert = ifelse( is.null( list(...)[['col_invert']] ), FALSE, list(...)[['col_invert']])
   col_rev = ifelse( is.null( list(...)[['col_rev']] ), TRUE, list(...)[['col_rev']])
   col_w = ifelse( is.null( list(...)[['col_w']] ), 0.7, list(...)[['col_w']])
@@ -495,13 +498,18 @@ sk_plot = function(g, gdim=NULL, ...)
   x_inch = diff(graphics::grconvertX(0:1, 'inches', 'user'))
   x_line = x_inch * par('cin')[2] * par('cex') * par('lheight')
 
-  # draw grid lines
-  if( !is.na(col_grid) )
+  # draw x grid lines
+  if( !is.na(col_grid_x) )
+  {
+    gl_x = g[['gyx']][['x']] - half_pixel['x']
+    graphics::segments(x0=gl_x, y0=bmin['y'], y1=bmax['y'], col=col_grid_x, lwd=lwd_grid)
+  }
+
+  # draw y grid lines
+  if( !is.na(col_grid_y) )
   {
     gl_y = g[['gyx']][['y']] - half_pixel['y']
-    gl_x = g[['gyx']][['x']] - half_pixel['x']
-    graphics::segments(x0=gl_x, y0=bmin['y'], y1=bmax['y'], col=col_grid)
-    graphics::segments(y0=gl_y, x0=bmin['x'], x1=bmax['x'], col=col_grid)
+    graphics::segments(y0=gl_y, x0=bmin['x'], x1=bmax['x'], col=col_grid_y, lwd=lwd_grid)
   }
 
   # draw a frame around the image

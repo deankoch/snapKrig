@@ -493,12 +493,13 @@ sk_sub = function(g, ij_keep=NULL, ij_rem=NULL, idx=FALSE, mirror=FALSE)
     is_sub = sk_sub_idx(gdim, ij_keep, nosort=TRUE, idx=FALSE)
 
     # verify that the result will be a regular sub-grid
-    sub_result = sk_sub_find(is_sub, gdim)
-    if(is.null(sub_result)) stop('request resulted in an irregular sub-grid')
+    #sub_result = sk_sub_find(is_sub, gdim)
+    #if(is.null(sub_result)) stop('request resulted in an irregular sub-grid')
 
     # return either the grid line indices or the sub-grid itself as a sk object
     if(idx) return( list(rem=ij_rem, keep=ij_keep) )
-    gyx_new = Map(function(gl, i) gl[i], gl=g[['gyx']], i=sub_result[['ij']])
+    gyx_new = Map(function(gl, i) gl[i], gl=g[['gyx']], i=ij_keep)
+    gyx_new = Map(function(gl, i) gl[i], gl=g[['gyx']], i=ij_keep)
     return(sk(gdim=gdim_new, gyx=gyx_new, gval=g[is_sub], crs=g[['crs']]))
   }
 

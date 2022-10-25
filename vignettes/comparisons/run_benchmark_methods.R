@@ -1,237 +1,8 @@
-
-# fits a model to grid g; returns parameters and execution time, or any errors
-# (pts and initial argument ignored)
-snapKrig_bench_fit = function(g, pts, n_rep=10, initial=NULL, timeout=60)
-{
-  # pts argument ignored
-
-  # catch and return any errors (otherwise return NA)
-  error_result = tryCatch({
-
-    # microbenchmark for median execution time
-    mb_fit = withTimeout({
-
-      microbenchmark({
-
-        # model fitting
-        sk_OK_result = sk_fit(g, quiet=TRUE, iso=TRUE)
-
-      }, times=n_rep)
-
-    }, timeout=timeout, onTimeout='error')
-    NULL
-
-  }, error = identity)
-
-  # return from failed executions
-  if( !is.null(error_result) ) return( list(result=NULL, teval=NULL, error=error_result) )
-
-  # return in list
-  return( list(result = sk_OK_result,
-               teval = median(mb_fit[['time']]) / 1e9,
-               error = error_result) )
-}
-
-# runs ordinary kriging on g with parameters pars; returns execution time, or any errors
-# (pts argument ignored)
-snapKrig_bench_OK = function(g, pts, pars, n_rep=10, out='p', timeout=60)
-{
-  # out = 'p' for prediction or 'v' for variance
-
-  # catch and return any errors (otherwise return NA)
-  error_result = tryCatch({
-
-    # model fitting
-    mb_pred = withTimeout({
-
-      microbenchmark({
-
-        g_predicted = sk_cmean(g, pars[['pars']], out=out, quiet=TRUE)
-
-      }, times=n_rep)
-
-    }, timeout=timeout, onTimeout='error')
-    NULL
-
-  }, error = identity)
-
-  # return from failed executions
-  if( !is.null(error_result) ) return( list(result=NULL, teval=NULL, error=error_result) )
-
-  # output as terra SpatRaster object in list
-  return( list(result = g_predicted,
-               teval = median(mb_pred[['time']]) / 1e9,
-               error = error_result) )
-}
-
-
-#' ## geoR implementation
-#'
-
-# fits a model to pts ; returns parameters and execution time, or any errors
-geoR_bench_fit = function(g, pts, n_rep=10, initial=NULL, timeout=60)
-{
-  # the dimensions and resolution of g are used to estimate initial parameter values.
-  # Argument initial can be supplied instead to override these defaults
-
-  # geoR has likelihood-based fitting but requires initial values from the user
-  if( is.null(initial) ) initial = sk_bds(sk_pars(1), g)[c('psill', 'y.rho'), 'initial']
-
-  # catch and return any errors (otherwise return NA)
-  error_result = tryCatch({
-
-    # unpack observed points data and coordinates and create a geodata list
-    coords = st_coordinates(pts)
-    vals = st_drop_geometry(pts)
-    pts_geoR = as.geodata(cbind(coords, vals))
-
-      # microbenchmark for median execution time
-      mb_fit = withTimeout({
-
-        microbenchmark({
-
-          # model fitting
-          geoR_OK_result = geoR::likfit(pts_geoR, ini.cov.pars = initial, cov.model = 'gaussian')
-
-        }, times=n_rep)
-
-    }, timeout=timeout, onTimeout='error')
-    NULL
-
-  }, error = identity)
-
-  if( !is.null(error_result) ) return( list(result=NULL, teval=NULL, error=error_result) )
-
-  # return in list
-  return( list(result = geoR_OK_result,
-               teval = median(mb_fit[['time']]) / 1e9,
-               error = error_result) )
-}
-
-# runs ordinary kriging from pts onto g with model pars; returns execution time, or any errors
-# (out ignored)
-geoR_bench_OK = function(g, pts, pars, n_rep=10, out='p', timeout=60)
-{
-  # catch and return any errors (otherwise return NA)
-  error_result = tryCatch({
-
-    # supply prediction surface grid lines in expected order for fields
-    xy = g[['gyx']][c('x', 'y')]
-    geoR_loc = expand.grid(xy)
-
-    # unpack observed points data and coordinates and create a geodata list
-    coords = st_coordinates(pts)
-    vals = st_drop_geometry(pts)
-    pts_geoR = as.geodata(cbind(coords, vals))
-
-    # model fitting
-    mb_pred = withTimeout({
-
-      microbenchmark({
-
-        # predictions AND VARIANCE happen in the one call - we only want to do this once
-        if(out == 'v') stop('see output for prediction (includes compute time for variance)')
-        geoR_z = krige.conv(pts_geoR, loc = geoR_loc, krige = krige.control(obj.model=pars))
-
-      }, times=n_rep)
-
-    }, timeout=timeout, onTimeout='error')
-    NULL
-
-  }, error = identity)
-  if( !is.null(error_result) ) return( list(result=NULL, teval=NULL, error=error_result) )
-
-  # convert to terra object
-  z = rast(matrix(c(geoR_z[['predict']]), rev(g[['gdim']])), crs=g[['crs']]) |> t() |> flip()
-  ext(z) = c(range(xy[[1]]), range(xy[[2]]))
-
-  # output as snapKrig object in list
-  return( list(result = sk(z),
-               teval = median(mb_pred[['time']]) / 1e9,
-               error = error_result) )
-}
-
-#' ## gstat implementation
-#'
-
-# fits a model to pts; returns parameters and execution time, or any errors
-# (g and initial arguments ignored)
-gstat_bench_fit = function(g, pts, n_rep=10, initial=NULL, timeout=60)
-{
-  # catch and return any errors (otherwise return NA)
-  error_result = tryCatch({
-
-    # simplify sf object to get same data in data.frame (use lowercase x, y)
-    pts_df = data.frame(st_drop_geometry(pts), st_coordinates(pts))
-    names(pts_df) = c('z', 'x', 'y')
-
-    # microbenchmark for median execution time
-    mb_fit = withTimeout({
-
-        microbenchmark({
-
-        # fit a variogram by least squares with the default initial values
-        pts_vgm = variogram(z~1, locations=~x+y, data=pts_df)
-        gstat_pars_df = fit.variogram(pts_vgm, model=vgm('Gau'))
-
-      }, times=n_rep)
-
-    }, timeout=timeout, onTimeout='error')
-    NULL
-
-  }, error = identity)
-  if( !is.null(error_result) ) return( list(result=NULL, teval=NULL, error=error_result) )
-
-  # return in list
-  return( list(result = gstat_pars_df,
-               teval = median(mb_fit[['time']]) / 1e9,
-               error = error_result) )
-}
-
-# runs ordinary kriging from pts onto g with model pars; returns execution time, or any errors
-gstat_bench_OK = function(g, pts, pars, n_rep=10, out='p', timeout=60)
-{
-  # catch and return any errors (otherwise return NA)
-  error_result = tryCatch({
-
-    # simplify sf object to get same data in data.frame (use lowercase x, y)
-    pts_df = data.frame(st_drop_geometry(pts), st_coordinates(pts))
-    names(pts_df) = c('z', 'x', 'y')
-    pts_gstat = gstat(formula=z~1, locations=~x+y, data=pts_df, model=pars)
-
-    # benchmarking
-    mb_pred = withTimeout({
-
-      microbenchmark({
-
-        # predictions AND VARIANCE happen in the one call - we only want to do this once
-        if(out == 'v') stop('see output for prediction (includes compute time for variance)')
-        gstat_pred_rast = interpolate(sk_export(g), model=pts_gstat)
-
-      }, times=n_rep)
-
-    }, timeout=timeout, onTimeout='error')
-    NULL
-
-  }, error = identity)
-  if( !is.null(error_result) ) return( list(result=NULL, teval=NULL, error=error_result) )
-
-  # output as terra SpatRaster object in list - NOTE we omit variance from return
-  return( list(result = sk(gstat_pred_rast[[1]]),
-               teval = median(mb_pred[['time']]) / 1e9,
-               error = error_result) )
-}
-
-
-#' ## fields implementation
-#'
-
 # this is a wrapper for `fields::Exp.cov` to fix a bug in `fields::spatialProcess`
 my_Expcov = function(x1, x2 = NULL, aRange = 1, p = 1, distMat = NA, C = NA,
                      marginal = FALSE, onlyUpper = FALSE, theta = NULL,
                      Distance=NULL, Dist.args=NULL)
 {
-
   # this function simply accepts and ignores the problematic arguments Distance, Dist.args
   Exp.cov(x1, x2=x2, aRange = aRange, p=p, distMat = distMat,
           C = C, marginal = marginal, onlyUpper=onlyUpper, theta=theta)
@@ -239,166 +10,378 @@ my_Expcov = function(x1, x2 = NULL, aRange = 1, p = 1, distMat = NA, C = NA,
 
 }
 
-# fits a model to pts; returns parameters and execution time, or any errors
-fields_bench_fit = function(g, pts, n_rep=10, initial=NULL, timeout=60)
-{
-  # argument g is ignored
 
-  # catch and return any errors (otherwise return NA)
+# time model-fitting with snapKrig, geoR, fields, gstat
+bench_fit = function(g, pkg, pars_initial, n_rep=1, timeout=5*60)
+{
+  # g: sk grid or (if not using snapKrig) sf POINTS data frame containing the observed data
+  # pkg: one of 'snapKrig', 'geoR', 'fields', 'gstat'
+  # pars_initial: fitted parameters list from snapKrig (ignored if pkg=='snapKrig')
+  # n_rep: number of repetitions
+  # timeout: maximum time (seconds) allowed for all repetitions
+
+  # catch and return any errors
   error_result = tryCatch({
 
-    # simplify sf object to get same data in data.frame (use lowercase x, y)
-    coords = st_coordinates(pts)
-    vals = st_drop_geometry(pts)
-
-    # microbenchmark for median execution time
+    # interrupt evaluation when timeout is exceeded
     mb_fit = withTimeout({
 
+      # extract non-NA points to data-frame
+      if(pkg != 'snapKrig')
+      {
+        if(inherits(g, 'sk')) g = sk_coords(g, out='sf', na_omit=TRUE, quiet=TRUE)
+        g_coords = sf::st_coordinates(g)
+        g_vals = sf::st_drop_geometry(g)
+
+        # extract parameters from sk fitted model to use as starting values for the other packages
+        p_ini = c(unlist(pars_initial[c('psill', 'eps')]), pars_initial[['y']][['kp']]['rho'])
+      }
+
+      # prepare arguments for gstat
+      if(pkg == 'gstat')
+      {
+        pts_gstat = data.frame(g_vals, g_coords)
+        names(pts_gstat) = c('z', 'x', 'y')
+      }
+
+      # prepare arguments for geoR
+      if(pkg=='geoR')
+      {
+        # export observed data to geodata list and copy starting parameters
+        pts_geoR = geoR::as.geodata(cbind(g_coords, g_vals))
+        pars_geoR = p_ini[c('psill', 'rho')]
+      }
+
+      # prepare arguments for fields
+      if(pkg=='fields')
+      {
+        # fields specifies scaled partial sill directly
+        p_ini['lambda'] = p_ini['eps']/p_ini['psill']
+        pars_fields = list(aRange=p_ini['rho'], lambda=p_ini['lambda'])
+      }
+
+      # repeat evaluations several times to get a median time
       microbenchmark({
 
-        # no initial values supplied
-        if( is.null(initial) )
-        {
-          # fit the model by REML
-          fields_result = spatialProcess(x=coords, y=vals,
-                                         cov.function='my_Expcov',
-                                         cov.args=list(p=2),
-                                         Dist.args=list(compact=FALSE))
-        } else {
+        # different likelihood calls for different packages
+        fit_result = switch(pkg,
 
-          # pass range from initial values
-          fields_result = spatialProcess(x=coords, y=vals,
-                                         cov.function='my_Expcov',
-                                         cov.args=list(p=2),
-                                         cov.params.start=list(aRange=initial['rho']),
-                                         Dist.args=list(compact=FALSE))
-        }
+                            # fast and direct
+                            'snapKrig' = sk_fit(g, iso=TRUE, quiet=TRUE),
 
-      }, times=n_rep)
+                            # fits a variogram by least squares (much faster, but not likelihood based)
+                            'gstat' =  fit.variogram(variogram(z~1, locations=~x+y, data=pts_gstat),
+                                                     model=vgm('Gau')),
 
-    }, timeout=timeout, onTimeout='error')
-    NULL
+                            # this does profile likelihood on 1 test value (to get one LL evaluation)
+                            'geoR' = geoR::likfit(pts_geoR,
+                                                  ini.cov.pars = pars_geoR,
+                                                  cov.model = 'gaussian',
+                                                  fix.nugget = TRUE,
+                                                  nugget = p_ini['eps']),
 
-  }, error = identity)
-  if( !is.null(error_result) ) return( list(result=NULL, teval=NULL, error=error_result) )
+                            # more direct, but syntax is a bit complicated
+                            'fields' = spatialProcess(g_coords, g_vals,
+                                                      cov.function = 'my_Expcov',
+                                                      cov.args = list(p=2),
+                                                      mKrig.args = list(m=1),
+                                                      cov.params.start = pars_fields,
+                                                      Dist.args = list(compact=FALSE))
+        ) # end switch
 
-  # return in list
-  return( list(result = fields_result,
+      }, times=n_rep) # end microbenchmark repetitions
+
+    }, timeout=timeout, onTimeout='error') # end timeout
+
+    NULL # return value from trycatch if the execution succeeds
+
+  }, error = identity) # end tryCatch
+
+  # return from failed execution
+  if( !is.null(error_result) ) return( list(result=NA, teval=NA, error=error_result) )
+
+  # return all results in list (convert teval to units of seconds)
+  return( list(result = fit_result,
                teval = median(mb_fit[['time']]) / 1e9,
                error = error_result) )
 }
 
-# runs ordinary kriging from pts onto g with model pars; returns execution time, or any errors
-fields_bench_OK = function(g, pts, pars, n_rep=10, out='p', timeout=60)
+# time a likelihood function evaluation with snapKrig, geoR, fields
+bench_likelihood = function(pars, g, pkg, n_rep=10, timeout=5*60)
 {
-  # argument pts is ignored (training data info is in pars)
+  # pars: the (package-specific) results object returned from bench_fit
+  # g: sk grid or (if not using skapKrig) sf POINTS data frame containing the observed data
+  # pkg: one of 'snapKrig', 'geoR', 'fields'
+  # n_rep: number of repetitions
+  # timeout: maximum time (seconds) allowed for all repetitions
 
-  # catch and return any errors (otherwise return NA)
+  # catch and return any errors
   error_result = tryCatch({
 
-    # supply prediction surface grid lines in expected order for fields
-    xy = g[['gyx']][c('x', 'y')]
+    # interrupt evaluation when timeout is exceeded
+    mb_lik = withTimeout({
 
-    # benchmarking
-    mb_pred = withTimeout({
+      # reshape data as needed
+      if(pkg == 'snapKrig')
+      {
+        # if a points dataframe is passed with snapKrig, snap it to a grid
+        if(!inherits(g, 'sk')) g = sk_snap(g)
 
+      } else {
+
+        # extract non-NA points to data-frame
+        if(inherits(g, 'sk')) g = sk_coords(g, out='sf', na_omit=TRUE, quiet=TRUE)
+        g_coords = sf::st_coordinates(g)
+        g_vals = sf::st_drop_geometry(g)
+
+      }
+
+      # prepare arguments for geoR
+      if(pkg=='geoR')
+      {
+        # make a geodata list
+        g_geoR = geoR::as.geodata(cbind(g_coords, g_vals))
+
+        # pars must be a likfit class object matching the input data so we fit again (1 iteration)
+        pars_geoR = geoR::likfit(g_geoR, cov.model='gaussian',
+                                 ini.cov.pars = c(pars[['sigmasq']], sqrt(pars[['phi']])),
+                                 control=list(maxit=1))
+      }
+
+      # prepare arguments for fields
+      if(pkg=='fields')
+      {
+        # fields accepts covariance parameters in arguments - copy fitted values
+        pars_fields = list(lambda = pars[['MLEInfo']][['pars.MLE']]['lambda'],
+                           aRange = pars[['MLEInfo']][['pars.MLE']]['aRange'],
+                           sigma2 = pars[['rhohat']])
+      }
+
+      # repeat evaluations several times to get a median time
       microbenchmark({
 
-        # separate prediction and variance calls
-        if(out=='p') fields_gridlist = fields::predictSurface(pars, grid.list=xy, extrap=TRUE)
-        if(out=='v') fields_gridlist = fields::predictSurfaceSE(pars, grid.list=xy, extrap=TRUE)
+        # different likelihood calls for different packages
+        lik_result = switch(pkg,
 
-      }, times=n_rep)
+                            # fast and direct
+                            'snapKrig' = sk_LL(pars, g, quiet=TRUE),
 
-    }, timeout=timeout, onTimeout='error')
-    NULL
+                            # this does profile likelihood on 1 test value (to get one LL evaluation)
+                            'geoR' = geoR::proflik(pars_geoR, g_geoR, nugget.values=pars[['nugget']]),
 
-  }, error = identity)
-  if( !is.null(error_result) ) return( list(result=NULL, teval=NULL, error=error_result) )
+                            # more direct, but syntax is a bit complicated
+                            'fields' = fields::mKrigMLEJoint(g_coords, g_vals,
+                                                             cov.function = 'my_Expcov',
+                                                             mKrig.args = list(m=1),
+                                                             cov.args = pars_fields)
+        ) # end switch
 
-  # convert to terra object
-  z = rast(matrix(c(fields_gridlist[['z']]), sapply(xy, length)), crs=g[['crs']]) |> t() |> flip()
-  ext(z) = c(range(xy[[1]]), range(xy[[2]]))
+      }, times=n_rep) # end microbenchmark repetitions
 
-  # output as terra SpatRaster object in list
-  return( list(result = sk(z),
-               teval = median(mb_pred[['time']]) / 1e9,
-               error = error_result))
-}
+    }, timeout=timeout, onTimeout='error') # end timeout
 
+    NULL # return value from trycatch if the execution succeeds
 
-# fits a model to pts; returns parameters and execution time, or any errors
-RandomFields_bench_fit = function(g, pts, n_rep=10, initial=NULL, timeout=60)
-{
-  # argument g is ignored
+  }, error = identity) # end tryCatch
 
-  # catch and return any errors (otherwise return NA)
-  error_result = tryCatch({
+  # return from failed execution
+  if( !is.null(error_result) ) return( list(result=NA, teval=NA, error=error_result) )
 
-    # simplify sf object to get a copy of data in dataframe
-    rf_data = cbind(st_coordinates(pts), st_drop_geometry(pts))
-
-    # microbenchmark for median execution time
-    mb_fit = withTimeout({
-
-      microbenchmark({
-
-        # define the model then fit it by MLE
-        rf_model = RMgauss(var=NA, scale=NA) + RMnugget(var=NA) + RMtrend(mean=NA)
-        rf_result = suppressMessages(RFfit(rf_model, data=rf_data))
-
-      }, times=n_rep)
-
-    }, timeout=timeout, onTimeout='error')
-    NULL
-
-  }, error = identity)
-  if( !is.null(error_result) ) return( list(result=NULL, teval=NULL, error=error_result) )
-
-  # return in list
-  return( list(result = rf_result,
-               teval = median(mb_fit[['time']]) / 1e9,
+  # return all results in list (convert teval to units of seconds)
+  return( list(result = lik_result,
+               teval = median(mb_lik[['time']]) / 1e9,
                error = error_result) )
 }
 
-# runs ordinary kriging from pts onto g with model pars; returns execution time, or any errors
-RandomFields_bench_OK = function(g, pts, pars, n_rep=10, out='p', timeout=60)
+# time kriging prediction and variance with snapKrig, geoR, fields, gstat
+bench_kriging = function(g, gdim, pars, pkg, out='p', n_rep=10, timeout=5*60)
 {
-  # argument pts is ignored (training data info is in pars)
+  # g: sk grid or sf POINTS data frame containing the observed data
+  # gdim: the desired output resolution (points in g are snapped to a grid of this size)
+  # pars: the (package-specific) results object returned from bench_fit
+  # pkg: one of 'snapKrig', 'geoR', 'fields', 'gstat'
+  # out: either 'p' (prediction) or 'v' (variance)
+  # n_rep: number of repetitions
+  # timeout: maximum time (seconds) allowed for all repetitions
 
-  # catch and return any errors (otherwise return NA)
+  # Note: only snapKrig and fields allow variance to be computed separately from the
+  # predictions. For the others, we compute both in prediction call (out='p'), and in
+  # variance calls (out='v') we compute nothing and return an error.
+
+  # catch and return any errors
   error_result = tryCatch({
 
-    # get coordinates of points on output grid
-    xy = g[['gyx']][c('x', 'y')]
-    xy_all = expand.grid(xy)
+    # handle gridded versus irregular point inputs
+    if(inherits(g, 'sk'))
+    {
+      # find the required up/down-scaling factor
+      scale_factor = gdim / dim(g)
 
-    # simplify sf object to get a copy of data in dataframe
-    rf_data = cbind(st_coordinates(pts), st_drop_geometry(pts))
+      # if scaling factor is 1, 1 output is same grid as input
+      if( all(scale_factor == 1) ) g_out = g
+      if( any(scale_factor < 1) ) g_out = sk_rescale(g, up=round(1/scale_factor))
+      if( any(scale_factor > 1) ) g_out = sk_rescale(g, down=round(scale_factor))
 
-    # benchmarking
-    mb_pred = withTimeout({
+    } else {
 
+      # irregular point case: snap to a grid of the desired resolution
+      g_out = sk_snap(g, gdim)
+    }
+
+    # output grid lines
+    xy = g_out[['gyx']][c('x', 'y')]
+
+    # prepare arguments for other packages
+    if(pkg != 'snapKrig')
+    {
+      if(inherits(g, 'sk')) g = sk_coords(g, out='sf', na_omit=TRUE, quiet=TRUE)
+      g_coords = sf::st_coordinates(g)
+      g_vals = sf::st_drop_geometry(g)
+    }
+
+    # prepare arguments for gstat
+    if(pkg == 'gstat')
+    {
+      # make a data frame out of points, then combine with pars to export to gstat object
+      df_gstat = data.frame(g_vals, g_coords)
+      names(df_gstat) = c('z', 'x', 'y')
+      pts_gstat = gstat::gstat(formula=z~1, locations=~x+y, data=df_gstat, model=pars)
+    }
+
+    # prepare arguments for geoR
+    if(pkg=='geoR')
+    {
+      # export observed data to geodata list and copy starting parameters
+      pts_geoR = geoR::as.geodata(cbind(g_coords, g_vals))
+    }
+
+    # interrupt evaluation when timeout is exceeded
+    mb_krig = withTimeout({
+
+      # repeat evaluations several times to get a median time
       microbenchmark({
 
-        # option return_variance=TRUE currently causes 'Error in predictGauss...' so we skip it here
-        if(out=='v') stop('variance not supported at this time')
-        rf_output = suppressMessages(RFinterpolate(pars, x=xy_all[['x']], y=xy_all[['y']], data=rf_data))
+        # different likelihood calls for different packages
+        krig_result = switch(pkg,
 
-      }, times=n_rep)
+                             # fast and direct
+                             'snapKrig' = sk_cmean(g_out, pars, what=out, quiet=TRUE),
 
-    }, timeout=timeout, onTimeout='error')
-    NULL
+                             # prediction and variance computed in the same call
+                             'gstat' = terra::interpolate(sk_export(g_out), model=pts_gstat),
 
-  }, error = identity)
-  if( !is.null(error_result) ) return( list(result=NULL, teval=NULL, error=error_result) )
+                             # prediction and variance computed in the same call
+                             'geoR' = geoR::krige.conv(pts_geoR,
+                                                       loc = expand.grid(xy),
+                                                       krige = krige.control(obj.model=pars)),
 
-  # convert to terra object
-  z = rast(matrix(c(rf_output[[1]]), sapply(xy, length)), crs=g[['crs']]) |> t() |> flip()
-  ext(z) = c(range(xy[[1]]), range(xy[[2]]))
+                             # fields allows separate calls but they are handled by different functions
+                             'fields' = if(out=='p') {
 
-  # output as terra SpatRaster object in list
-  return( list(result = sk(z),
-               teval = median(mb_pred[['time']]) / 1e9,
-               error = error_result))
+                               fields::predictSurface(pars, grid.list=xy, extrap=TRUE)
+
+                             } else {
+
+                               fields::predictSurfaceSE(pars, grid.list=xy, extrap=TRUE)
+                             }
+        ) # end switch
+
+      }, times=n_rep) # end microbenchmark repetitions
+
+    }, timeout=timeout, onTimeout='error') # end timeout
+
+    NULL # return value from trycatch if the execution succeeds
+
+  }, error = identity) # end tryCatch
+
+  # return from failed execution
+  if( !is.null(error_result) ) return( list(result=NA, teval=NA, error=error_result) )
+  if( is.null(krig_result) ) return( list(result=NA, teval=NA, error='NULL result') )
+
+  # export non-snapKrig results to SpatRaster (gstat produces a SpatRaster by default)
+  if(pkg %in% c('fields', 'geoR'))
+  {
+    # extract the data vector (which is named differently in the two packages)
+    result_nm = c(fields='z', geoR='predict')
+    z = krig_result[[result_nm[pkg]]]
+
+    # flip to correct for different vectorization ordering
+    krig_result = terra::flip(terra::t(rast(matrix(c(z), sapply(xy, length)), crs=g_out[['crs']])))
+    ext(krig_result) = c(range(xy[[1]]), range(xy[[2]]))
+  }
+
+  # return all results in list (convert teval to units of seconds)
+  return( list(result = sk(krig_result),
+               teval = median(mb_krig[['time']]) / 1e9,
+               error = error_result) )
+}
+
+# define a function to open all results files and combine them
+make_all_results = function(csv_paths)
+{
+  csv_paths_ready = csv_paths[file.exists(csv_paths)]
+  csv_list = lapply(csv_paths_ready, read.csv)
+  do.call(rbind, csv_list)[,-1]
+}
+
+# define a function to create a plot of results from a given example
+make_results_plot = function(all_results, eg_nm)
+{
+  # log-log plot of all likelihood timing results
+  gg0 = ggplot(all_results) +
+    aes(x=n_in, y=teval_lik, color=pkg, lty=complete) +
+    geom_point() +
+    geom_line() +
+    geom_line() +
+    xlab('input points') +
+    ylab('time (seconds)') +
+    labs(color='R package',
+         lty='with variance') +
+    scale_x_log10(
+      breaks = scales::trans_breaks('log10', function(x) 10^x),
+      labels = scales::trans_format('log10', scales::math_format(10^.x))
+    ) +
+    scale_y_log10(
+      breaks = scales::trans_breaks('log10', function(x) 10^x),
+      labels = scales::trans_format('log10', scales::math_format(10^.x))
+    ) +
+    theme_bw() +
+    theme(text=element_text(size=8),
+          strip.text.x=element_text(face='bold'),
+          strip.text.y=element_text(face='bold'))
+
+  # log-log plot of prediction and variance timing results for example eg_nm
+  results_plot_df = subset(all_results, name==eg_nm)
+
+  # make a plotting data frame with single column for both times
+  n_plot = nrow(results_plot_df)
+  results_plot_df = results_plot_df[rep(seq(n_plot), 2),]
+  results_plot_df[['with_var']] = rep(c(TRUE, FALSE), each=n_plot)
+  results_plot_df[['teval']] = results_plot_df[['teval_pred']]
+  results_plot_df[['teval']][seq(n_plot)] = results_plot_df[['teval_both']][seq(n_plot)]
+
+  # create prediction + variance time plot
+  gg1 = ggplot(results_plot_df) +
+    aes(x=n_out, y=teval, color=pkg, lty=with_var) +
+    geom_point() +
+    geom_line() +
+    geom_line() +
+    xlab('output points') +
+    ylab('time (seconds)') +
+    labs(color='R package',
+         lty='with variance') +
+    scale_x_log10(
+      breaks = scales::trans_breaks('log10', function(x) 10^x),
+      labels = scales::trans_format('log10', scales::math_format(10^.x))
+    ) +
+    scale_y_log10(
+      breaks = scales::trans_breaks('log10', function(x) 10^x),
+      labels = scales::trans_format('log10', scales::math_format(10^.x))
+    ) +
+    theme_bw() +
+    theme(text=element_text(size=8),
+          strip.text.x=element_text(face='bold'),
+          strip.text.y=element_text(face='bold'))
+
+  gridExtra::grid.arrange(gg0, gg1, nrow=1)
 }

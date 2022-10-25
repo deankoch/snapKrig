@@ -107,6 +107,7 @@ get_mpb = function(up=NA, SNRC='092I', rasterbc_storage_path=NA, out='mpb')
     output_rast = pine_rast * IBM_full_rast
   }
 
+  print('finished')
   # convert to snapKrig grid object and trim outer NA rows and columns
   output_g = sk_sub(sk(output_rast))
 

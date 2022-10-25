@@ -60,16 +60,15 @@ library(here)
 
 # set project directory and find two helper functions
 dir_project = here('vignettes/comparisons')
-path_deps = file.path(dir_project, c('get_data.R', 'run_benchmark_methods.R'))
+path_deps = file.path(dir_project, c('helper_get_data.R', 'helper_benchmark_methods.R'))
 invisible(sapply(path_deps, source))
 
 #'
-#' The functions in `get_data.R` (`get_ozone`, `get_meuse`, `get_mpb`) are for
-#' loading example data, and the ones in `run_benchmark_methods.R` (`bench_fit`,
-#' `bench_likelihood`, `bench_kriging`) are for executing various steps in a
-#' modeling workflow, and timing computations. `make_all_results` and
-#' `make_results_plot` are called during the big testing loop below to assemble
-#' results and display them as a line chart.
+#' The first group of helper functions (`get_ozone`, `get_meuse`, `get_mpb`) is for
+#' loading example data. The second group (`bench_fit`, `bench_likelihood`, `bench_kriging`)
+#' is for executing various steps in the modeling workflow, and timing computations.
+#' `make_all_results` and `make_results_plot` are called during the big testing loop below
+#' to assemble results and display them as a line chart.
 #'
 #' Output paths are defined next. Note that `dir_bench_results` should point to a
 #' location with at least 3.8GB of free storage space. This does not need to be

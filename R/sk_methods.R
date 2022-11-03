@@ -1,14 +1,14 @@
 #' sk_methods.R
 #' Dean Koch, 2022
-#' methods for sk objects (grid lists)
+#' S3 methods for sk grid list objects
 #'
 #' ## INDEXING METHODS
 #'
 #' Replace a sk list element (double-bracket assign)
 #'
-#' Replaces entries in the sk list object. This does no validation (since `sk_validate`
-#' uses `[[<-`, so there would be an infinite recursion problem) so users are advised
-#' to pass the results to `sk_validate` afterwards unless they know what they're doing.
+#' Replaces entries in the sk list object. This does no validation. If it did, then
+#' `sk_validate` would have an infinite recursion problem (it uses `[[<-`). Users should
+#' pass the results to `sk_validate` afterwards unless they know what they're doing.
 #'
 #' @param x a sk object
 #' @param value the replacement object

@@ -334,7 +334,8 @@ sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, out='l')
   if( !quiet ) cat( paste(round(log_likelihood, 5), '\n') )
 
   # count number of parameters and compute AIC, BIC
-  n_pars  = ( length(unlist(pars)) - 2 ) + n_X
+  is_iso = pars[['x']][['kp']][1] == pars[['y']][['kp']][1]
+  n_pars  = ( length(unlist(pars)) - 2 ) + n_X - as.integer(is_iso)
   aic_out = ( -2 * log_likelihood ) + ( 2 * n_pars )
   bic_out = ( -2 * log_likelihood ) + ( log(n_obs * n_layer) * n_pars  )
 

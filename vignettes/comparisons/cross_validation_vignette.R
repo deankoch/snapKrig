@@ -61,8 +61,14 @@ river_dist = units::drop_units(river_dist)
 
 # include both distance and its square root
 g_X = g
-g_X[] = scale(cbind(river_dist, sqrt(river_dist)))
+g_X[] = scale(river_dist)
 
+# fit_result_ok = sk_fit(g, X=NA, iso=TRUE, quiet=TRUE)
+# fit_result_uk = sk_fit(g, X=g_X, iso=TRUE, quiet=TRUE)
+#
+# sk_LL(fit_result_ok, g, X=NA, quiet=TRUE, out='m')
+# sk_LL(fit_result_uk, g, X=g_X, quiet=TRUE, out='m')
+# sk_LL(fit_result_uk, g, X=g_X, quiet=TRUE, out='b')
 
 #'
 #' ## Define the cross-validation script
@@ -81,16 +87,18 @@ g_X[] = scale(cbind(river_dist, sqrt(river_dist)))
 # run a short CV analysis on Meuse
 run_cv = function(g, g_X, n_fold=5, n_rep=25)
 {
-  # g and X should be sk grid list objects, containing the response data and covariates matrix.
+  # g and g_X should be sk grid list objects, containing the response data and covariates matrix.
+
+  # correlograms
+  cg_nm = c('gau', 'mat', 'gxp', 'sph', 'exp')
 
   # count covariates and describe models to fit
-  X = g_X[]
-  n_lm = ncol(X)
-  out_df = data.frame(name = paste0('fit_result_', c('ok', 'uk', 'uk_gau', 'uk_mat')),
-                      covariance = c(rep('gau', 3), 'mat'),
-                      covariates = c(0, rep(n_lm, 3)),
-                      isotropic = c(TRUE, TRUE, FALSE, FALSE),
-                      parameters = 1 + 2 + c(1, 1, 2, 4),
+  n_lm = ncol(g_X[])
+  out_df = data.frame(name = paste0('fit_result_', c('ok_iso', 'uk_iso', paste0('uk_', cg_nm))),
+                      covariance = c(rep('gau', 2), cg_nm),
+                      covariates = c(0, rep(n_lm, 1+length(cg_nm))),
+                      isotropic = c(TRUE, TRUE, rep(FALSE, length(cg_nm))),
+                      parameters = 3L + c(1, 1, 2, 4, 4, 2, 2),
                       MSDR = 0,
                       MSPE = 0,
                       MSPEb = 0,
@@ -133,21 +141,17 @@ run_cv = function(g, g_X, n_fold=5, n_rep=25)
       # model setup
       pars = out_df[j, 'covariance']
       iso = out_df[j, 'isotropic']
-      X_train = X_test = NA
-      if(out_df[j, 'covariates'] > 0)
-      {
-        X_train = X[is_obs_train,]
-        X_test = X
-      }
+      X = NA
+      if(out_df[j, 'covariates'] > 0) X = g_X
 
       # fit and compute information scores on training set
-      fit_result = sk_fit(g_train, pars=pars, X=X_train, iso=iso, quiet=TRUE)
-      aic_train = sk_LL(fit_result, g_train, X=X_train, quiet=TRUE, out='a')
-      bic_train = sk_LL(fit_result, g_train, X=X_train, quiet=TRUE, out='b')
+      fit_result = sk_fit(g_train, pars=pars, X=X, iso=iso, quiet=TRUE)
+      aic_train = sk_LL(fit_result, g_train, X=X, quiet=TRUE, out='a')
+      bic_train = sk_LL(fit_result, g_train, X=X, quiet=TRUE, out='b')
 
       # predict and compute variance, transform to original scale
-      g_pred = sk_cmean(g, pars=fit_result, X=X_test)
-      g_var = sk_cmean(g, pars=fit_result, X=X_test, what='v', quiet=TRUE)
+      g_pred = sk_cmean(g, pars=fit_result, X=X)
+      g_var = sk_cmean(g, pars=fit_result, X=X, what='v', quiet=TRUE)
       g_pred_b = exp(g_pred + g_var/2)
 
       # standardized residuals on test set
@@ -192,6 +196,8 @@ run_cv = function(g, g_X, n_fold=5, n_rep=25)
 #' This takes about 5-10 minutes to complete
 #'
 cv_results = run_cv(g, g_X, n_fold=5, n_rep=25)
+print(cv_results)
+
 write.csv(cv_results, path_main_result)
 
 

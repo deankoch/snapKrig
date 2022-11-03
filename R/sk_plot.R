@@ -809,6 +809,7 @@ sk_plot_semi = function(vg, pars=NULL, add=FALSE, fun='classical', ...)
 
   # assign defaults
   n_test = ifelse( is.null( list(...)[['n_test']] ), 5e3, list(...)[['n_test']])
+  cex_main = ifelse( is.null( list(...)[['cex_main']] ), 1, list(...)[['cex_main']])
   cex_bin = ifelse( is.null( list(...)[['cex_bin']] ), 1.5, list(...)[['cex_bin']])
   col_bin = ifelse( is.null( list(...)[['col_bin']] ), 'black', list(...)[['col_bin']])
   col_model = ifelse( is.null( list(...)[['col_model']] ), 'blue', list(...)[['col_model']])
@@ -819,6 +820,7 @@ sk_plot_semi = function(vg, pars=NULL, add=FALSE, fun='classical', ...)
   unit_in = ifelse( is.null( list(...)[['unit_in']] ), 'm', list(...)[['unit_in']])
   unit_out = ifelse( is.null( list(...)[['unit_out']] ), 'm', list(...)[['unit_out']])
   ylab = ifelse( is.null( list(...)[['ylab']] ), 'semi-variance (gamma)', list(...)[['ylab']])
+  leg = ifelse( is.null( list(...)[['leg']] ), TRUE, list(...)[['leg']])
   leg_main = ifelse( is.null( list(...)[['leg_main']] ), 'model', list(...)[['leg_main']])
   n_bin = ifelse( is.null( list(...)[['n_bin']] ), NA, list(...)[['n_bin']])
   reset = ifelse( is.null( list(...)[['reset']] ), TRUE, list(...)[['reset']])
@@ -913,7 +915,7 @@ sk_plot_semi = function(vg, pars=NULL, add=FALSE, fun='classical', ...)
 
     # initialize the plot area without points
     main_out = ifelse( is.null( list(...)[['main']] ), main_def, list(...)[['main']])
-    plot(xlim_out, ylim_out, main=main_out, xlab=xlab, ylab=ylab, pch=NA, bty=bty)
+    plot(xlim_out, ylim_out, main=main_out, xlab=xlab, ylab=ylab, pch=NA, bty=bty, cex.main=cex_main)
 
     # find line height in same units as user coordinates
     y_inch = diff(graphics::grconvertY(0:1, 'lines', 'user'))
@@ -931,7 +933,7 @@ sk_plot_semi = function(vg, pars=NULL, add=FALSE, fun='classical', ...)
       points(d_bin_out, v_bin/2, col=col_bin_border, cex=size_plot)
 
       # add legend for the circles
-      if(input_vg)
+      if(input_vg & leg)
       {
         # compute legend ticks (bin sizes to show)
         s_bin_plot = pretty(s_bin, n=3)
@@ -964,7 +966,7 @@ sk_plot_semi = function(vg, pars=NULL, add=FALSE, fun='classical', ...)
     graphics::polygon(x_out, y_out, col=col_model_fill, border=col_model_border, lwd=lwd)
 
     # add a legend
-    if(!add & input_vg) legend(x=2*x_line + par('usr')[2], y=plot_max/2 - y_line,
+    if(!add & input_vg & leg) legend(x=2*x_line + par('usr')[2], y=plot_max/2 - y_line,
                                yjust=1,
                                title=leg_main,
                                fill=col_model_fill,

@@ -4,7 +4,7 @@
 \alias{[[.sk<-}
 \title{sk_methods.R
 Dean Koch, 2022
-methods for sk objects (grid lists)}
+S3 methods for sk grid list objects}
 \usage{
 \method{[[}{`sk<-`}(x, value)
 }
@@ -23,9 +23,9 @@ a "sk" object
 \details{
 Replace a sk list element (double-bracket assign)
 
-Replaces entries in the sk list object. This does no validation (since \code{sk_validate}
-uses \verb{[[<-}, so there would be an infinite recursion problem) so users are advised
-to pass the results to \code{sk_validate} afterwards unless they know what they're doing.
+Replaces entries in the sk list object. This does no validation. If it did, then
+\code{sk_validate} would have an infinite recursion problem (it uses \verb{[[<-}). Users should
+pass the results to \code{sk_validate} afterwards unless they know what they're doing.
 }
 \examples{
 # sk list elements are interrelated - for example gres must match spacing in gyx

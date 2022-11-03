@@ -94,8 +94,8 @@ the color scale (default TRUE}
 
 \item{layer}{integer: the layer (column) to plot (default 1)}
 
-\item{lwd_axis, lwd_ticks}{numeric: respectively, line widths for the axis lines and
-ticks (0 to omit, default 1)}
+\item{lwd_axis, lwd_ticks, lwd_grid}{numeric: respectively, line widths for the axis
+lines, ticks, and grid lines (default 1)}
 
 \item{main, zlab, ylab, xlab}{character: respectively, a title to put on top in bold,
 a legend title to put over the color bar, and axis titles for dimensions y and x.

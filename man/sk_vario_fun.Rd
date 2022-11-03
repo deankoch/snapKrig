@@ -15,21 +15,23 @@ sk_vario_fun(pars, d = NULL)
 data frame (for list \code{d}) or numeric vector (for vector \code{d}) of variogram values
 }
 \description{
-Computes the value of the variogram function v, defined by covariance model \code{pars}
+Computes the value of the variogram function w, defined by covariance model \code{pars}
 at the component y and x lags supplied in \code{d}.
 }
 \details{
-By definition v is Var( Z(s1) - Z(s2) ), where s1 and s2 are a pair of spatial
-locations, and Z is the spatial process value. \code{snapKrig} assumes that Z is second-order
-stationary, which means that v only depends on the relative displacement s1-s2.
-v in this case is equal to twice the covariance function. \code{sk_vario_fun} computes
-the covariance function as the sum of \code{eps} and \code{psill} times 1 minus the correlation
-function for the supplied distances.
+By definition w is Var( Z(s1) - Z(s2) ), where s1 and s2 are a pair of spatial
+locations, and Z is the spatial process value. If Z is second-order stationary
+then w only depends on the relative displacement, s1 - s2 = (dx, dy). \code{snapKrig}
+models the variogram as W = 2 ( \code{eps} + \code{psill} ( 1 - cy(dy) cx(dx) ) ).
 
-NOTE: v is twice the semi-variogram, usually denoted by greek letter gamma. Variogram
-v is therefore often written 2\emph{gamma. This can (and does) lead to confusion in the
+\code{sk_vario_fun} evaluates this function using the correlogram functions (cy and cx),
+partial sill (\code{psill}) and nugget (\code{eps}) defined in \code{pars}, over the displacement
+(dy and dx) supplied in \code{d}.
+
+NOTE: w is twice the semi-variogram, usually denoted by greek letter gamma. Variogram
+w is therefore often written 2\emph{gamma. This can (and does) lead to confusion in the
 literature about whether to include a factor 2 in downstream calculations.
-This function multiplies the covariance function by 2, returning the variogram v
+This function multiplies the semi-variogram function by 2, returning the variogram w
 (ie 2}gamma), NOT the semi-variogram.
 
 If \code{d} is a list, its 'y' and 'x' components should supply the y and x component distances.
@@ -62,3 +64,7 @@ lines(d_test, vario_lims[,1])
 lines(d_test, vario_lims[,2])
 
 }
+\seealso{
+sk_pars
+}
+\concept{variogram functions}

@@ -4,20 +4,22 @@
 
 #' Theoretical variogram function
 #'
-#' Computes the value of the variogram function v, defined by covariance model `pars`
+#' Computes the value of the variogram function w, defined by covariance model `pars`
 #' at the component y and x lags supplied in `d`.
 #'
-#' By definition v is Var( Z(s1) - Z(s2) ), where s1 and s2 are a pair of spatial
-#' locations, and Z is the spatial process value. `snapKrig` assumes that Z is second-order
-#' stationary, which means that v only depends on the relative displacement s1-s2.
-#' v in this case is equal to twice the covariance function. `sk_vario_fun` computes
-#' the covariance function as the sum of `eps` and `psill` times 1 minus the correlation
-#' function for the supplied distances.
+#' By definition w is Var( Z(s1) - Z(s2) ), where s1 and s2 are a pair of spatial
+#' locations, and Z is the spatial process value. If Z is second-order stationary
+#' then w only depends on the relative displacement, s1 - s2 = (dx, dy). `snapKrig`
+#' models the variogram as W = 2 ( `eps` + `psill` ( 1 - cy(dy) cx(dx) ) ).
 #'
-#' NOTE: v is twice the semi-variogram, usually denoted by greek letter gamma. Variogram
-#' v is therefore often written 2*gamma. This can (and does) lead to confusion in the
+#' `sk_vario_fun` evaluates this function using the correlogram functions (cy and cx),
+#' partial sill (`psill`) and nugget (`eps`) defined in `pars`, over the displacement
+#' (dy and dx) supplied in `d`.
+#'
+#' NOTE: w is twice the semi-variogram, usually denoted by greek letter gamma. Variogram
+#' w is therefore often written 2*gamma. This can (and does) lead to confusion in the
 #' literature about whether to include a factor 2 in downstream calculations.
-#' This function multiplies the covariance function by 2, returning the variogram v
+#' This function multiplies the semi-variogram function by 2, returning the variogram w
 #' (ie 2*gamma), NOT the semi-variogram.
 #'
 #' If `d` is a list, its 'y' and 'x' components should supply the y and x component distances.
@@ -34,6 +36,9 @@
 #'
 #' @return data frame (for list `d`) or numeric vector (for vector `d`) of variogram values
 #' @export
+#'
+#' @family variogram functions
+#' @seealso sk_pars
 #'
 #' @examples
 #' # set up example grid and parameters

@@ -233,3 +233,18 @@ max(abs(z_pred_uk - g_super_uk), na.rm=TRUE)
 max(abs(z_var_uk - g_super_uk_v))
 
 }
+\seealso{
+sk sk_pars
+
+Other estimators: 
+\code{\link{sk_GLS}()}
+
+Other variance-related functions: 
+\code{\link{sk_GLS}()},
+\code{\link{sk_LL}()},
+\code{\link{sk_nLL}()},
+\code{\link{sk_sim}()},
+\code{\link{sk_var}()}
+}
+\concept{estimators}
+\concept{variance-related functions}

@@ -4,99 +4,150 @@
 \alias{sk_sample_pt}
 \title{Sub-grid point sampler for grid data}
 \usage{
-sk_sample_pt(g, n = 100, lag_max = 0, interval = 1L, over = FALSE)
+sk_sample_pt(
+  g,
+  n = 100,
+  lag_max = 0,
+  up = 0,
+  over = FALSE,
+  sk_out = TRUE,
+  seed = NULL
+)
 }
 \arguments{
-\item{g}{any grid object accepted or returned by \code{sk}}
+\item{g}{an sk grid object or any other object accepted by \code{sk}}
 
 \item{n}{integer > 0, the maximum number of center points to sample}
 
 \item{lag_max}{integer, Moore neighborhood radius (ie the maximum queen's distance)}
 
-\item{interval}{integer > 0, the down-scaling factor for sub-grids of \code{g}}
+\item{up}{integer, the up-scaling factor for sampling sub-grids of \code{g}}
 
 \item{over}{logical, indicates to allow overlapping sub-grids (when they can be avoided)}
+
+\item{sk_out}{logical, if TRUE (the default) the function returns an sk grid}
+
+\item{seed}{integer seed, passed to \code{base::set.seed}}
 }
 \value{
-If \code{lag_max=0} (the default), the function returns the sample indices as a
-length-\code{n} integer vector. If \code{lag_max} is positive, the function returns a list of
-\code{n+1} indexing vectors; the first locates the \code{n} sub-grid center points, and the
-following \code{n} vectors locate the points in each sub-grid (including the center points
-itself)
+If \code{lag_max == 0} (the default), the function returns a single-layer sk grid when
+\code{sk_out=TRUE}, or else the sample indices in \code{g} as a length-\code{n} integer vector. If
+\code{lag_max > 0}, the function returns a multi-layer sk grid \code{sk_out=TRUE}, or else a list of
+\code{n} vectors indexing the sampled points in each sub-grid of \code{g}.
 }
 \description{
 Sample \code{n} locations from the non-NA points in the input grid \code{g}, optionally using
 them as centers to place \code{n} sub-grids of the specified size and resolution.
 }
 \details{
-The function draws a sample of \code{n} locations (uniformly at random) from the non-NA
-points in the input grid \code{g}, and returns their vector index. If there are fewer
-than \code{n} locations available, they are all returned.
+When \code{sk_out=TRUE} (the default), the function returns an sk grid containing the sampled
+points. If multiple samples are requested, a multi-layer grid is returned. When
+\code{sk_out=FALSE}, the function returns the vector index of the sampled grid points,
+or if multiple samples are requested, a list of vectors.
 
-When \code{lag_max > 1}, the function also identifies a regular sub-grid of the Moore
-neighbourhood of (integer) radius \code{lag_max} around each of the sample points, with
-\code{interval-1} grid lines separating each sub-grid line. \code{interval} is the factor by
-which the resolution of the sub-grid is scaled to get the original grid resolution;
-It must evenly divide \code{lag_max}.
+By default the function simply draws a sample of \code{n} locations (uniformly at random)
+from the non-NA points in the input grid \code{g}.
 
-For a given \code{interval}, the grid \code{g} can be partitioned into \code{interval^2} distinct
+When \code{lag_max > 1}, the function instead returns the the Moore neighbourhood of
+radius \code{lag_max} around each of the sample points (including the center point). These
+sub-grids are returned as distinct layers (or list entries, if \code{sk_out=FALSE}). Their
+resolution can be coarsened (up-scaled) by increasing \code{up} from its default 0. \code{up}
+must either be 0 or else a positive integer that evenly divides \code{lag_max}
+(see \code{sk_rescale}).
+
+For a given \code{up}, the grid \code{g} can be partitioned into \code{(up+1)^2} distinct
 non-overlapping sub-grids. When \code{over=FALSE} (the default), the function apportions
 its \code{n} point samples as evenly as possible among these disjoint subsets. This ensures
-that if \code{n} is less than or equal to \code{interval^2}, and there are no NAs, there can be
+that if \code{n} is less than or equal to \code{(up+1)^2}, and there are no \code{NA}s, there can be
 no repetition (overlap) of points in the returned sub-grids.
+
+Note that with the default \code{sk_out=TRUE}, \code{lag_max > 1} is only supported for complete
+grids \code{g}. This is because with missing data it is hard (and sometimes impossible) to
+ensure that the Moore neighborhoods have identical \code{NA} structure (and this is a
+requirement for multi-layer sk grids).
+
+Note also that multi-layer sk grids are not fully supported yet. If you pass a
+multi-layer grid to g, the function returns results for the first layer only.
 }
 \examples{
-# define a grid
-gdim = c(100, 100)
-ng = prod(gdim)
+# define an empty grid
+g_empty = sk(gdim = c(100, 100))
 
 # get an ordinary random sample with default settings
-idx_sample = sk_sample_pt(g=gdim)
-sk_plot(seq(ng) \%in\% idx_sample, gdim)
+g_sample = sk_sample_pt(g_empty)
+plot(g_sample)
+
+# same call with index return mode
+idx_sample = sk_sample_pt(g_empty, sk_out=FALSE)
+str(idx_sample)
 
 # reduce or increase number of center points from default 100
-idx_sample = sk_sample_pt(gdim, n=10)
-sk_plot(seq(ng) \%in\% idx_sample, gdim)
+g_sample = sk_sample_pt(g_empty, n=10)
+plot(g_sample)
 
-# sampled from Moore neighbourhoods of radius 6
-n = 10
-idx_sample = sk_sample_pt(gdim, n=n, lag_max=6L)
-sk_plot(seq(ng) \%in\% unlist(idx_sample), gdim, col_grid='white')
+# add some data to g and repeat
+pars = sk_pars(g_empty)
+pars$eps = 1e-6
+g = sk_sim(g_empty, pars)
+plot(g)
+g_sample = sk_sample_pt(g)
+plot(g_sample)
 
-# plot each list element a different color
-group_sample = rep(0L, prod(gdim))
-for(i in seq(1 + n)[-1]) group_sample[ idx_sample[[i]] ] = i-1L
-sk_plot(group_sample, gdim, breaks=c('not sampled', seq(n)), zlab='sub-grid')
-
-# When interval > 1, the function attempts to avoid overlap whenever possible
-interval = 2
-n = interval^2 # to get disjoint results n must be less than or equal to interval^2
-lag_max = 10 * interval # vary to get larger/smaller subsets. max allowable: min(gdim)/2
-idx_sample = sk_sample_pt(gdim, n=n, interval=interval, lag_max=lag_max)
-idx_overlap = rowSums( sapply(idx_sample[-1], function(i) seq(ng) \%in\% i) )
-sk_plot(as.integer(idx_overlap), gdim, zlab='times sampled')
+# sample 3 subgrids from Moore neighbourhoods of radius 6 (index output mode)
+n = 3
+idx_sample = sk_sample_pt(g, n=n, lag_max=6L, sk_out=FALSE, seed=42)
 
 # plot each list element a different color
-group_sample = rep(0L, prod(gdim))
-for(i in seq(1 + interval^2)[-1]) group_sample[ idx_sample[[i]] ] = i-1L
-sk_plot(group_sample, gdim, breaks=c('not sampled', seq(interval^2)), zlab='sub-grid')
+group_sample = rep(0L, length(g))
+for(i in seq(n)) group_sample[ idx_sample[[i]] ] = i
+sk_plot(group_sample, dim(g), breaks=c('not sampled', seq(n)), zlab='sub-grid')
+
+# plot all the sub-grid data
+g_plot = g_empty
+g_plot[unlist(idx_sample)] = g[unlist(idx_sample)]
+plot(g_plot)
+
+# default sk_out=TRUE returns them as multi-layer grid object
+g_sample = sk_sample_pt(g, n=n, lag_max=6L, seed=42)
+plot(g_sample, layer=1, zlim=range(g_plot, na.rm=TRUE))
+plot(g_sample, layer=2, zlim=range(g_plot, na.rm=TRUE))
+plot(g_sample, layer=3, zlim=range(g_plot, na.rm=TRUE))
+
+
+
+# When up > 0 the function will attempts to avoid overlap whenever possible
+up = 1
+n = (up+1)^2 # to get disjoint results n must be less than or equal to (up+1)^2
+lag_max = 10 * (up+1) # vary to get larger/smaller subsets. max allowable: min(gdim)/2
+idx_sample = sk_sample_pt(g, n=n, up=up, lag_max=lag_max, sk_out=FALSE)
+idx_overlap = rowSums( sapply(idx_sample, function(i) seq_along(g) \%in\% i) )
+
+# plot each list element a different color
+group_sample = rep(0L, length(g))
+for(i in seq(n)) group_sample[ idx_sample[[i]] ] = i
+sk_plot(group_sample, dim(g), breaks=c('not sampled', seq(n)), zlab='sub-grid')
+
+# no overlap
+sk_plot(as.integer(idx_overlap), dim(g), zlab='times sampled')
 
 # compare with over=TRUE (usually results in overlap - try running a few times)
-idx_sample_compare = sk_sample_pt(gdim, n=n, interval=interval, lag_max=lag_max, over=TRUE)
-idx_overlap_compare = rowSums( sapply(idx_sample_compare[-1], function(i) seq(ng) \%in\% i) )
-sk_plot(as.integer(idx_overlap_compare), gdim, zlab='times sampled')
+idx_sample_compare = sk_sample_pt(g, n=n, up=up, lag_max=lag_max, over=TRUE, sk_out=FALSE)
+idx_overlap_compare = rowSums( sapply(idx_sample_compare, function(i) seq_along(g) \%in\% i) )
+sk_plot(as.integer(idx_overlap_compare), dim(g), zlab='times sampled')
 
-# only non-NA points are eligible in initial sample of center points
-g = sk(gdim)
-g$gval = rep(NA, ng)
-idx_obs = sample.int(ng, ng/1e2)
-g$gval[idx_obs] = 'non-NA'
-sk_plot(g)
+# incomplete input data example
+g_sample = sk_sample_pt(g, n=10)
+sk_plot(g_sample)
 
 # draw a sample of center points and indicate sub-grids in color
-idx_sample = sk_sample_pt(g, n=10, lag_max=6L, interval=2)
-g$gval[unlist(idx_sample[-1])] = 'sub-grid'
-g$gval[idx_sample[[1]]] = 'center point'
-sk_plot(g)
+idx_sample = sk_sample_pt(g_sample, n=10, lag_max=6, up=1, over=FALSE, sk_out=FALSE)
+g_sample_grid = g_empty
+g_sample_grid[] = rep('not sampled', length(g_empty))
+g_sample_grid[unlist(idx_sample)] = 'sub-grid sample'
+plot(g_sample_grid)
 
 }
+\seealso{
+sk sk_sample_vg
+}
+\keyword{internal}

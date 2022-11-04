@@ -24,7 +24,7 @@ sk_fit(
 \item{X}{todo}
 }
 \value{
-sdfsdfdsfs
+unfinished
 }
 \description{
 An automated model fitting procedure

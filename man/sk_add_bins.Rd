@@ -43,3 +43,9 @@ sk_add_bins(distance_df, n_bin = 5, probs=seq(0, 1, length.out=6))
 sk_add_bins(distance_df, n_bin = 5, probs=NULL)
 
 }
+\seealso{
+Other variogram functions: 
+\code{\link{sk_vario_fun}()}
+}
+\concept{variogram functions}
+\keyword{internal}

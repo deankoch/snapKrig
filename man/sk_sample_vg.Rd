@@ -14,19 +14,23 @@ sk_sample_vg(
 )
 }
 \arguments{
-\item{g}{any grid object accepted or returned by \code{sk}, containing non-NA data}
+\item{g}{any grid object accepted or returned by \code{sk}}
+
+\item{n_pp}{integer maximum number of point pairs to sample}
 
 \item{idx}{optional integer vector indexing the points to sample}
 
 \item{n_bin}{integer number of distance bins to assign (passed to \code{sk_add_bins})}
 
-\item{n_max}{integer maximum number of point pairs to sample}
+\item{n_layer_max}{integer, maximum number of layers to sample (for multi-layer \code{g})}
+
+\item{quiet}{logical, suppresses console output}
 }
 \value{
-Results are returned in a data frame with each row representing one point pair.
-Fields include 'dabs' and 'd', the absolute difference and distance mentioned earlier,
-along with a number of indexing vectors for both point locations and relative separation.
-'bin' is an integer splitting distances into \code{n_bin} categories.
+A data frame with a row for each sampled point pair. Fields include 'dabs' and 'd',
+the absolute difference in point values and the separation distance, along with the vector
+index, row and column numbers, and component (x, y) distances for each point pair. 'bin'
+indicates membership in one of \code{n_bin} categories.
 }
 \description{
 Compute the absolute differences for point pairs in \code{g}, along with their separation
@@ -34,15 +38,24 @@ distances. If no sample point index is supplied (in \code{idx}), the function sa
 at random using \code{sk_sample_pt}.
 }
 \details{
-In a set of n points there are n_pp(n) = (n^2 - n) / 2 possible point pairs. This
+In a set of n points there are n_pp(n) = (n^2-n)/2 possible point pairs. This
 expression is inverted to determine the maximum number of sample points in \code{g} to use
-in order to satisfy the user-supplied argument \code{n_pp}. A random sub-sample of \code{idx} is
-taken as needed.
+in order to satisfy the argument \code{n_pp}, the maximum number of point pairs to sample.
+A random sub-sample of \code{idx} is taken as needed. By default \code{n_pp=1e4} which results
+in \code{n=141}.
 
-The mean of the point pair absolute values ('dabs') is the classical estimator of the
-variogram. This and two other robust methods are implemented in \code{sk_plot_vg}.
+The mean of the point pair absolute values ('dabs') for a given distance interval is the
+classical estimator of the variogram. This and two other robust methods are implemented
+in \code{sk_plot_semi}. These statistics are sensitive to the choice of distance bins. They
+are added automatically by a call to \code{sk_add_bins} (with \code{n_bin}) but users can also set
+up bins manually by adjusting the 'bin' column of the output.
+
+For multi-layer \code{g}, the function samples observed point locations once and re-uses this
+selection in all layers. At most \code{n_layer_max} layers are sampled in this way (default is
+the square root of the number of layers, rounded up)
 }
 \examples{
+
 # make example grid and reference covariance model
 gdim = c(22, 15)
 n = prod(gdim)
@@ -85,4 +98,7 @@ sk_plot_semi(vg, pars)
 vg = sk_sample_vg(g_obs_multi, n_layer_max=5)
 sk_plot_semi(vg, pars)
 
+}
+\seealso{
+sk sk_sample_pt sk_add_bins
 }

@@ -86,6 +86,7 @@ Other likelihood functions:
 Other variance-related functions: 
 \code{\link{sk_GLS}()},
 \code{\link{sk_LL}()},
+\code{\link{sk_cmean}()},
 \code{\link{sk_sim}()},
 \code{\link{sk_var}()}
 }

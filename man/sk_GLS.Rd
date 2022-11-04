@@ -178,8 +178,12 @@ summary(sk_GLS(g_multi, pars, X_obs))
 \seealso{
 sk
 
+Other estimators: 
+\code{\link{sk_cmean}()}
+
 Other variance-related functions: 
 \code{\link{sk_LL}()},
+\code{\link{sk_cmean}()},
 \code{\link{sk_nLL}()},
 \code{\link{sk_sim}()},
 \code{\link{sk_var}()}

@@ -152,6 +152,7 @@ sk
 Other variance-related functions: 
 \code{\link{sk_GLS}()},
 \code{\link{sk_LL}()},
+\code{\link{sk_cmean}()},
 \code{\link{sk_nLL}()},
 \code{\link{sk_sim}()}
 }

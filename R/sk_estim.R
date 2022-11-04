@@ -321,7 +321,11 @@ sk_GLS = function(g, pars, X=NA, out='s', fac_method='eigen', fac=NULL)
 #' @param quiet logical indicating to suppress console output
 #'
 #' @return numeric matrix, the predicted values (or their variance)
+#'
 #' @export
+#' @seealso sk sk_pars
+#' @family estimators
+#' @family variance-related functions
 #'
 #' @examples
 #'
@@ -700,7 +704,7 @@ sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NUL
 #' @param pars todo
 #' @param X todo
 #'
-#' @return sdfsdfdsfs
+#' @return unfinished
 #' @export
 #'
 #' @examples

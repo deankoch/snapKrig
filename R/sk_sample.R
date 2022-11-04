@@ -35,8 +35,9 @@
 #' @param d numeric vector or list with vector entries 'y' and 'x', the distances to evaluate
 #'
 #' @return data frame (for list `d`) or numeric vector (for vector `d`) of variogram values
-#' @export
 #'
+#' @export
+#' @keywords internal
 #' @family variogram functions
 #' @seealso sk_pars
 #'
@@ -94,111 +95,142 @@ sk_vario_fun = function(pars, d=NULL)
 #' Sample `n` locations from the non-NA points in the input grid `g`, optionally using
 #' them as centers to place `n` sub-grids of the specified size and resolution.
 #'
-#' The function draws a sample of `n` locations (uniformly at random) from the non-NA
-#' points in the input grid `g`, and returns their vector index. If there are fewer
-#' than `n` locations available, they are all returned.
+#' When `sk_out=TRUE` (the default), the function returns an sk grid containing the sampled
+#' points. If multiple samples are requested, a multi-layer grid is returned. When
+#' `sk_out=FALSE`, the function returns the vector index of the sampled grid points,
+#' or if multiple samples are requested, a list of vectors.
 #'
-#' When `lag_max > 1`, the function also identifies a regular sub-grid of the Moore
-#' neighbourhood of (integer) radius `lag_max` around each of the sample points, with
-#' `interval-1` grid lines separating each sub-grid line. `interval` is the factor by
-#' which the resolution of the sub-grid is scaled to get the original grid resolution;
-#' It must evenly divide `lag_max`.
+#' By default the function simply draws a sample of `n` locations (uniformly at random)
+#' from the non-NA points in the input grid `g`.
 #'
-#' For a given `interval`, the grid `g` can be partitioned into `interval^2` distinct
+#' When `lag_max > 1`, the function instead returns the the Moore neighbourhood of
+#' radius `lag_max` around each of the sample points (including the center point). These
+#' sub-grids are returned as distinct layers (or list entries, if `sk_out=FALSE`). Their
+#' resolution can be coarsened (up-scaled) by increasing `up` from its default 0. `up`
+#' must either be 0 or else a positive integer that evenly divides `lag_max`
+#' (see `sk_rescale`).
+#'
+#'
+#' For a given `up`, the grid `g` can be partitioned into `(up+1)^2` distinct
 #' non-overlapping sub-grids. When `over=FALSE` (the default), the function apportions
 #' its `n` point samples as evenly as possible among these disjoint subsets. This ensures
-#' that if `n` is less than or equal to `interval^2`, and there are no NAs, there can be
+#' that if `n` is less than or equal to `(up+1)^2`, and there are no `NA`s, there can be
 #' no repetition (overlap) of points in the returned sub-grids.
 #'
-#' @param g any grid object accepted or returned by `sk`
+#' Note that with the default `sk_out=TRUE`, `lag_max > 1` is only supported for complete
+#' grids `g`. This is because with missing data it is hard (and sometimes impossible) to
+#' ensure that the Moore neighborhoods have identical `NA` structure (and this is a
+#' requirement for multi-layer sk grids).
+#'
+#' Note also that multi-layer sk grids are not fully supported yet. If you pass a
+#' multi-layer grid to g, the function returns results for the first layer only.
+#'
+#' @param g an sk grid object or any other object accepted by `sk`
 #' @param n integer > 0, the maximum number of center points to sample
 #' @param lag_max integer, Moore neighborhood radius (ie the maximum queen's distance)
-#' @param interval integer > 0, the down-scaling factor for sub-grids of `g`
+#' @param up integer, the up-scaling factor for sampling sub-grids of `g`
 #' @param over logical, indicates to allow overlapping sub-grids (when they can be avoided)
+#' @param sk_out logical, if TRUE (the default) the function returns an sk grid
 #'
-#' @return If `lag_max=0` (the default), the function returns the sample indices as a
-#' length-`n` integer vector. If `lag_max` is positive, the function returns a list of
-#' `n+1` indexing vectors; the first locates the `n` sub-grid center points, and the
-#' following `n` vectors locate the points in each sub-grid (including the center points
-#' itself)
+#' @return If `lag_max == 0` (the default), the function returns a single-layer sk grid when
+#' `sk_out=TRUE`, or else the sample indices in `g` as a length-`n` integer vector. If
+#' `lag_max > 0`, the function returns a multi-layer sk grid `sk_out=TRUE`, or else a list of
+#' `n` vectors indexing the sampled points in each sub-grid of `g`.
 #'
 #' @export
+#' @keywords internal
+#' @seealso sk sk_sample_vg
 #'
 #' @examples
-#' # define a grid
-#' gdim = c(100, 100)
-#' ng = prod(gdim)
+#' # define an empty grid
+#' g_empty = sk(gdim = c(100, 100))
 #'
 #' # get an ordinary random sample with default settings
-#' idx_sample = sk_sample_pt(g=gdim)
-#' sk_plot(seq(ng) %in% idx_sample, gdim)
+#' g_sample = sk_sample_pt(g_empty)
+#' plot(g_sample)
+#'
+#' # same call with index return mode
+#' idx_sample = sk_sample_pt(g_empty, sk_out=FALSE)
+#' str(idx_sample)
 #'
 #' # reduce or increase number of center points from default 100
-#' idx_sample = sk_sample_pt(gdim, n=10)
-#' sk_plot(seq(ng) %in% idx_sample, gdim)
+#' g_sample = sk_sample_pt(g_empty, n=10)
+#' plot(g_sample)
 #'
-#' # sampled from Moore neighbourhoods of radius 6
+#' # add some data to g and repeat
+#' pars = sk_pars(g_empty)
+#' pars$eps = 1e-6
+#' g = sk_sim(g_empty, pars)
+#' plot(g)
+#' g_sample = sk_sample_pt(g)
+#' plot(g_sample)
+#'
+#' # sample from Moore neighbourhoods of radius 6
 #' n = 10
-#' idx_sample = sk_sample_pt(gdim, n=n, lag_max=6L)
-#' sk_plot(seq(ng) %in% unlist(idx_sample), gdim, col_grid='white')
+#' g_sample = sk_sample_pt(g, n=n, lag_max=6L)
+#' idx_sample = sk_sample_pt(g, n=n, lag_max=6L, sk_out=FALSE)
+#'
+#' # default output is multi-layer grid object containing all subgrids
+#' plot(g_sample, layer=1)
+#' plot(g_sample, layer=2)
 #'
 #' # plot each list element a different color
-#' group_sample = rep(0L, prod(gdim))
-#' for(i in seq(1 + n)[-1]) group_sample[ idx_sample[[i]] ] = i-1L
-#' sk_plot(group_sample, gdim, breaks=c('not sampled', seq(n)), zlab='sub-grid')
+#' group_sample = rep(0L, length(g))
+#' for(i in seq(n)) group_sample[ idx_sample[[i]] ] = i
+#' sk_plot(group_sample, dim(g), breaks=c('not sampled', seq(n)), zlab='sub-grid')
 #'
-#' # When interval > 1, the function attempts to avoid overlap whenever possible
-#' interval = 2
-#' n = interval^2 # to get disjoint results n must be less than or equal to interval^2
-#' lag_max = 10 * interval # vary to get larger/smaller subsets. max allowable: min(gdim)/2
-#' idx_sample = sk_sample_pt(gdim, n=n, interval=interval, lag_max=lag_max)
-#' idx_overlap = rowSums( sapply(idx_sample[-1], function(i) seq(ng) %in% i) )
-#' sk_plot(as.integer(idx_overlap), gdim, zlab='times sampled')
+#' # When up > 0 the function will attempts to avoid overlap whenever possible
+#' up = 1
+#' n = (up+1)^2 # to get disjoint results n must be less than or equal to (up+1)^2
+#' lag_max = 10 * (up+1) # vary to get larger/smaller subsets. max allowable: min(gdim)/2
+#' idx_sample = sk_sample_pt(g, n=n, up=up, lag_max=lag_max, sk_out=FALSE)
+#' idx_overlap = rowSums( sapply(idx_sample, function(i) seq_along(g) %in% i) )
+#' sk_plot(as.integer(idx_overlap), dim(g), zlab='times sampled')
 #'
 #' # plot each list element a different color
-#' group_sample = rep(0L, prod(gdim))
-#' for(i in seq(1 + interval^2)[-1]) group_sample[ idx_sample[[i]] ] = i-1L
-#' sk_plot(group_sample, gdim, breaks=c('not sampled', seq(interval^2)), zlab='sub-grid')
+#' group_sample = rep(0L, length(g))
+#' for(i in seq(n)) group_sample[ idx_sample[[i]] ] = i
+#' sk_plot(group_sample, dim(g), breaks=c('not sampled', seq(n)), zlab='sub-grid')
 #'
 #' # compare with over=TRUE (usually results in overlap - try running a few times)
-#' idx_sample_compare = sk_sample_pt(gdim, n=n, interval=interval, lag_max=lag_max, over=TRUE)
-#' idx_overlap_compare = rowSums( sapply(idx_sample_compare[-1], function(i) seq(ng) %in% i) )
-#' sk_plot(as.integer(idx_overlap_compare), gdim, zlab='times sampled')
+#' idx_sample_compare = sk_sample_pt(g, n=n, up=up, lag_max=lag_max, over=TRUE, sk_out=FALSE)
+#' idx_overlap_compare = rowSums( sapply(idx_sample_compare, function(i) seq_along(g) %in% i) )
+#' sk_plot(as.integer(idx_overlap_compare), dim(g), zlab='times sampled')
 #'
 #' # only non-NA points are eligible in initial sample of center points
-#' g = sk(gdim)
-#' g$gval = rep(NA, ng)
-#' idx_obs = sample.int(ng, ng/1e2)
-#' g$gval[idx_obs] = 'non-NA'
-#' sk_plot(g)
+#' g_sample = sk_sample_pt(g, n=10)
+#' sk_plot(g_sample)
 #'
 #' # draw a sample of center points and indicate sub-grids in color
-#' idx_sample = sk_sample_pt(g, n=10, lag_max=6L, interval=2)
-#' g$gval[unlist(idx_sample[-1])] = 'sub-grid'
-#' g$gval[idx_sample[[1]]] = 'center point'
-#' sk_plot(g)
+#' idx_sample = sk_sample_pt(g_sample, n=10, lag_max=6, up=1, over=FALSE, sk_out=FALSE)
+#' g_sample_grid = g_empty
+#' g_sample_grid[] = rep('not sampled', length(g_empty))
+#' g_sample_grid[unlist(idx_sample)] = 'sub-grid sample'
+#' plot(g_sample_grid)
 #'
-sk_sample_pt = function(g, n=1e2, lag_max=0, interval=1L, over=FALSE)
+sk_sample_pt = function(g, n=1e2, lag_max=0, up=0, over=FALSE, sk_out=TRUE)
 {
   # unpack the grid object
   g = sk(g)
-  gdim = g[['gdim']]
-  is_obs = g[['is_obs']]
+  gdim = dim(g)
+  is_obs = !is.na(g)
 
   # extract only the first layer from multi-layer objects
-  if( !is.null(g[['idx_grid']]) ) { z = g[['gval']][g[['idx_grid']], 1L] } else { z = g[['gval']] }
-
-  # identify non-missing points in grid
-  if( is.null(z) ) z = rep(0L, prod(gdim))
+  if( is.matrix(g[['gval']]) ) g = sk(modifyList(g, list(gval=g[,1L])))
 
   # all-missing case treated as all-observed
-  if( !any(is_obs) ) is_obs = rep(TRUE, length(is_obs))
+  all_missing = !any(is_obs)
+  if( all_missing )
+  {
+    is_obs = rep(TRUE, length(is_obs))
+    g[] = rep(TRUE, length(g))
+  }
 
   # check for valid parameters in request
   gdim_inner = gdim - 2 * lag_max
-  if( !( all(gdim_inner > 0 ) ) ) stop('lag_max cannot exceed min(gdim)/2')
+  if( !( all(gdim_inner > 0 ) ) ) stop('lag_max cannot exceed min(dim(g))/2')
 
-  # find subset for which Moore neighbourhood is completely inside grid
+  # find subset of points for which Moore neighbourhood is completely inside grid
   ij_inner = lapply(stats::setNames(gdim, c('i', 'j')), function(d) seq(1+lag_max, d-lag_max) )
   is_inner = sk_sub_idx(gdim, ij=ij_inner)
 
@@ -207,85 +239,103 @@ sk_sample_pt = function(g, n=1e2, lag_max=0, interval=1L, over=FALSE)
   idx_eligible = which(is_eligible)
   ij_obs = sk_vec2mat(idx_eligible, gdim)
 
-  # sample center points
+  # sample center points only
   n = min(sum(is_eligible), n)
-  idx_center_all = sample(idx_eligible, n)
-  if(lag_max == 0) { idx_list = list(idx_center_all) } else {
+  idx_center_all = sort(sample(idx_eligible, n))
 
-    # pick a different sample that avoids overlap
-    if(!over)
-    {
-      # the number of disjoint sub-grids and the index of points
-      n_disjoint = interval^2
-      idx_inner = which(is_inner)
+  # handle single layer output
+  if(lag_max == 0)
+  {
+    # return from index mode
+    if(!sk_out) return(idx_center_all)
 
-      # identify all disjoint sub-grid origins within inner sub-grid,
-      ij_origin = apply(expand.grid(seq(interval)-1, seq(interval)-1), 1, identity, simplify=FALSE)
-      ij_all = lapply(ij_origin, function(ij) Map(function(d, r) seq(1L+r, d, by=interval), d=gdim_inner, r=ij))
-      idx_disjoint = lapply(ij_all, function(ij) sk_sub_idx(gdim_inner, unname(ij), idx=TRUE))
-
-      # omit NA points
-      idx_disjoint = lapply(idx_disjoint, function(ij) ij[ is_obs[idx_inner][ij] ] )
-
-      # the number of non-NA points in each disjoint sub-grid
-      n_obs_disjoint = sapply(idx_disjoint, length)
-
-      # apportion samples evenly to remaining sample sites, building n_per in a loop
-      n_per = integer(n_disjoint)
-      n_remain = n
-      while( (n_remain > 0) & any(n_obs_disjoint > 0) )
-      {
-        # find minimum number of non-NA points remaining in nonempty sub-grids
-        is_nonempty = n_obs_disjoint > 0
-        n_nonempty = sum(is_nonempty)
-
-        # draw the same number of points from each one
-        n_each = min(min(n_obs_disjoint[is_nonempty]), floor(n_remain/n_nonempty))
-
-        # exit case: fewer points needed than available sub-grids
-        if(n_each == 0)
-        {
-          # draw a single point from a subset of the sub-grids
-          n_each = 1
-          n_rem = sample(which(is_nonempty), n_remain)
-          is_nonempty = seq(n_disjoint) %in% n_rem
-        }
-
-        # draw at most this many points from each non-empty sub-grid
-        n_per[is_nonempty] = n_per[is_nonempty] + n_each
-        n_obs_disjoint = n_obs_disjoint - n_each
-        n_remain = n_remain - n_each * sum(is_nonempty)
-      }
-
-      # sample n_per[i] sub-grid origins from ith disjoint set
-      idx_center_inner = unlist( Map(function(n, idx) sample(idx, n), n=n_per, idx=idx_disjoint) )
-
-      # remap to original (not inner) grid
-      idx_center_all = idx_inner[idx_center_inner]
-    }
-
-    # check for invalid down-scaling factor then make center box template
-    if( ( lag_max %% interval ) != 0) stop('interval must divide lag_max')
-    lag_max = min(c(lag_max, gdim))
-    box_offset = seq(-lag_max, lag_max, by=as.integer(interval))
-
-    # loop over center points, compute index of all points in Moore neighbourhood
-    idx_list = lapply(idx_center_all, function(idx) {
-
-      # find grid (i,j) indices for box template centered at center point
-      ij_center = lapply(sk_vec2mat(idx, gdim, out='list'), function(idx) idx + box_offset)
-
-      # find vectorized index corresponding to this sample
-      sk_sub_idx(gdim, ij_center, idx=TRUE)
-    })
-
-    # set first entry to be the vector of all center points
-    idx_list = c(list(idx_center_all), idx_list)
+    # sk grid output
+    is_selected = seq_along(g) %in% idx_center_all
+    g[!is_selected] = ifelse(all_missing, FALSE, NA)
+    return(g)
   }
 
-  # filter length-1 entries and collapse length-1 results before returning
-  idx_list = idx_list[sapply(idx_list, length) > 1]
-  if( length(idx_list) == 1 ) idx_list = unlist(idx_list)
+  # check for valid `up` and define sequence interval for sub-grid lines
+  sep = 1L + as.integer(up)
+  if(sep < 1) stop('up must be a non-negative integer')
+
+  # pick a sample that avoids overlap
+  if(!over)
+  {
+    # the number of disjoint sub-grids and the index of points
+    n_disjoint = sep^2
+    idx_inner = which(is_inner)
+
+    # identify all disjoint sub-grid origins within inner sub-grid,
+    ij_origin = apply(expand.grid(seq(sep)-1L, seq(sep)-1L), 1L, identity, simplify=FALSE)
+    ij_all = lapply(ij_origin, function(ij) Map(function(d, r) seq(1L+r, d, by=sep), d=gdim_inner, r=ij))
+    idx_disjoint = lapply(ij_all, function(ij) sk_sub_idx(gdim_inner, unname(ij), idx=TRUE))
+
+    # omit NA points
+    idx_disjoint = lapply(idx_disjoint, function(ij) ij[ is_obs[idx_inner][ij] ] )
+
+    # the number of non-NA points in each disjoint sub-grid
+    n_obs_disjoint = sapply(idx_disjoint, length)
+
+    # apportion samples evenly to remaining sample sites, building n_per in a loop
+    n_per = integer(n_disjoint)
+    n_remain = n
+    while( (n_remain > 0) & any(n_obs_disjoint > 0) )
+    {
+      # find minimum number of non-NA points remaining in nonempty sub-grids
+      is_nonempty = n_obs_disjoint > 0
+      n_nonempty = sum(is_nonempty)
+
+      # draw the same number of points from each one
+      n_each = min(min(n_obs_disjoint[is_nonempty]), floor(n_remain/n_nonempty))
+
+      # exit case: fewer points needed than available sub-grids
+      if(n_each == 0)
+      {
+        # draw a single point from a subset of the sub-grids
+        n_each = 1
+        n_rem = sample(which(is_nonempty), n_remain)
+        is_nonempty = seq(n_disjoint) %in% n_rem
+      }
+
+      # draw at most this many points from each non-empty sub-grid
+      n_per[is_nonempty] = n_per[is_nonempty] + n_each
+      n_obs_disjoint = n_obs_disjoint - n_each
+      n_remain = n_remain - n_each * sum(is_nonempty)
+    }
+
+    # sample n_per[i] sub-grid origins from ith disjoint set
+    idx_center_inner = unlist( Map(function(n, idx) sample(idx, n), n=n_per, idx=idx_disjoint) )
+
+    # remap to original (not inner) grid
+    idx_center_all = idx_inner[idx_center_inner]
+  }
+
+  # check for invalid up-scaling factor then make center box template
+  if( ( lag_max %% sep ) != 0) stop('up+1 must divide lag_max')
+  lag_max = min(c(lag_max, gdim))
+  box_offset = seq(-lag_max, lag_max, by=sep)
+
+  # make a list of box grid lines
+  ij_list = lapply(idx_center_all, function(idx) {
+
+    # find grid (i,j) indices for box template centered at center point
+    ij_center = lapply(sk_vec2mat(idx, gdim, out='list'), function(idx) idx + box_offset)
+  })
+
+  # return from sk grid mode
+  if(sk_out)
+  {
+    # create single-layer sk (sub)grids and extract their data into columns of matrix
+    g_sub_mat = sapply(ij_list, function(ij) sk_sub(g, ij)[])
+
+    # merge them into a multi-layer object
+    g_sub = sk_sub(g, ij_list[[1]])
+    return( sk(modifyList(g_sub, list(gval=g_sub_mat))) )
+  }
+
+  # loop over boxes, computing index of all points in Moore neighbourhood
+  idx_list = lapply(ij_list, function(ij) sk_sub_idx(gdim, ij, idx=TRUE))
   return(idx_list)
 }
 

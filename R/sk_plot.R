@@ -341,8 +341,16 @@ sk_plot = function(g, gdim=NULL, ...)
     bool_image = is.logical(z)
     if( bool_image )
     {
+      # these annoying edge cases require different breaks
+      all_true = all(z[!z_is_na])
+      all_false = !any(z[!z_is_na])
       z = as.integer(z)
-      if( is.null(breaks) ) breaks = c('false', 'true')
+      if( is.null(breaks) )
+      {
+        breaks = c('false', 'true')
+        if(all_true) breaks = 'true'
+        if(all_false) breaks = 'false'
+      }
     }
 
     # coerce factor and character to integer, preserving names in `breaks`

@@ -365,10 +365,10 @@ print.sk = function(x, ...)
     complete_msg = paste0(complete_msg, layer_msg)
   }
 
-  # for non-numeric types, print the class instead of the range
+  # for non-numeric types, print the type instead of the range
   if( !is.numeric(x[['gval']]) & !is.null(x[['gval']]) )
   {
-    complete_msg = paste0(complete_msg, '(', class(x[['gval']])[1], ' data)\n')
+    complete_msg = paste0(complete_msg, '(', typeof(x[['gval']]), ' data)\n')
   }
 
   # print messages
@@ -411,10 +411,10 @@ summary.sk = function(x, ...)
   range_msg = NULL
   if( n_obs > 0 )
   {
-    # for non-numeric types, print the class instead of the range
+    # for non-numeric types, print the type instead of the range
     if( !is.numeric(x[['gval']]) )
     {
-      range_msg = paste0('(', class(x[['gval']])[1], ' data)')
+      range_msg = paste0('(', typeof(x[['gval']]), ' data)')
 
     } else {
 

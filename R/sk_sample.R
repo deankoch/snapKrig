@@ -131,6 +131,7 @@ sk_vario_fun = function(pars, d=NULL)
 #' @param up integer, the up-scaling factor for sampling sub-grids of `g`
 #' @param over logical, indicates to allow overlapping sub-grids (when they can be avoided)
 #' @param sk_out logical, if TRUE (the default) the function returns an sk grid
+#' @param seed integer seed, passed to `base::set.seed`
 #'
 #' @return If `lag_max == 0` (the default), the function returns a single-layer sk grid when
 #' `sk_out=TRUE`, or else the sample indices in `g` as a length-`n` integer vector. If
@@ -165,19 +166,27 @@ sk_vario_fun = function(pars, d=NULL)
 #' g_sample = sk_sample_pt(g)
 #' plot(g_sample)
 #'
-#' # sample from Moore neighbourhoods of radius 6
-#' n = 10
-#' g_sample = sk_sample_pt(g, n=n, lag_max=6L)
-#' idx_sample = sk_sample_pt(g, n=n, lag_max=6L, sk_out=FALSE)
-#'
-#' # default output is multi-layer grid object containing all subgrids
-#' plot(g_sample, layer=1)
-#' plot(g_sample, layer=2)
+#' # sample 3 subgrids from Moore neighbourhoods of radius 6 (index output mode)
+#' n = 3
+#' idx_sample = sk_sample_pt(g, n=n, lag_max=6L, sk_out=FALSE, seed=42)
 #'
 #' # plot each list element a different color
 #' group_sample = rep(0L, length(g))
 #' for(i in seq(n)) group_sample[ idx_sample[[i]] ] = i
 #' sk_plot(group_sample, dim(g), breaks=c('not sampled', seq(n)), zlab='sub-grid')
+#'
+#' # plot all the sub-grid data
+#' g_plot = g_empty
+#' g_plot[unlist(idx_sample)] = g[unlist(idx_sample)]
+#' plot(g_plot)
+#'
+#' # default sk_out=TRUE returns them as multi-layer grid object
+#' g_sample = sk_sample_pt(g, n=n, lag_max=6L, seed=42)
+#' plot(g_sample, layer=1, zlim=range(g_plot, na.rm=TRUE))
+#' plot(g_sample, layer=2, zlim=range(g_plot, na.rm=TRUE))
+#' plot(g_sample, layer=3, zlim=range(g_plot, na.rm=TRUE))
+#'
+#'
 #'
 #' # When up > 0 the function will attempts to avoid overlap whenever possible
 #' up = 1
@@ -185,19 +194,21 @@ sk_vario_fun = function(pars, d=NULL)
 #' lag_max = 10 * (up+1) # vary to get larger/smaller subsets. max allowable: min(gdim)/2
 #' idx_sample = sk_sample_pt(g, n=n, up=up, lag_max=lag_max, sk_out=FALSE)
 #' idx_overlap = rowSums( sapply(idx_sample, function(i) seq_along(g) %in% i) )
-#' sk_plot(as.integer(idx_overlap), dim(g), zlab='times sampled')
 #'
 #' # plot each list element a different color
 #' group_sample = rep(0L, length(g))
 #' for(i in seq(n)) group_sample[ idx_sample[[i]] ] = i
 #' sk_plot(group_sample, dim(g), breaks=c('not sampled', seq(n)), zlab='sub-grid')
 #'
+#' # no overlap
+#' sk_plot(as.integer(idx_overlap), dim(g), zlab='times sampled')
+#'
 #' # compare with over=TRUE (usually results in overlap - try running a few times)
 #' idx_sample_compare = sk_sample_pt(g, n=n, up=up, lag_max=lag_max, over=TRUE, sk_out=FALSE)
 #' idx_overlap_compare = rowSums( sapply(idx_sample_compare, function(i) seq_along(g) %in% i) )
 #' sk_plot(as.integer(idx_overlap_compare), dim(g), zlab='times sampled')
 #'
-#' # only non-NA points are eligible in initial sample of center points
+#' # incomplete input data example
 #' g_sample = sk_sample_pt(g, n=10)
 #' sk_plot(g_sample)
 #'
@@ -208,8 +219,11 @@ sk_vario_fun = function(pars, d=NULL)
 #' g_sample_grid[unlist(idx_sample)] = 'sub-grid sample'
 #' plot(g_sample_grid)
 #'
-sk_sample_pt = function(g, n=1e2, lag_max=0, up=0, over=FALSE, sk_out=TRUE)
+sk_sample_pt = function(g, n=1e2, lag_max=0, up=0, over=FALSE, sk_out=TRUE, seed=NULL)
 {
+  # initialize RNG state
+  set.seed(seed)
+
   # unpack the grid object
   g = sk(g)
   gdim = dim(g)
@@ -346,26 +360,40 @@ sk_sample_pt = function(g, n=1e2, lag_max=0, up=0, over=FALSE, sk_out=TRUE)
 #' distances. If no sample point index is supplied (in `idx`), the function samples points
 #' at random using `sk_sample_pt`.
 #'
-#' In a set of n points there are n_pp(n) = (n^2 - n) / 2 possible point pairs. This
+#' In a set of n points there are n_pp(n) = (n^2-n)/2 possible point pairs. This
 #' expression is inverted to determine the maximum number of sample points in `g` to use
-#' in order to satisfy the user-supplied argument `n_pp`. A random sub-sample of `idx` is
-#' taken as needed.
+#' in order to satisfy the argument `n_pp`, the maximum number of point pairs to sample.
+#' A random sub-sample of `idx` is taken as needed. By default `n_pp=1e4` which results
+#' in `n=141`.
 #'
-#' The mean of the point pair absolute values ('dabs') is the classical estimator of the
-#' variogram. This and two other robust methods are implemented in `sk_plot_vg`.
+#' The mean of the point pair absolute values ('dabs') for a given distance interval is the
+#' classical estimator of the variogram. This and two other robust methods are implemented
+#' in `sk_plot_semi`. These statistics are sensitive to the choice of distance bins. They
+#' are added automatically by a call to `sk_add_bins` (with `n_bin`) but users can also set
+#' up bins manually by adjusting the 'bin' column of the output.
 #'
-#' @param g any grid object accepted or returned by `sk`, containing non-NA data
+#' For multi-layer `g`, the function samples observed point locations once and re-uses this
+#' selection in all layers. At most `n_layer_max` layers are sampled in this way (default is
+#' the square root of the number of layers, rounded up)
+#'
+#' @param g any grid object accepted or returned by `sk`
+#' @param n_pp integer maximum number of point pairs to sample
 #' @param idx optional integer vector indexing the points to sample
-#' @param n_max integer maximum number of point pairs to sample
 #' @param n_bin integer number of distance bins to assign (passed to `sk_add_bins`)
+#' @param n_layer_max integer, maximum number of layers to sample (for multi-layer `g`)
+#' @param quiet logical, suppresses console output
 #'
-#' @return Results are returned in a data frame with each row representing one point pair.
-#' Fields include 'dabs' and 'd', the absolute difference and distance mentioned earlier,
-#' along with a number of indexing vectors for both point locations and relative separation.
-#' 'bin' is an integer splitting distances into `n_bin` categories.
+#'
+#' @return A data frame with a row for each sampled point pair. Fields include 'dabs' and 'd',
+#' the absolute difference in point values and the separation distance, along with the vector
+#' index, row and column numbers, and component (x, y) distances for each point pair. 'bin'
+#' indicates membership in one of `n_bin` categories.
+#'
 #' @export
+#' @seealso sk sk_sample_pt sk_add_bins
 #'
 #' @examples
+#'
 #' # make example grid and reference covariance model
 #' gdim = c(22, 15)
 #' n = prod(gdim)
@@ -412,23 +440,20 @@ sk_sample_vg = function(g, n_pp=1e4, idx=NULL, n_bin=25, n_layer_max=NA, quiet=F
 {
   # unpack expected inputs
   g = sk(g)
-  gdim = g[['gdim']]
-  gres = g[['gres']]
+  is_obs = !is.na(g)
 
-  # multi-layer support
-  is_multi = !is.null(g[['idx_grid']])
-  if(is_multi) { z = g[['gval']][g[['idx_grid']], 1L] } else { z = g[['gval']] }
-  if( is.null(z) ) stop('g must have element "gval" (the data vector)')
-  n = sum(!is.na(z)) # fix me
+  # count observations and halt if there aren't any
+  n = sum(is_obs)
+  if(n == 0) stop('g had no non-NA values')
 
   # the number of sample points required to get n point pairs, the inverse of f(n)=(n^2-n)/2
-  n_obs = min(floor( (1 + sqrt(1 + 8*n_pp)) / 2 ), sum(!is.na(z)))
+  n_obs = min(floor( (1 + sqrt(1 + 8*n_pp)) / 2 ), n)
 
   # call point sampler if a subset of points was not specified
-  if( is.null(idx) ) idx = sk_sample_pt(g, n_obs)
+  if( is.null(idx) ) idx = sk_sample_pt(g, n_obs, sk_out=FALSE)
 
   # verify that input sample point locations are non-NA and sub-sample as needed
-  idx = idx[ !is.na(z[idx]) ]
+  idx = idx[ is_obs[idx] ]
   if( length(idx) > n_obs ) idx = sample(idx, n_obs)
   n_obs = length(idx)
   n_pp = (n_obs^2-n_obs)/2
@@ -438,13 +463,14 @@ sk_sample_vg = function(g, n_pp=1e4, idx=NULL, n_bin=25, n_layer_max=NA, quiet=F
   if(!quiet) cat(msg_n)
 
   # compute grid indices (i, j) for the sample points
-  ij_obs = sk_vec2mat(idx, gdim)
+  ij_obs = sk_vec2mat(idx, dim(g))
 
   # anonymous function to compute lower triangular part of a 1d distance matrix
   vec_dist = function(x) c(stats::dist(x, method='manhattan', diag=T))
 
   # compute dimension-wise grid line (i,j) distances between all point pairs
-  dmat = stats::setNames(apply(ij_obs, 2, vec_dist, simplify=F), c('di', 'dj'))
+  dmat = apply(ij_obs, 2, vec_dist, simplify=F)
+  names(dmat) = c('di', 'dj')
 
   # indexes the distance matrix entries vectorized by the `c` in vec_dist
   idx_lower = lower.tri(matrix(NA, n_obs, n_obs))
@@ -455,9 +481,10 @@ sk_sample_vg = function(g, n_pp=1e4, idx=NULL, n_bin=25, n_layer_max=NA, quiet=F
 
   # i,j indices for each point pair, and their vectorized indices
   ij_pp = list(p1=ij_obs[idx_i_lower,], p2=ij_obs[idx_j_lower,])
-  idx_pp = lapply(ij_pp, function(ij) sk_mat2vec(ij, gdim))
+  idx_pp = lapply(ij_pp, function(ij) sk_mat2vec(ij, dim(g)))
 
   # compute absolute differences in data for each point pair, then separation distance
+  is_multi = is.matrix(g[['gval']])
   if( is_multi )
   {
     # speed things up by directly indexing matrix of non-NAs
@@ -465,30 +492,36 @@ sk_sample_vg = function(g, n_pp=1e4, idx=NULL, n_bin=25, n_layer_max=NA, quiet=F
 
     # sub-sample among layers
     n_layer = ncol(g[['gval']])
-    if( is.na(n_layer_max) ) n_layer_max = max(1L, floor(sqrt(n_layer)))
+    if( is.na(n_layer_max) ) n_layer_max = max(1L, ceiling(sqrt(n_layer)))
     n_layer_max = min(n_layer, n_layer_max)
     idx_sample_layer = sample.int(n_layer, n_layer_max)
 
     # console output
-    msg_n = paste('sampling', n_layer_max, 'of', n_layer, 'layers\n')
-    if(!quiet) cat(msg_n)
+    if(!quiet) cat(paste('sampling', n_layer_max, 'of', n_layer, 'layers\n'))
 
     # loop over selected sample layers, drawing the same point pairs in each layer
     dabs_all = sapply(idx_sample_layer, function(idx_layer) {
 
-      # compute absolute differences for selected point pairs in this layer
-      abs(apply(sapply(idx_pp_sparse, function(i) as.vector(g[['gval']][i, idx_layer])), 1, diff))
+      # data values for selected point pairs in a big matrix
+      z_mat = sapply(idx_pp_sparse, function(i) as.vector(g[i, idx_layer]))
+
+      # absolute differences for point pairs in this layer
+      abs(apply(z_mat, 1, diff))
     })
+
+    lyr = rep(idx_sample_layer, each=nrow(dabs_all))
 
   } else {
 
-    # same as above but for a single layer only
-    dabs_all = abs( apply( sapply(idx_pp, function(i) z[i]), 1, diff ) )
+    # one call to do all of the above for a single layer only
+    dabs_all = abs( apply( sapply(idx_pp, function(i) g[i]), 1, diff ) )
+    lyr = 1L
   }
 
-  # compile everything in a data frame then append distance info
+  # compile everything in a data frame then append distance and layer number
   vg = data.frame(dabs=c(dabs_all), idx_pp, ij_pp, dmat)
-  vg[c('dy', 'dx')] = rep(gres, each=nrow(vg)) * vg[c('di', 'dj')]
+  vg[c('dy', 'dx')] = rep(g[['gres']], each=nrow(vg)) * vg[c('di', 'dj')]
+  vg[['lyr']] = lyr
   vg[['d']] = sqrt( rowSums( vg[c('dy', 'dx')]^2 ) )
 
   # split into distance bins before returning
@@ -516,7 +549,10 @@ sk_sample_vg = function(g, n_pp=1e4, idx=NULL, n_bin=25, n_layer_max=NA, quiet=F
 #' @param probs numeric vector of quantile probabilities to establish breakpoints (length `n_bin+1`)
 #'
 #' @return same as input `vg` but with integer column `bin` added/modified
+#'
 #' @export
+#' @keywords internal
+#' @family variogram functions
 #'
 #' @examples
 #' distance_df = data.frame(d=runif(25))
@@ -546,11 +582,11 @@ sk_add_bins = function(vg, n_bin=25, probs=NULL)
   if( is.null(NULL) ) probs = seq(0, 1, length.out=1L+n_bin)
 
   # n_bin=1 puts everything in bin 1
-  if(n_bin == 1) return( modifyList(vg, list(bin=1L)) )
+  if(n_bin == 1) return( utils::modifyList(vg, list(bin=1L)) )
 
   # split range evenly into bins when `probs=NULL`
-  if( anyNA(probs) ) return( modifyList(vg, list( bin=as.integer(cut(d, breaks=n_bin))) ) )
+  if( anyNA(probs) ) return( utils::modifyList(vg, list( bin=as.integer(cut(d, breaks=n_bin))) ) )
 
   # otherwise find bins of roughly equal content
-  return( modifyList(vg, list(bin=findInterval(d, quantile(d, probs=probs)))) )
+  return( utils::modifyList(vg, list(bin=findInterval(d, quantile(d, probs=probs)))) )
 }

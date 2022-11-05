@@ -731,6 +731,8 @@ sk_plot_pars = function(pars, g=NULL, simple=FALSE, ...)
 #'
 #' \item{d_max}{numeric > 0: x (distance) limit for plotting in input units}
 #'
+#' \item{leg}{logical: adds a sample bin legend}
+#'
 #' \item{leg_main}{character: title for the sample bin legend (default 'model')}
 #'
 #' \item{lwd}{numeric: line width for the model semi-variance}

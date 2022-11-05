@@ -694,18 +694,58 @@ sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NUL
 
 
 
-#' Fit a covariance model to the data by maximum likelihood
+#' Fit a covariance model to an sk grid by maximum likelihood
 #'
-#' An automated model fitting procedure
+#' This uses `stats::optim` to minimize the log-likelihood function for a grid dataset
+#' `g` over the space of unknown parameters for the covariance function specified in `pars`.
+#' If only one parameter is unknown, the function instead uses `stats::optimize`.
 #'
-#' documentation unfinished
+#' `NA` entries in `pars` are treated as unknown parameters and fitted by the
+#' function, whereas non-`NA` entries are treated as fixed parameters (and not fitted).
+#' If none of the parameters in `pars` are `NA`, the function copies everything as initial
+#' values, then treats all parameters as unknown. `pars` can also be a character vector
+#' (see `?sk_pars`) in which case all covariance parameters are treated as unknown.
 #'
-#' @param g_obs todo
-#' @param pars todo
-#' @param X todo
+#' Bounds and initial values are set automatically using `sk_bds`, unless they are otherwise
+#' specified in arguments `lower`, `initial`, `upper`. These should be vectors containing only
+#' the unknown parameters, *ie.* they must exclude fixed parameters. If the entries are unnamed,
+#' they must be in the same order as in the output of `sk_update_pars(pars, iso=iso)`.
 #'
-#' @return unfinished
+#' Since all parameters in the covariance model should be strictly positive, optimization
+#' happens on the (parameter) log-scale by default. This allows users to select non-default
+#' method (besides 'L-BFGS-B') that don't accept bounds (`lower`, `initial`, `upper` are
+#' ignored in this case). Note that the 'gxp' and 'mat' correlograms behave badly with
+#' very small or very large shape parameters, so for them we recommended 'L-BFGS-B' only.
+#' Note that bounds, initial values, and `method` are ignored when only one parameter is
+#' unknown. In this case, all entries of `control` except 'tol' are ignored (see
+#' `?stats::optimize`)
+#'
+#' As a sanity check `n_max` sets a maximum for the number of observed grid points. This
+#' is to avoid accidental calls with very large datasets that would cause R to hang or crash.
+#' Set `n_max=Inf` (with caution) to bypass this check. Similarly the maximum number of
+#' iterations is set to `1e3` but this can be changed by manually setting 'maxit' in
+#' `control`.
+#'
+#' @param g an sk grid (or list with entries 'gdim', 'gres', 'gval')
+#' @param pars covariance parameter list, with `NA`s indicating parameters to fit
+#' @param X numeric (or NA), matrix, or sk grid of linear predictors, passed to `sk_LL`
+#' @param iso logical, indicating to constrain the y and x kernel parameters to be the same
+#' @param n_max integer, the maximum number of observations allowed
+#' @param quiet logical, indicating to suppress console output
+#' @param lower numeric vector, lower bounds for parameters
+#' @param initial numeric vector, initial values for parameters
+#' @param upper numeric vector, upper bounds for parameters
+#' @param log_scale logical, indicating to log-transform parameters for optimization
+#' @param method character, passed to `stats::optim` (default is 'L-BFGS-B')
+#' @param control list, passed to `stats::optim`
+#'
+#' @return A parameter list in the form returned by `sk_pars` containing both fixed and
+#' fitted parameters. The data-frame of bounds and initial values is also included in the
+#' attribute 'bds'
+#'
 #' @export
+#' @family parameter managers
+#' @seealso sk sk_LL sk_nLL stats::optim stats::optimize
 #'
 #' @examples
 #'
@@ -721,11 +761,14 @@ sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NUL
 #' sk_plot(g_obs)
 #' fit_result = sk_fit(g_obs, pars='gau')
 #'
-#' fit_result$pars |> sk_pars_update()
-#' pars_src |> sk_pars_update()
+#' # compare estimates with true values
+#' rbind(true=sk_pars_update(pars_src), fitted=sk_pars_update(fit_result))
 #'
-#' # check sequence of other psill values
-#' pars_out = fit_result$pars
+#' # extract bounds data frame
+#' attr(fit_result, 'bds')
+#'
+#' # check a sequence of other psill values
+#' pars_out = fit_result
 #' psill_test = ( 2^(seq(5) - 3) ) * pars_out[['psill']]
 #' LL_test = sapply(psill_test, function(s) sk_LL(modifyList(pars_out, list(psill=s)), g_obs) )
 #' plot(psill_test, LL_test)
@@ -735,95 +778,183 @@ sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NUL
 #' # repeat with most data missing
 #' n = prod(gdim)
 #' n_obs = 200
-#' gval = sk_sim(g_empty, pars_src, quiet=TRUE)
-#' g_obs = modifyList(g_empty, list(gval=gval))
-#' idx_obs = sample.int(prod(gdim), n_obs)
-#' g_miss = modifyList(g_obs, list(gval=rep(NA, n)))
-#' g_miss$gval[idx_obs] = g_obs$gval[idx_obs]
+#' g_obs = sk_sim(g_empty, pars_src)
+#' idx_miss = sample.int(length(g_empty), length(g_empty) - n_obs)
+#' g_miss = g_obs
+#' g_miss[idx_miss] = NA
 #' sk_plot(g_miss)
 #'
+#' # fit and compare
+#' fit_result = sk_fit(g_miss, pars='gau')
+#' rbind(true=sk_pars_update(pars_src), fitted=sk_pars_update(fit_result))
 #'
-sk_fit = function(g_obs, pars=NULL, X=NA, iso=TRUE, initial=NULL, quiet=FALSE,
-                     lower=NULL, upper=NULL, n_max=1e3)
+sk_fit = function(g, pars=NULL, X=NA, iso=TRUE, n_max=1e3, quiet=FALSE,
+                  lower=NULL, initial=NULL, upper=NULL,
+                  log_scale=TRUE, method='L-BFGS-B', control=list())
 {
-  # unpack vectorized grid as list
-  g_obs = sk(g_obs)
-  gdim = g_obs[['gdim']]
+  # only L-BFGS-B accepts bounds, so log-scale is mandatory for other methods
+  if( (method != 'L-BFGS-B' & !log_scale) )
+  {
+    warning('Setting log_scale=TRUE (required for methods other than L-BFGS-B)')
+    log_scale = TRUE
+  }
 
-  # check for missingness and count observations
-  is_obs = !is.na(g_obs[['gval']])
-  if( !any(is_obs) ) stop('no data found in g_obs')
-  n_all = prod(gdim)
+  # unpack grid input and count observations
+  g_obs = sk(g)
+  n_all = length(g_obs)
+  is_obs = !is.na(g_obs)
   n_obs = sum(is_obs)
+  if(n_obs == 0) stop('no data found in g_obs')
 
   # problem size sanity check
   if( (n_obs < n_all) & (n_obs > n_max) ) stop('number of observed points exceeded n_max')
 
-  # # handle sparse indexing
-  # if( is.null(g[['idx_grid']]) )
-  # {
-  #   g[['idx_grid']]
-  #
-  #
-  # }
+  # parse character string arguments to pars
+  pars = ifelse(is.null(pars), 'gau', pars)
+  if( !is.list(pars) ) pars = sk_pars(g_obs, pars)
 
-  # coerce to matrix of appropriate dimensions
-  # n_obs = sum(is_obs)
-  # if( is.matrix(X) )
-  # {
-  #   # pad with NAs as needed
-  #   #idx_pad = match(seq(n_all), which(is_obs))
-  #   # if( is.vector(X) ) if( length(X) == n_obs ) X = X[idx_pad]
-  #   # if( is.matrix(X) ) if( nrow(X) == n_obs ) X = apply(X, 2, function(x) x[idx_pad])
-  #   # X = matrix(X, nrow=n_all)
-  #
-  #   if( is.vector(X) ) if( length(X) == n_obs ) X = X[idx_pad]
-  #   X = matrix(X, nrow=n_obs)
-  #
-  #   if( all(is.na(X)) ) X = NA
-  # }
+  ## set up bounds and initial values
 
-  # # set flags for multi-layer support
-  # is_indexed = !is.null(g_obs[['idx_grid']])
-  # is_multi = is.matrix(g_obs[['gval']]) | is_indexed
-  # if(is_multi) { g_obs[['gval']] = as.matrix(g_obs[['gval']]) } else {
-  #
-  #   # substitute equivalent sub-grid problem if possible
-  #   sub_result = sk_sub_find(g_obs=g)
-  #   if( !is.null(sub_result) )
-  #   {
-  #     # skip when full grid is non-NA
-  #     if( any(sub_result[['gdim']] < gdim) )
-  #     {
-  #       # compute new grid configuration and copy to g
-  #       gdim = sub_result[['gdim']]
-  #       gres = g[['gres']] * sub_result[['res_scale']]
-  #       gyx = Map(function(yx, idx) yx[idx], yx=g[['gyx']], idx=sub_result[['ij']])
-  #
-  #
-  #       # TODO: test and fix this for sparse and matrix-valued cases
-  #       g = modifyList(g, list(gdim=gdim, gres=gres, gyx=gyx, gval=g[['gval']][is_obs]))
-  #       is_obs = rep(TRUE, prod(gdim))
-  #     }
-  #   }
-  # }
+  # standardize input to pars and set NAs for missing values
+  pars_fix = sk_pars_make(pars)
 
-  # set covariance parameter defaults
-  if( !is.list(pars) ) pars = sk_pars(g_obs, ifelse(is.null(pars), 'gau', pars))
-  p_fixed = sk_pars_update(pars, iso=iso)
-  is_fitted = is.na(p_fixed)
-  if( !any(is_fitted) ) is_fitted[] = TRUE
+  # extract fixed parameter values and names of unknown parameters
+  pars_fix_vec = sk_pars_update(pars_fix, iso=iso)
+  nm_fit = names(pars_fix_vec)[ is.na(pars_fix_vec) ]
 
-  # set initial value defaults
-  nm_fitted = names(is_fitted)[is_fitted]
-  nm_fixed = names(is_fitted)[!is_fitted]
-  if( is.null(initial) ) initial = sk_bds(pars, g_obs)[nm_fitted, 'initial']
-  pars = sk_pars_update(pars, p_fixed, iso=iso)
+  # if all parameters are supplied we fix none of them (and fit all)
+  if( length(nm_fit) == 0 )
+  {
+    # use supplied parameters as initial values
+    if(is.null(initial)) initial = pars_fix_vec
+
+    # copy NAs to all entries of fixed parameters list and update names
+    pars_fix = sk_pars_update(pars_fix, rep(NA, length(pars_fix_vec)), iso=iso)
+    pars_fix_vec = sk_pars_update(pars_fix, iso=iso)
+    nm_fit = names(pars_fix_vec)
+  }
+
+  # get default initial values and bounds data frame
+  pars_df = sk_bds(pars_fix, g_obs)[nm_fit,]
+  nm_expect = rownames(pars_df)
+
+  # collect any user supplied bounds and replace defaults
+  bds_arg = list(lower=lower, initial=initial, upper=upper)
+  for(arg_nm in names(bds_arg))
+  {
+    # skip when bounds argument not supplied
+    arg = bds_arg[[arg_nm]]
+    if( !is.null(arg) )
+    {
+      # check for valid names then replace only the named arguments
+      p_nm = names(arg)
+      is_nm_valid = all(p_nm %in% nm_expect)
+      if( !is_nm_valid | is.null(p_nm) ) names(arg) = nm_expect[seq_along(arg)]
+      pars_df[names(arg), arg_nm] = arg
+    }
+  }
+
+  # switch to log-scale if requested
+  if(log_scale)
+  {
+    # transform bounds and fixed parameters (if any)
+    pars_df = log(pars_df)
+    pars_fix_vec = log(pars_fix_vec)
+  }
+
+  # scaling constants passed to optimizer for internal use
+  optim_scale = apply(pars_df, 1L, function(p) diff(range(p)))
+
+  # TODO: scale covariates X as needed
+
+  # when iso=TRUE and pars_fix contains fixed y kernel parameter(s) they must be copied to x
+  pars_fix = sk_pars_update(pars_fix, pars_fix_vec, iso=iso)
+
+  # evaluate objective at initial values and bounds
+  bds_nLL = apply(pars_df, 2L, function(p) sk_nLL(p, g_obs, pars_fix, X, iso, TRUE, log_scale))
+
+  # 1d optimization case
+  if( nrow(pars_df) == 1 )
+  {
+    # copy user supplied tolerance or set default
+    tol = ifelse(is.null(control[['tol']]), .Machine$double.eps^0.25, control[['tol']])
+    optimize_out = optimize(f = sk_nLL,
+                            interval = pars_df[c('lower', 'upper')],
+                            tol = tol,
+                            g_obs = g_obs,
+                            pars_fix = pars_fix,
+                            X = X,
+                            iso = iso,
+                            log_scale = log_scale,
+                            quiet = quiet)
+
+    # reshape the output list to be like output of optim
+    optim_out = list(message='', par=optimize_out[['minimum']], value=optimize_out[['objective']])
+
+  } else {
+
+    # n-d optimization case
+
+    # set default control parameters and run the optimizer
+    control = utils::modifyList(list(maxit=1e3, parscale=optim_scale), control)
+    optim_out = suppressWarnings(stats::optim(par = pars_df[['initial']],
+                                              lower = pars_df[['lower']],
+                                              upper = pars_df[['upper']],
+                                              f = sk_nLL,
+                                              method = method,
+                                              g_obs = g_obs,
+                                              pars_fix = pars_fix,
+                                              X = X,
+                                              iso = iso,
+                                              quiet = quiet,
+                                              log_scale = log_scale,
+                                              control = control) )
+  }
+
+  # unpack optimizer output
+  obj_val = optim_out[['value']]
+  pars_fitted_v = optim_out[['par']]
+  if(!quiet) cat(paste('\n', optim_out[['message']]))
+
+  # revert to initial value if optimize/optim result was not an improvement
+  if(bds_nLL[['initial']] < obj_val)
+  {
+    pars_fitted_v = pars_df[['initial']]
+    warning('initial values had best likelihood score)')
+  }
+
+  # reshape as list and copy results to bounds data frame
+  pars_fitted = sk_pars_update(pars_fix, pars_fitted_v, iso=iso, na_omit=TRUE)
+  pars_df['fitted'] = pars_fitted_v
+
+  # back transform parameters fitted on log-scale
+  if(log_scale)
+  {
+    pars_df = exp(pars_df)
+    pars_fitted = sk_pars_update(pars_fitted, exp(sk_pars_update(pars_fitted)))
+  }
+
+  # add bounds data frame as attribute of output parameter list
+  df_order = c('lower', 'initial', 'fitted', 'upper')
+  attr(pars_fitted, 'bds') = pars_df[df_order]
+  return(pars_fitted)
+
+
+
+  # p_fixed = sk_pars_update(pars, iso=iso)
+  # is_fitted = is.na(p_fixed)
+  # if( !any(is_fitted) ) is_fitted[] = TRUE
+  #
+  # # set initial value defaults
+  # nm_fitted = names(is_fitted)[is_fitted]
+  # nm_fixed = names(is_fitted)[!is_fitted]
+  # if( is.null(initial) ) initial = sk_bds(pars, g_obs)[nm_fitted, 'initial']
+  # pars = sk_pars_update(pars, p_fixed, iso=iso)
 
   # fit the model
   #v = var(g[['gval']], na.rm=TRUE)
-  result_optim = sk_optim(g_obs, pars, X=X, iso=iso, quiet=quiet,
-                             lower=lower, initial=initial, upper=upper)
+  # result_optim = sk_optim(g_obs, pars, X=X, iso=iso, quiet=quiet,
+  #                            lower=lower, initial=initial, upper=upper)
   #pars_out = result_optim[['pars']]
 
   # # check sequence of likely psill substitutions
@@ -840,7 +971,7 @@ sk_fit = function(g_obs, pars=NULL, X=NA, iso=TRUE, initial=NULL, quiet=FALSE,
   # plot the semi-variogram for de-trended data
   #vg_detrend = sk_sample_vg(g)
   #sk_plot_semi(vg_detrend, pars_out)
-  return(result_optim)
+  #return(result_optim)
 
 
   if(0)
@@ -894,7 +1025,9 @@ sk_fit = function(g_obs, pars=NULL, X=NA, iso=TRUE, initial=NULL, quiet=FALSE,
 #'
 #' documentation unfinished
 #'
-#' @param g_obs list of form returned by `sk` (with entries 'gdim', 'gres', 'gval')
+#'
+#'
+#' @param g list of form returned by `sk` (with entries 'gdim', 'gres', 'gval')
 #' @param pars list of fixed kernel parameters, with NAs indicating parameters to fit
 #' @param X numeric, vector, matrix, or NA, the mean or its linear predictors, passed to `sk_LL`
 #' @param iso logical, indicating to constrain the y and x kernel parameters to be the same
@@ -907,8 +1040,8 @@ sk_fit = function(g_obs, pars=NULL, X=NA, iso=TRUE, initial=NULL, quiet=FALSE,
 #'
 #' @examples
 #' # set up example grid and data
-#' g_obs = sk(10)
-#' g_obs$gval = rnorm(10^2)
+#' g_obs = sk_sim(100, )
+#' g_obs[] = rnorm(10^2)
 #' sk_optim(g_obs, quiet=TRUE)
 #'
 #' # repeat with one or more parameters fixed
@@ -922,7 +1055,7 @@ sk_fit = function(g_obs, pars=NULL, X=NA, iso=TRUE, initial=NULL, quiet=FALSE,
 #' sk_optim(g_obs, iso=T, quiet=TRUE)
 #' sk_optim(g_obs, pars, iso=T, quiet=TRUE)
 #'
-sk_optim = function(g_obs, pars='gau', X=0, iso=FALSE, control=list(), quiet=FALSE,
+sk_optim = function(g, pars='gau', X=0, iso=FALSE, control=list(), quiet=FALSE,
                        log_scale=TRUE, method='L-BFGS-B', lower=NULL, initial=NULL, upper=NULL)
 {
   # only L-BFGS-B accepts bounds, so log-scale is mandatory for other methods
@@ -932,7 +1065,8 @@ sk_optim = function(g_obs, pars='gau', X=0, iso=FALSE, control=list(), quiet=FAL
     log_scale = TRUE
   }
 
-  g_obs = sk(g_obs)
+  # validate grid input
+  g_obs = sk(g)
 
   # standardize input to pars and set NAs for missing values
   pars_fix = sk_pars_make(pars)
@@ -941,11 +1075,13 @@ sk_optim = function(g_obs, pars='gau', X=0, iso=FALSE, control=list(), quiet=FAL
   pars_fix_vec = sk_pars_update(pars_fix, iso=iso)
   nm_fit = names(pars_fix_vec)[ is.na(pars_fix_vec) ]
 
-  # TODO: when values are specified for all parameters in `pars`, use them as initial values
+  # when all parameters are supplied we fix none of them
   if( length(nm_fit) == 0 )
   {
-    # set initial value automatically here?
-    #initial = sk_pars_update(pars_fix)
+    # use supplied parameters as initial values
+    if(is.null(initial)) initial = pars_fix_vec
+
+    # copy NAs to all entries of fixed parameters list and update names
     pars_fix = sk_pars_update(pars_fix, rep(NA, length(pars_fix_vec)), iso=iso)
     pars_fix_vec = sk_pars_update(pars_fix, iso=iso)
     nm_fit = names(pars_fix_vec)
@@ -955,35 +1091,51 @@ sk_optim = function(g_obs, pars='gau', X=0, iso=FALSE, control=list(), quiet=FAL
   pars_df = sk_bds(pars_fix, g_obs)[nm_fit,]
   nm_expect = rownames(pars_df)
 
-  # overwrite default lower bounds any user supplied settings
-  if( !is.null(lower) )
+  # collect any user supplied bounds and replace defaults
+  bds_arg = list(lower=lower, initial=initial, upper=upper)
+  for(arg_nm in names(bds_arg))
   {
-    # check for valid names then replace only the named arguments
-    lower_nm = names(lower)
-    is_nm_valid = all(lower_nm %in% nm_expect)
-    if( !is_nm_valid | is.null(lower_nm) ) names(lower) = nm_expect[seq_along(lower)]
-    pars_df[names(lower), 'lower'] = lower
+    # skip when bounds argument not supplied
+    arg = bds_arg[[arg_nm]]
+    if( !is.null(arg) )
+    {
+      # check for valid names then replace only the named arguments
+      p_nm = names(arg)
+      is_nm_valid = all(p_nm %in% nm_expect)
+      if( !is_nm_valid | is.null(p_nm) ) names(arg) = nm_expect[seq_along(arg)]
+      pars_df[names(arg), arg_nm] = arg
+    }
   }
 
-  # do the same for initials
-  if( !is.null(initial) )
-  {
-    # check for valid names then replace only the named arguments
-    initial_nm = names(initial)
-    is_nm_valid = all(initial_nm %in% nm_expect)
-    if( !is_nm_valid | is.null(initial_nm) ) names(initial) = nm_expect[seq_along(initial)]
-    pars_df[names(initial), 'initial'] = initial
-  }
-
-  # and for uppers
-  if( !is.null(upper) )
-  {
-    # check for valid names then replace only the named arguments
-    upper_nm = names(upper)
-    is_nm_valid = all(upper_nm %in% nm_expect)
-    if( !is_nm_valid | is.null(upper_nm) ) names(upper) = nm_expect[seq_along(upper)]
-    pars_df[names(upper), 'upper'] = upper
-  }
+  # # overwrite default lower bounds any user supplied settings
+  # if( !is.null(lower) )
+  # {
+  #   # check for valid names then replace only the named arguments
+  #   lower_nm = names(lower)
+  #   is_nm_valid = all(lower_nm %in% nm_expect)
+  #   if( !is_nm_valid | is.null(lower_nm) ) names(lower) = nm_expect[seq_along(lower)]
+  #   pars_df[names(lower), 'lower'] = lower
+  # }
+  #
+  # # do the same for initials
+  # if( !is.null(initial) )
+  # {
+  #   # check for valid names then replace only the named arguments
+  #   initial_nm = names(initial)
+  #   is_nm_valid = all(initial_nm %in% nm_expect)
+  #   if( !is_nm_valid | is.null(initial_nm) ) names(initial) = nm_expect[seq_along(initial)]
+  #   pars_df[names(initial), 'initial'] = initial
+  # }
+  #
+  # # and for uppers
+  # if( !is.null(upper) )
+  # {
+  #   # check for valid names then replace only the named arguments
+  #   upper_nm = names(upper)
+  #   is_nm_valid = all(upper_nm %in% nm_expect)
+  #   if( !is_nm_valid | is.null(upper_nm) ) names(upper) = nm_expect[seq_along(upper)]
+  #   pars_df[names(upper), 'upper'] = upper
+  # }
 
   # switch to log-scale if requested
   if(log_scale)
@@ -993,7 +1145,7 @@ sk_optim = function(g_obs, pars='gau', X=0, iso=FALSE, control=list(), quiet=FAL
     pars_fix_vec = log(pars_fix_vec)
   }
 
-  # sacling constants passed to optimizer for internal use
+  # scaling constants passed to optimizer for internal use
   optim_scale = apply(pars_df, 1L, function(p) diff(range(p)))
 
   # TODO: check this

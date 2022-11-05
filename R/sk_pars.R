@@ -51,7 +51,7 @@ sk_pars = function(g, pars='gau', fill='initial')
 #' `g$gres * dim(g)`. Ranges are initialized to the geometric mean of the upper
 #' and lower bounds.
 #'
-#' Variance bounds centered around `var_obs`, which by default is set to the sample
+#' Variance bounds are centered around `var_obs`, which by default is set to the sample
 #' variance of the data in `g`. `eps` (measurement variance) and `psill` (partial
 #' sill) are both initialized to one half of `var_obs`, bounded above by `var_obs`
 #' times `var_mult`, and bounded below by a small positive number (`1e-6`). Note that
@@ -105,7 +105,7 @@ sk_bds = function(pars, g, var_obs=NULL, var_mult=2)
   g = sk(g)
 
   # compute sample variance if not supplied, or set to default 1 when there is no data
-  if( is.null(var_obs) ) var_obs = ifelse(is.null(g[['gval']]), 1, var(g[], na.rm=TRUE)) / 2
+  if( is.null(var_obs) ) var_obs = ifelse(is.null(g[['gval']]), 1, var(g[], na.rm=TRUE))
   if( is.na(var_obs) ) var_obs = 1
 
   # set up bounds for variance components

@@ -429,7 +429,8 @@ sk_nLL = function(p, g_obs, pars_fix, X=0, iso=FALSE, quiet=TRUE, log_scale=FALS
 {
   # note the grid object argument name is "g_obs" and not "g" (like in other functions)
   # because there seems to be a name conflict somewhere in the use of ... with
-  # `stats::optim` that causes it to fail to copy arguments named "g"
+  # `stats::optim` that causes it to fail to copy arguments named "g". Maybe a partial
+  # matching error with some other argument starting with the letter 'g'?
 
   # transform back from log scale
   if(log_scale)

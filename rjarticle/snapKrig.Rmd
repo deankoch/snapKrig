@@ -218,7 +218,7 @@ At the selected resolution each Meuse data point is mapped to a unique grid poin
 
 The snapped data are now in the format expected by the \CRANpkg{snapKrig}'s core modelling functions. A covariates data matrix `X` may optionally be supplied to account for linear trends, as we do later. First, by way of comparison, we will ignore covariates and fit a spatially constant trend.
 
-`sk_fit` attempts to automatically find maximum likelihood estimators (MLEs) for the mean and covariance parameters by numerically optimizing the full joint likelihood for all observed points in `g`, using R's `base::optim`.
+`sk_fit` attempts to automatically find maximum likelihood estimators (MLEs) for the mean and covariance parameters by numerically optimizing the full joint likelihood for all observed points in `g`, using R's `stats::optim`.
 
 ```{r meuse-ok, include=TRUE, echo=TRUE}
 # fit the covariance model and mean

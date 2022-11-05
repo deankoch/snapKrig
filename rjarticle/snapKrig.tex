@@ -146,7 +146,7 @@ At the selected resolution each Meuse data point is mapped to a unique grid poin
 
 The snapped data are now in the format expected by the \CRANpkg{snapKrig}'s core modelling functions. A covariates data matrix \texttt{X} may optionally be supplied to account for linear trends, as we do later. First, by way of comparison, we will ignore covariates and fit a spatially constant trend.
 
-\texttt{sk\_fit} attempts to automatically find maximum likelihood estimators (MLEs) for the mean and covariance parameters by numerically optimizing the full joint likelihood for all observed points in \texttt{g}, using R's \texttt{base::optim}.
+\texttt{sk\_fit} attempts to automatically find maximum likelihood estimators (MLEs) for the mean and covariance parameters by numerically optimizing the full joint likelihood for all observed points in \texttt{g}, using R's \texttt{stats::optim}.
 
 \begin{verbatim}
 # fit the covariance model and mean
@@ -309,7 +309,7 @@ Both AIC and BIC tell the same story here. Introducing a covariate (UK) improves
 \toprule
 covariates & isotropic & $c_y$ & $c_x$ & parameters & AIC & BIC & rMSPE & rMSPEb\\
 \midrule
-no & yes & gau & gau & 4 & 211.5 & 223.6 & 0.311 & 175.31\\
+no & yes & gau & gau & 4 & 209.9 & 222.1 & 0.311 & 175.31\\
 yes & yes & gau & gau & 5 & 178.1 & 193.3 & 0.272 & 155.22\\
 yes & no & gau & gau & 6 & 178.3 & 196.5 & 0.257 & 152.10\\
 yes & no & mat & mat & 8 & 181.9 & 206.3 & 0.249 & 148.75\\

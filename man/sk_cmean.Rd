@@ -63,19 +63,18 @@ In technical terms, \code{sk_cmean} estimates the mean of the signal process beh
 The nugget effect (\code{eps}) is therefore added to the diagonals of the covariance matrix for
 the observed points, but NOT to the corresponding entries of the cross-covariance matrix.
 This has the effect of smoothing (de-noising) predictions at observed locations, which means
-\code{sk_cmean} is not an exact interpolator (unless \code{eps=0}). Rather it makes a correction to
-the observed data to make it consistent with the surrounding signal.
+\code{sk_cmean} is not an exact interpolator (except in the limit \code{eps} -> \code{0}). Rather it makes
+a correction to the observed data to make it consistent with the surrounding signal.
 
-This is a good thing - real spatial datasets are almost always noisy, and we are usually
-interested in the signal, and not some version of it that is distorted by error. For more
-on this see section 3 of Cressie (1993), and in particular the discussion in 3.2.1 on the
-nugget effect.
+This is a good thing - real spatial datasets are almost always noisy, and we are typically
+interested in the signal, not some distorted version of it. For more on this see section 3
+of Cressie (1993), and in particular the discussion in 3.2.1 on the nugget effect.
 
 The covariance factorization \code{fac} can be pre-computed using \code{sk_var} with arguments
-\code{scaled=TRUE} and (if computing variance) \code{fac_method='eigen'}. This will speed up repeated
-calls where only the observed data values change (same covariance structure \code{pars}, and same
-\code{NA} structure in the data). Note that the kriging variance does not change in this case and
-only needs to be computed once.
+\code{scaled=TRUE} (and, if computing variance, \code{fac_method='eigen'}). This will speed up
+subsequent calls where only the observed data values have changed (same covariance structure
+\code{pars}, and same \code{NA} structure in the data). The kriging variance does not change
+in this case and only needs to be computed once.
 
 reference: "Statistics for Spatial Data" by Noel Cressie (1993)
 }

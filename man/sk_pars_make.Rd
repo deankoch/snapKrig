@@ -52,6 +52,7 @@ sk_corr
 
 Other parameter managers: 
 \code{\link{sk_bds}()},
+\code{\link{sk_fit}()},
 \code{\link{sk_kp}()},
 \code{\link{sk_pars_update}()},
 \code{\link{sk_pars}()},

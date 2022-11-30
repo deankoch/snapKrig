@@ -2,35 +2,89 @@
 % Please edit documentation in R/sk_estim.R
 \name{sk_fit}
 \alias{sk_fit}
-\title{Fit a covariance model to the data by maximum likelihood}
+\title{Fit a covariance model to an sk grid by maximum likelihood}
 \usage{
 sk_fit(
-  g_obs,
+  g,
   pars = NULL,
   X = NA,
   iso = TRUE,
-  initial = NULL,
+  n_max = 1000,
   quiet = FALSE,
   lower = NULL,
+  initial = NULL,
   upper = NULL,
-  n_max = 1000
+  log_scale = TRUE,
+  method = "L-BFGS-B",
+  control = list()
 )
 }
 \arguments{
-\item{g_obs}{todo}
+\item{g}{an sk grid (or list with entries 'gdim', 'gres', 'gval')}
 
-\item{pars}{todo}
+\item{pars}{covariance parameter list, with \code{NA}s indicating parameters to fit}
 
-\item{X}{todo}
+\item{X}{numeric (or NA), matrix, or sk grid of linear predictors, passed to \code{sk_LL}}
+
+\item{iso}{logical, indicating to constrain the y and x kernel parameters to be the same}
+
+\item{n_max}{integer, the maximum number of observations allowed}
+
+\item{quiet}{logical, indicating to suppress console output}
+
+\item{lower}{numeric vector, lower bounds for parameters}
+
+\item{initial}{numeric vector, initial values for parameters}
+
+\item{upper}{numeric vector, upper bounds for parameters}
+
+\item{log_scale}{logical, indicating to log-transform parameters for optimization}
+
+\item{method}{character, passed to \code{stats::optim} (default is 'L-BFGS-B')}
+
+\item{control}{list, passed to \code{stats::optim}}
 }
 \value{
-unfinished
+A parameter list in the form returned by \code{sk_pars} containing both fixed and
+fitted parameters. The data-frame of bounds and initial values is also included in the
+attribute 'bds'
 }
 \description{
-An automated model fitting procedure
+This uses \code{stats::optim} to minimize the log-likelihood function for a grid dataset
+\code{g} over the space of unknown parameters for the covariance function specified in \code{pars}.
+If only one parameter is unknown, the function instead uses \code{stats::optimize}.
 }
 \details{
-documentation unfinished
+\code{NA} entries in \code{pars} are treated as unknown parameters and fitted by the
+function, whereas non-\code{NA} entries are treated as fixed parameters (and not fitted).
+If none of the parameters in \code{pars} are \code{NA}, the function copies everything as initial
+values, then treats all parameters as unknown. \code{pars} can also be a character vector
+defining a pair of correlograms (see \code{?sk_pars}) in which case all covariance parameters
+are treated as unknown.
+
+Bounds and initial values are set automatically using \code{sk_bds}, unless they are otherwise
+specified in arguments \code{lower}, \code{initial}, \code{upper}. These should be vectors containing only
+the unknown parameters, \emph{ie.} they must exclude fixed parameters. Call
+\code{sk_update_pars(pars, iso=iso)} to get a template with the expected names and order.
+
+All parameters in the covariance models supported by \code{snapKrig} are strictly positive.
+Optimization is (by default) done on the parameter log-scale, and users can select a
+non-constrained \code{method} if they wish (\code{?stats::optim}). As the default method 'L-BFGS-B'
+is the only one that accepts bounds (\code{lower}, \code{initial}, \code{upper} are otherwise ignored)
+\code{method} is ignored when \code{log_scale=FALSE}.
+
+Note that the 'gxp' and 'mat' correlograms behave strangely with very small or very large
+shape parameters, so for them we recommended 'L-BFGS-B' only.
+
+When there is only one unknown parameter, the function uses \code{stats::optimize} instead of
+\code{stats::optim}. In this case all entries of \code{control} with the exception of 'tol' are
+ignored, as are bounds and initial values, and arguments to \code{method}.
+
+As a sanity check \code{n_max} sets a maximum for the number of observed grid points. This
+is to avoid accidental calls with very large datasets that would cause R to hang or crash.
+Set \code{n_max=Inf} (with caution) to bypass this check. Similarly the maximum number of
+iterations is set to \code{1e3} but this can be changed by manually setting 'maxit' in
+\code{control}.
 }
 \examples{
 
@@ -46,11 +100,14 @@ g_obs = sk_sim(g_empty, pars_src)
 sk_plot(g_obs)
 fit_result = sk_fit(g_obs, pars='gau')
 
-fit_result$pars |> sk_pars_update()
-pars_src |> sk_pars_update()
+# compare estimates with true values
+rbind(true=sk_pars_update(pars_src), fitted=sk_pars_update(fit_result))
 
-# check sequence of other psill values
-pars_out = fit_result$pars
+# extract bounds data frame
+attr(fit_result, 'bds')
+
+# check a sequence of other psill values
+pars_out = fit_result
 psill_test = ( 2^(seq(5) - 3) ) * pars_out[['psill']]
 LL_test = sapply(psill_test, function(s) sk_LL(modifyList(pars_out, list(psill=s)), g_obs) )
 plot(psill_test, LL_test)
@@ -60,12 +117,26 @@ print(data.frame(psill=psill_test, likelihood=LL_test))
 # repeat with most data missing
 n = prod(gdim)
 n_obs = 200
-gval = sk_sim(g_empty, pars_src, quiet=TRUE)
-g_obs = modifyList(g_empty, list(gval=gval))
-idx_obs = sample.int(prod(gdim), n_obs)
-g_miss = modifyList(g_obs, list(gval=rep(NA, n)))
-g_miss$gval[idx_obs] = g_obs$gval[idx_obs]
+g_obs = sk_sim(g_empty, pars_src)
+idx_miss = sample.int(length(g_empty), length(g_empty) - n_obs)
+g_miss = g_obs
+g_miss[idx_miss] = NA
 sk_plot(g_miss)
 
+# fit and compare
+fit_result = sk_fit(g_miss, pars='gau')
+rbind(true=sk_pars_update(pars_src), fitted=sk_pars_update(fit_result))
 
 }
+\seealso{
+sk sk_LL sk_nLL stats::optim stats::optimize
+
+Other parameter managers: 
+\code{\link{sk_bds}()},
+\code{\link{sk_kp}()},
+\code{\link{sk_pars_make}()},
+\code{\link{sk_pars_update}()},
+\code{\link{sk_pars}()},
+\code{\link{sk_to_string}()}
+}
+\concept{parameter managers}

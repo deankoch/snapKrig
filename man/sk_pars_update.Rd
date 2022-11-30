@@ -125,6 +125,7 @@ sk_pars_update(pars_filled, -seq(3), na_omit=TRUE)
 \seealso{
 Other parameter managers: 
 \code{\link{sk_bds}()},
+\code{\link{sk_fit}()},
 \code{\link{sk_kp}()},
 \code{\link{sk_pars_make}()},
 \code{\link{sk_pars}()},

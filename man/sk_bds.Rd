@@ -30,7 +30,7 @@ computed by taking the element-wise product of dimensions and resolution, ie
 \code{g$gres * dim(g)}. Ranges are initialized to the geometric mean of the upper
 and lower bounds.
 
-Variance bounds centered around \code{var_obs}, which by default is set to the sample
+Variance bounds are centered around \code{var_obs}, which by default is set to the sample
 variance of the data in \code{g}. \code{eps} (measurement variance) and \code{psill} (partial
 sill) are both initialized to one half of \code{var_obs}, bounded above by \code{var_obs}
 times \code{var_mult}, and bounded below by a small positive number (\code{1e-6}). Note that
@@ -57,6 +57,7 @@ sk_bds('mat', g, var_mult=1)
 sk
 
 Other parameter managers: 
+\code{\link{sk_fit}()},
 \code{\link{sk_kp}()},
 \code{\link{sk_pars_make}()},
 \code{\link{sk_pars_update}()},

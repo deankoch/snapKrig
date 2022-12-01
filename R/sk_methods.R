@@ -2,8 +2,6 @@
 #' Dean Koch, 2022
 #' S3 methods for sk grid list objects
 #'
-#' ## INDEXING METHODS
-#'
 #' Replace a sk list element (double-bracket assign)
 #'
 #' Replaces entries in the sk list object. This does no validation. If it did, then
@@ -18,7 +16,7 @@
 #'
 #' @examples
 #' # sk list elements are interrelated - for example gres must match spacing in gyx
-#' g = sk_validate(list(gval=rnorm(10^2), gdim=10, gres=0.5))
+#' g = sk_validate(list(gval=stats::rnorm(10^2), gdim=10, gres=0.5))
 #' g[['gres']] = 2 * g[['gres']]
 #' g[['gyx']] = lapply(g[['gyx']], function(x) 2*x)
 #' sk_validate(g)
@@ -46,6 +44,7 @@
 #' @param x a sk object
 #' @param i column-vectorized index
 #' @param j index of layer (only for multi-layer x)
+#' @param drop ignored
 #' @param ... ignored
 #'
 #' @return a list, vector, or matrix (see description)
@@ -53,7 +52,7 @@
 #'
 #' @examples
 #' # define a sk list and extract two of its elements
-#' g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+#' g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 #' g[c('gdim', 'gres')]
 #'
 #' # display all the grid data as a vector or a matrix
@@ -108,22 +107,21 @@
 #' vectorized grid data values. For multi-layer objects, specify the layer in j
 #' and supply a matrix for replacement
 #'
-#' @param x a sk object
-#' @param value the replacement values
+#' @param x an sk object
 #' @param i column-vectorized index
 #' @param j index of layer (only for multi-layer x)
-#' @param ... ignored
+#' @param value the replacement values
 #'
 #' @return the "sk" object with the specified subset replaced by value
 #' @export
 #'
 #' @examples
-#' g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+#' g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 #' print(g)
 #' g[1] = NA
 #' print(g)
 #'
-`[<-.sk` = function(x, i=NULL, j=NULL, value, ...) {
+`[<-.sk` = function(x, i=NULL, j=NULL, value) {
 
   # check if we are replacing everything
   replace_all = is.null(i) & is.null(j)
@@ -171,8 +169,7 @@
   }
 }
 
-#'
-#' ## GROUP GENERICS
+
 #'
 #' Math group generics
 #'
@@ -185,7 +182,7 @@
 #' @export
 #'
 #' @examples
-#' g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+#' g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 #' summary(g)
 #' summary(abs(g))
 #' summary(exp(g))
@@ -201,7 +198,7 @@ Math.sk = function(x, ...)
   if(.Generic %in% generic_ok)
   {
     # replace the data values and return the validated sk object
-    return( sk(modifyList(x, list(gval=get(.Generic)(x[], ...)))) )
+    return( sk(utils::modifyList(x, list(gval=get(.Generic)(x[], ...)))) )
 
   } else { stop(paste(.Generic, 'not defined for "sk" objects')) }
 }
@@ -227,7 +224,7 @@ Math.sk = function(x, ...)
 #' @export
 #'
 #' @examples
-#' g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+#' g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 #'
 #' # verify a trig identity using Ops and Math
 #' summary( cos(g)^2 + sin(g)^2 )
@@ -242,7 +239,7 @@ Math.sk = function(x, ...)
 Ops.sk = function(e1, e2)
 {
   # extract grid data as vector/matrix, saving a copy of sk object
-  if(is(e1, 'sk'))
+  if(methods::is(e1, 'sk'))
   {
     g_out = e1
     e1 = e1[]
@@ -255,7 +252,7 @@ Ops.sk = function(e1, e2)
     if(.Generic == '!')
     {
       # dispatch to default method then replace the data values in output sk object
-      return( sk(modifyList(g_out, list(gval=get(.Generic)(e1)))) )
+      return( sk(utils::modifyList(g_out, list(gval=get(.Generic)(e1)))) )
     }
 
     # first argument is implied to be zero (as in `-e1`)
@@ -265,7 +262,7 @@ Ops.sk = function(e1, e2)
   } else {
 
     # same as with first argument
-    if(is(e2, 'sk'))
+    if(methods::is(e2, 'sk'))
     {
       # overwrites copy of the first sk object
       g_out = e2
@@ -274,7 +271,7 @@ Ops.sk = function(e1, e2)
   }
 
   # dispatch to default method then replace the data values in output sk object
-  return( sk(modifyList(g_out, list(gval=get(.Generic)(e1, e2)))) )
+  return( sk(utils::modifyList(g_out, list(gval=get(.Generic)(e1, e2)))) )
 }
 
 #'
@@ -291,7 +288,7 @@ Ops.sk = function(e1, e2)
 #' @examples
 #'
 #' # make test example and verify common summary stats
-#' g = sk(gval=1+abs(rnorm(4^2)), gdim=4, gres=0.5)
+#' g = sk(gval=1+abs(stats::rnorm(4^2)), gdim=4, gres=0.5)
 #' sum(g) == sum(g[])
 #' min(g) == min(g[])
 #' max(g) == max(g[])
@@ -322,8 +319,6 @@ Summary.sk = function(..., na.rm=FALSE)
 }
 
 
-#'
-#' ## OTHER METHODS
 #'
 #' Auto-printing
 #'
@@ -384,27 +379,27 @@ print.sk = function(x, ...)
 #'
 #' All dimensional information (`gdim`, `gres`, `gyx`) is printed in the order y, x
 #'
-#' @param x a sk object
+#' @param object an sk object
 #' @param ... ignored
 #'
 #' @return nothing
 #' @export
 #'
 #' @examples
-#' g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+#' g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 #' summary(g)
 #' g[1] = NA
 #' summary(g)
 #'
-summary.sk = function(x, ...)
+summary.sk = function(object, ...)
 {
   # validate input and check for CRS
-  x = sk_validate(x)
-  has_crs = !is.null(x[['crs']])
+  object = sk_validate(object)
+  has_crs = !is.null(object[['crs']])
 
   # check grid size and number of NAs
-  n = length(x)
-  n_miss = sum(!x[['is_obs']])
+  n = length(object)
+  n_miss = sum(!object[['is_obs']])
   n_obs = n - n_miss
 
   # check range
@@ -412,13 +407,13 @@ summary.sk = function(x, ...)
   if( n_obs > 0 )
   {
     # for non-numeric types, print the type instead of the range
-    if( !is.numeric(x[['gval']]) )
+    if( !is.numeric(object[['gval']]) )
     {
-      range_msg = paste0('(', typeof(x[['gval']]), ' data)')
+      range_msg = paste0('(', typeof(object[['gval']]), ' data)')
 
     } else {
 
-      range_obs = range(x, na.rm=TRUE)
+      range_obs = range(object, na.rm=TRUE)
       n_sig = min(max(3, round(-log(diff(range_obs), base=10))), 12)
       range_string = paste(format(range_obs, digits=n_sig, trim=TRUE), collapse=', ')
       range_msg = paste0('range [', range_string, ']')
@@ -436,10 +431,10 @@ summary.sk = function(x, ...)
   if( n_miss == 0 ) title_msg = paste0('complete', crs_msg, 'sk grid')
 
   # check for matrix values
-  if(is.matrix(x[['gval']]))
+  if(is.matrix(object[['gval']]))
   {
     # indicate matrix values with layer
-    n_layer = ncol(x[['gval']])
+    n_layer = ncol(object[['gval']])
     layer_msg = paste0(n_layer, ' layer', ifelse(n_layer==1, '', 's'))
     title_msg = paste0(title_msg, '\n', layer_msg)
   }
@@ -450,11 +445,11 @@ summary.sk = function(x, ...)
   #cat('\n')
 
   # strings for grid dimensions and resolution
-  gdim_msg = paste('dimensions :', paste(x[['gdim']], collapse=' x '))
-  gres_msg = paste('resolution :', paste(x[['gres']], collapse=' x '))
+  gdim_msg = paste('dimensions :', paste(object[['gdim']], collapse=' x '))
+  gres_msg = paste('resolution :', paste(object[['gres']], collapse=' x '))
 
   # strings for extent
-  ext_list = apply(sk_coords(x, corner=TRUE, quiet=TRUE), 2, range, simplify=FALSE)
+  ext_list = apply(sk_coords(object, corner=TRUE, quiet=TRUE), 2, range, simplify=FALSE)
   ext_ranges = sapply(ext_list, function(e) paste0('[', paste(e, collapse=', '), ']'))
   ext_msg = paste('    extent :', paste(ext_ranges, collapse=' x '))
 
@@ -476,7 +471,7 @@ summary.sk = function(x, ...)
 #' @seealso sk_plot
 #'
 #' @examples
-#' g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+#' g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 #' plot(g)
 plot.sk = function(x, ...) sk_plot(x, ...)
 
@@ -492,7 +487,7 @@ plot.sk = function(x, ...) sk_plot(x, ...)
 #' @export
 #'
 #' @examples
-#' g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+#' g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 #' length(g)
 length.sk = function(x) as.integer(prod(x[['gdim']]))
 
@@ -506,7 +501,7 @@ length.sk = function(x) as.integer(prod(x[['gdim']]))
 #' @export
 #'
 #' @examples
-#' g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+#' g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 #' dim(g)
 dim.sk = function(x) x[['gdim']]
 
@@ -520,7 +515,7 @@ dim.sk = function(x) x[['gdim']]
 #' @export
 #'
 #' @examples
-#' g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+#' g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 #' g[c(1,3)] = NA
 #' is.na(g)
 is.na.sk = function(x)
@@ -539,17 +534,18 @@ is.na.sk = function(x)
 #' Returns a logical indicating if any of the grid points are NA
 #'
 #' @param x a sk object
+#' @param recursive ignored
 #'
 #' @return logical
 #' @export
 #'
 #' @examples
-#' g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+#' g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 #' anyNA(g)
 #' g[1] = NA
 #' anyNA(g)
 #'
-anyNA.sk = function(x)
+anyNA.sk = function(x, recursive)
 {
   # handle empty grids
   if( is.null(x[['gval']]) ) return(TRUE)
@@ -570,7 +566,7 @@ anyNA.sk = function(x)
 #' @export
 #'
 #' @examples
-#' g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+#' g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 #' mean(g) == mean(g[])
 #'
 mean.sk = function(x, ...)
@@ -597,7 +593,7 @@ mean.sk = function(x, ...)
 #' @export
 #'
 #' @examples
-#' g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+#' g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 #' as.vector(g)
 as.vector.sk = function(x, mode='any')
 {
@@ -624,7 +620,7 @@ as.vector.sk = function(x, mode='any')
 as.logical.sk = function(x, ...)
 {
   # replace the data values and return the sk object
-  modifyList(x, list(gval=as.logical(x[])))
+  utils::modifyList(x, list(gval=as.logical(x[])))
 }
 
 #' Coerce grid values to numeric (double type)
@@ -632,39 +628,39 @@ as.logical.sk = function(x, ...)
 #' This also adds support for as.numeric
 #'
 #' @param x a sk object
-#' @param mode passed to as.double
+#' @param ... further arguments to as.double
 #'
-#' @return a "sk" object with numeric data values
+#' @return an "sk" object with numeric data values
 #' @export
 #'
 #' @examples
-#' g = sk_validate(list(gval=sample(c(F,T), 4^2, replace=TRUE), gdim=4, gres=0.5))
+#' g = sk_validate(list(gval=sample(c(FALSE, TRUE), 4^2, replace=TRUE), gdim=4, gres=0.5))
 #' g[]
 #' as.numeric(g)[]
 #'
 as.double.sk = function(x, ...)
 {
   # replace the data values and return the sk object
-  modifyList(x, list(gval=as.double(x[], ...)))
+  utils::modifyList(x, list(gval=as.double(x[], ...)))
 }
 
 
 #' Coerce grid values to integer
 #'
 #' @param x a sk object
-#' @param mode passed to as.vector
+#' @param ... further arguments to as.integer
 #'
-#' @return a "sk" object with integer data values
+#' @return an "sk" object with integer data values
 #' @export
 #'
 #' @examples
-#' g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+#' g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 #' g[]
 #' as.integer(g)[]
 as.integer.sk = function(x, ...)
 {
   # replace the data values and return the sk object
-  modifyList(x, list(gval=as.integer(x[], ...)))
+  utils::modifyList(x, list(gval=as.integer(x[], ...)))
 }
 
 #' convert to matrix
@@ -682,7 +678,7 @@ as.integer.sk = function(x, ...)
 #' @export
 #'
 #' @examples
-#' g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+#' g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 #' plot(g)
 #' as.matrix(g)
 as.matrix.sk = function(x, rownames.force=NA, layer=1, ...)

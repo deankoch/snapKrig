@@ -9,16 +9,16 @@
 \arguments{
 \item{x}{a sk object}
 
-\item{mode}{passed to as.vector}
+\item{...}{further arguments to as.integer}
 }
 \value{
-a "sk" object with integer data values
+an "sk" object with integer data values
 }
 \description{
 Coerce grid values to integer
 }
 \examples{
-g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 g[]
 as.integer(g)[]
 }

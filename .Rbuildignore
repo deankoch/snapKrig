@@ -1,6 +1,13 @@
-^snapKrig\.Rproj$
+.gitignore
+^.*\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
+^README\.Rmd$
+^pkg_update\.R$
 ^rjarticle$
 ^vignettes$
-^pkg_update\.R$
+^vignettes_backup$
+^previous_versions$
+^NEWS\.md$
+^cran-comments.md$
+^CRAN-RELEASE$

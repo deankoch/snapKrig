@@ -26,6 +26,8 @@ sk_cmean(
 
 \item{out}{character, the return object, either 's' (sk grid) or 'v' (vector)}
 
+\item{fac_method}{character, either 'chol' or 'eigen'}
+
 \item{fac}{(optional) pre-computed factorization of covariance matrix scaled by partial sill}
 
 \item{quiet}{logical indicating to suppress console output}
@@ -129,7 +131,7 @@ range(g_ok_v - g_simple_v)
 
 # introduce some covariates
 n_betas = 3
-betas = rnorm(n_betas, 0, 10)
+betas = stats::rnorm(n_betas, 0, 10)
 g_X = sk_sim(g_all, pars, n_layer=n_betas-1L)
 g_lm_all = g_all + as.vector(cbind(1, g_X[]) \%*\% betas)
 g_lm_miss = g_lm_all

@@ -9,16 +9,16 @@
 \arguments{
 \item{x}{a sk object}
 
-\item{mode}{passed to as.double}
+\item{...}{further arguments to as.double}
 }
 \value{
-a "sk" object with numeric data values
+an "sk" object with numeric data values
 }
 \description{
 This also adds support for as.numeric
 }
 \examples{
-g = sk_validate(list(gval=sample(c(F,T), 4^2, replace=TRUE), gdim=4, gres=0.5))
+g = sk_validate(list(gval=sample(c(FALSE, TRUE), 4^2, replace=TRUE), gdim=4, gres=0.5))
 g[]
 as.numeric(g)[]
 

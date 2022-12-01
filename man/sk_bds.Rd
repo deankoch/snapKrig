@@ -44,11 +44,11 @@ large or small distances.
 \examples{
 gdim = c(10, 15)
 g = sk(gdim)
-g[] = rnorm(length(g))
+g[] = stats::rnorm(length(g))
 sk_bds('mat', g)
 
 # same result by passing in observed variance
-sk_bds('mat', g, var(g[]))
+sk_bds('mat', g, stats::var(g[]))
 
 # a less conservative bound for variance (only eps and psill affected)
 sk_bds('mat', g, var_mult=1)

@@ -4,10 +4,12 @@
 \alias{anyNA.sk}
 \title{Check for presence of grid points with missing data (NAs)}
 \usage{
-\method{anyNA}{sk}(x)
+\method{anyNA}{sk}(x, recursive)
 }
 \arguments{
 \item{x}{a sk object}
+
+\item{recursive}{ignored}
 }
 \value{
 logical
@@ -16,7 +18,7 @@ logical
 Returns a logical indicating if any of the grid points are NA
 }
 \examples{
-g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 anyNA(g)
 g[1] = NA
 anyNA(g)

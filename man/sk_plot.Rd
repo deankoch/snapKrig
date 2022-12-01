@@ -65,7 +65,7 @@ The following style parameters are optional:
 
 \describe{
 
-\item{adj, leg_just}{numeric in \link{0,1}: respectively, the horizontal justification
+\item{adj, leg_just}{numeric in [0,1]: respectively, the horizontal justification
 of the title and vertical justification of the color bar legend (default 0.5 for both) }
 
 \item{asp}{ numeric or NA: the aspect ratio parameter passed to graphics::image (default 1) }
@@ -135,16 +135,16 @@ plot(g, ij=TRUE)
 
 # example data: cosine of squared distance to top left corner
 z = apply(expand.grid(g$gyx), 1, \(z) cos( 2*sum(z^2) ) )
-g_example = modifyList(g, list(gval=z))
+g_example = utils::modifyList(g, list(gval=z))
 plot(g_example)
 
 # plot as matrix (changes default palette)
-plot(g_example, ij=T)
+plot(g_example, ij=TRUE)
 
 # alignment
-plot(g_example, ij=T, main='Centered title and legend by default')
-plot(g_example, ij=T, main='adj: left-right justification of title', adj=0)
-plot(g_example, ij=T, main='leg_just: top-bottom justification of color bar', leg_just=0)
+plot(g_example, ij=TRUE, main='Centered title and legend by default')
+plot(g_example, ij=TRUE, main='adj: left-right justification of title', adj=0)
+plot(g_example, ij=TRUE, main='leg_just: top-bottom justification of color bar', leg_just=0)
 
 # set the palette - see hcl.pals() for valid names
 pal = 'Zissou 1'
@@ -185,9 +185,9 @@ g_v = sk(v)
 plot(g_v, zlab=expression(V[ij]))
 
 # minimal versions
-plot(g_v, minimal=T)
-plot(g_v, minimal=T, leg=T)
-plot(g_v, minimal=T, col_grid='white', leg=TRUE)
+plot(g_v, minimal=TRUE)
+plot(g_v, minimal=TRUE, leg=TRUE)
+plot(g_v, minimal=TRUE, col_grid='white', leg=TRUE)
 
 # logical matrix plots are gray-scale by default
 plot(g_v > 1e-2, main='logical matrix')
@@ -207,11 +207,11 @@ sk_plot(z_char, gdim)
 g_sim = sk_sim(c(100, 50), n_layer=3)
 split.screen(c(1,3))
 screen(1)
-plot(g_sim, main='layer 1', layer=1, minimal=T, col_box='black')
+plot(g_sim, main='layer 1', layer=1, minimal=TRUE, col_box='black')
 screen(2)
-plot(g_sim, main='layer 2', layer=2, minimal=T, col_box='black')
+plot(g_sim, main='layer 2', layer=2, minimal=TRUE, col_box='black')
 screen(3)
-plot(g_sim, main='layer 3', layer=3, minimal=T, col_box='black')
+plot(g_sim, main='layer 3', layer=3, minimal=TRUE, col_box='black')
 
 }
 \seealso{

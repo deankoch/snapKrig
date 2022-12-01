@@ -18,7 +18,7 @@ numeric
 This calculates the mean over all layers (if any)
 }
 \examples{
-g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 mean(g) == mean(g[])
 
 }

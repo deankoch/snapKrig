@@ -42,7 +42,7 @@ case argument \code{gdim} must also be specified. This can be much faster with l
 
 # define a grid and example data
 gdim = c(50, 53)
-pars = modifyList(sk_pars(gdim), list(eps=1e-12))
+pars = utils::modifyList(sk_pars(gdim), list(eps=1e-12))
 g = sk_sim(gdim, pars)
 plot(g)
 

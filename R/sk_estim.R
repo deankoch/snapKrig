@@ -64,7 +64,7 @@
 #' gdim = c(45, 31)
 #' g_empty = sk(gdim)
 #' n = length(g_empty)
-#' pars = modifyList(sk_pars(g_empty, 'gau'), list(psill=2))
+#' pars = utils::modifyList(sk_pars(g_empty, 'gau'), list(psill=2))
 #'
 #' # generate spatial noise
 #' g_noise = sk_sim(g_empty, pars)
@@ -72,7 +72,7 @@
 #'
 #' # generate more spatial noise to use as covariates
 #' n_betas = 3
-#' betas = rnorm(n_betas, 0, 10)
+#' betas = stats::rnorm(n_betas, 0, 10)
 #' g_X = sk_sim(g_empty, pars, n_layer=n_betas-1L)
 #' X = g_X[]
 #' X_all = cbind(1, X)
@@ -318,6 +318,7 @@ sk_GLS = function(g, pars, X=NA, out='s', fac_method='eigen', fac=NULL)
 #' @param out character, the return object, either 's' (sk grid) or 'v' (vector)
 #' @param fac (optional) pre-computed factorization of covariance matrix scaled by partial sill
 #' @param quiet logical indicating to suppress console output
+#' @param fac_method character, either 'chol' or 'eigen'
 #'
 #' @return numeric matrix, the predicted values (or their variance)
 #'
@@ -377,7 +378,7 @@ sk_GLS = function(g, pars, X=NA, out='s', fac_method='eigen', fac=NULL)
 #'
 #' # introduce some covariates
 #' n_betas = 3
-#' betas = rnorm(n_betas, 0, 10)
+#' betas = stats::rnorm(n_betas, 0, 10)
 #' g_X = sk_sim(g_all, pars, n_layer=n_betas-1L)
 #' g_lm_all = g_all + as.vector(cbind(1, g_X[]) %*% betas)
 #' g_lm_miss = g_lm_all
@@ -560,7 +561,7 @@ sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NUL
     if(!is_sk) return(z_out)
 
     # or return in an sk grid object
-    return(sk(modifyList(g_out, list(gval=z_out))))
+    return(sk(utils::modifyList(g_out, list(gval=z_out))))
   }
 
   # compute GLS coefficients and resulting adjustments to predictor
@@ -603,7 +604,7 @@ sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NUL
     if(!is_sk) return(z_out)
 
     # or return in an sk grid object
-    return(sk(modifyList(g_out, list(gval=z_out))))
+    return(sk(utils::modifyList(g_out, list(gval=z_out))))
   }
 
   # verify that fac is an eigen-decomposition
@@ -684,7 +685,7 @@ sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NUL
     if(!is_sk) return(z_out)
 
     # return the sk grid
-    return(sk(modifyList(g_out, list(gval=z_out))))
+    return(sk(utils::modifyList(g_out, list(gval=z_out))))
   }
 
   stop('argument "what" not recognized')
@@ -757,7 +758,7 @@ sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NUL
 #' gdim = c(50, 53)
 #' g_empty = sk(gdim)
 #' pars_src = sk_pars(g_empty)
-#' pars_src = modifyList(pars_src, list(eps=runif(1, 0, 1e1), psill=runif(1, 0, 1e2)))
+#' pars_src = utils::modifyList(pars_src, list(eps=runif(1, 0, 1e1), psill=runif(1, 0, 1e2)))
 #' pars_src[['y']][['kp']] = pars_src[['x']][['kp']] = runif(1, 1, 50)
 #'
 #' # generate example data and fit to it
@@ -774,7 +775,7 @@ sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NUL
 #' # check a sequence of other psill values
 #' pars_out = fit_result
 #' psill_test = ( 2^(seq(5) - 3) ) * pars_out[['psill']]
-#' LL_test = sapply(psill_test, function(s) sk_LL(modifyList(pars_out, list(psill=s)), g_obs) )
+#' LL_test = sapply(psill_test, function(s) sk_LL(utils::modifyList(pars_out, list(psill=s)), g_obs) )
 #' plot(psill_test, LL_test)
 #' lines(psill_test, LL_test)
 #' print(data.frame(psill=psill_test, likelihood=LL_test))
@@ -880,15 +881,15 @@ sk_fit = function(g, pars=NULL, X=NA, iso=TRUE, n_max=1e3, quiet=FALSE,
   {
     # copy user supplied tolerance or set default
     tol = ifelse(is.null(control[['tol']]), .Machine$double.eps^0.25, control[['tol']])
-    optimize_out = optimize(f = sk_nLL,
-                            interval = pars_df[c('lower', 'upper')],
-                            tol = tol,
-                            g_obs = g_obs,
-                            pars_fix = pars_fix,
-                            X = X,
-                            iso = iso,
-                            log_scale = log_scale,
-                            quiet = quiet)
+    optimize_out = stats::optimize(f = sk_nLL,
+                                   interval = pars_df[c('lower', 'upper')],
+                                   tol = tol,
+                                   g_obs = g_obs,
+                                   pars_fix = pars_fix,
+                                   X = X,
+                                   iso = iso,
+                                   log_scale = log_scale,
+                                   quiet = quiet)
 
     # reshape the output list to be like output of optim
     optim_out = list(message='', par=optimize_out[['minimum']], value=optimize_out[['objective']])

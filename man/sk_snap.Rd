@@ -14,6 +14,8 @@ sk_snap(from, g = nrow(from), crop_from = FALSE, crop_g = FALSE, quiet = FALSE)
 \item{crop_from}{logical, indicating to omit points not overlying \code{g}.}
 
 \item{crop_g}{logical, indicating to trim \code{g} to the extent of \code{from}.}
+
+\item{quiet}{logical, suppresses console output}
 }
 \value{
 sk object, a grid containing the snapped points. These are assigned
@@ -55,7 +57,7 @@ bounding box of \code{g}.
 
 # functions to scale arbitrary inverval to (1, 2,... 100) and make color palettes
 num_to_cent = function(x) 1L + floor(99*( x-min(x) ) / diff(range(x)))
-my_pal = function(x) hcl.colors(x, 'Spectral', rev=T)
+my_pal = function(x) hcl.colors(x, 'Spectral', rev=TRUE)
 my_col = function(x) my_pal(1e2)[ num_to_cent(x) ]
 
 # create a grid object
@@ -71,7 +73,7 @@ from[['y']] = from[['y']] + 5
 from[['x']] = from[['x']] + 15
 
 # add example data values and plot
-from[['z']] = rnorm(length(from[['y']]))
+from[['z']] = stats::rnorm(length(from[['y']]))
 plot(g, reset=FALSE)
 graphics::points(from[c('x', 'y')], pch=16, col=my_col(from[['z']]))
 graphics::points(from[c('x', 'y')])
@@ -114,7 +116,7 @@ plot(g, reset=FALSE)
 plot(eg_sfc, add=TRUE)
 
 # generate example data and plot
-eg_sf = sf::st_sf(data.frame(z=rnorm(length(g_pts))), geometry=eg_sfc)
+eg_sf = sf::st_sf(data.frame(z=stats::rnorm(length(g_pts))), geometry=eg_sfc)
 plot(g, reset=FALSE)
 plot(eg_sf, pch=16, add=TRUE, pal=my_pal)
 plot(eg_sfc, add=TRUE)

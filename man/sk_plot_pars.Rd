@@ -11,6 +11,8 @@ sk_plot_pars(pars, g = NULL, simple = FALSE, ...)
 
 \item{g}{any object understood by \code{sk}}
 
+\item{simple}{logical, if FALSE the function adds some annotation}
+
 \item{...}{additional arguments passed to \code{sk_plot}}
 }
 \value{

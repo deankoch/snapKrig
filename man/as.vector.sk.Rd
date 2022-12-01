@@ -22,6 +22,6 @@ For multi-layer \code{x}, the first layer is returned.
 For single layer \code{x}, and with default \code{mode='any'}, this is the same as \code{x[]}
 }
 \examples{
-g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 as.vector(g)
 }

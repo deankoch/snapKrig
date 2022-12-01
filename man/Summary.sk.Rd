@@ -4,10 +4,10 @@
 \alias{summary.sk}
 \title{Grid summary}
 \usage{
-\method{summary}{sk}(x, ...)
+\method{summary}{sk}(object, ...)
 }
 \arguments{
-\item{x}{a sk object}
+\item{object}{an sk object}
 
 \item{...}{ignored}
 }
@@ -21,7 +21,7 @@ Prints detailed information about a grid
 All dimensional information (\code{gdim}, \code{gres}, \code{gyx}) is printed in the order y, x
 }
 \examples{
-g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 summary(g)
 g[1] = NA
 summary(g)

@@ -20,7 +20,7 @@ with `g[i]` instead of `g[["gval"]][i]`. For numeric indices, `g` now behaves li
 
 We also now have a large number of methods defined for "sk", including common generics like `summary`,
 `plot`, `length`, `range`, `mean`, `sum`, and much more. Group generics like `exp`, `*`, and `>` also have
-methods for `g` and will return a "sk" object directly (no more fussing with `modifyList`).
+methods for `g` and will return a "sk" object directly (no more fussing with `utils::modifyList`).
 
 # Coming soon
 

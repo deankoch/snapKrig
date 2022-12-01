@@ -65,11 +65,11 @@ number of parameters, the log-determinant \code{log_det}, and the quadratic form
 gdim = c(25, 12)
 n = prod(gdim)
 g_empty = g_lm = sk(gdim)
-pars = modifyList(sk_pars(g_empty, 'gau'), list(psill=0.7, eps=5e-2))
+pars = utils::modifyList(sk_pars(g_empty, 'gau'), list(psill=0.7, eps=5e-2))
 
 # generate some coefficients
 n_betas = 3
-betas = rnorm(n_betas)
+betas = stats::rnorm(n_betas)
 
 # generate covariates and complete data in grid and vector form
 g_X = sk_sim(g_empty, pars, n_layer=n_betas-1L)

@@ -42,7 +42,7 @@ and \code{g} can be recovered from \code{g_fine} with \code{sk_rescale(g_fine, u
 
 # example data
 gdim = c(50, 53)
-pars = modifyList(sk_pars(gdim), list(eps=1e-2))
+pars = utils::modifyList(sk_pars(gdim), list(eps=1e-2))
 g = sk_sim(gdim, pars)
 plot(g)
 

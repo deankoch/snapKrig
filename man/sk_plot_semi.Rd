@@ -58,7 +58,7 @@ The following style parameters are optional:
 
 \describe{
 
-\item{alpha_bin, alpha_model, alpha_bin_b, alpha_model_b}{numeric in \link{0,1}: respectively,
+\item{alpha_bin, alpha_model, alpha_bin_b, alpha_model_b}{numeric in [0,1]: respectively,
 the transparency of the fill color for circles and ribbons (default 0.3), and their borders
 (default 0.5 )}
 
@@ -87,11 +87,8 @@ ignored if \code{pars} not supplied)}
 \item{reset}{logical: indicates to reset graphical parameters to their original values
 when finished (default TRUE)}
 
-\item{unit_in, unit_out}{character: udunits2 strings specifying input distance units and
-the desired units for distances in the plot (default for both is meters 'm')}
-
 \item{xlab, ylab}{character: titles for the y and x axes. The default for y is
-'semi-variance (gamma)', and for x 'distance (<unit_out>)'}
+'semi-variance (gamma)', and for x 'distance'}
 
 }
 }
@@ -110,10 +107,6 @@ sk_plot_semi(g_empty, pars)
 # change annotations, sharpen ribbon border
 sk_plot_semi(g_empty, pars, main='title', xlab='x', ylab='y')
 sk_plot_semi(g_empty, pars, alpha_model_b=1, main='example title', xlab='x', ylab='y')
-
-# input and output units are 'm' by default
-sk_plot_semi(g_empty, pars, unit_out='km')
-sk_plot_semi(g_empty, pars, unit_in='km', unit_out='km')
 
 # generate sample data and sample semivariogram
 g_obs = sk_sim(g_empty, pars)

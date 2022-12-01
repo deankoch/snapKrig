@@ -18,7 +18,7 @@ nothing
 A wrapper for sk_plot
 }
 \examples{
-g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 plot(g)
 }
 \seealso{

@@ -17,6 +17,6 @@ Returns the total number of points in the grid, which is the product of the
 number of y and x grid lines (\code{gdim}).
 }
 \examples{
-g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 length(g)
 }

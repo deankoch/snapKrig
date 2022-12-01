@@ -39,7 +39,7 @@
 #'
 #' # example data
 #' gdim = c(50, 53)
-#' pars = modifyList(sk_pars(gdim), list(eps=1e-2))
+#' pars = utils::modifyList(sk_pars(gdim), list(eps=1e-2))
 #' g = sk_sim(gdim, pars)
 #' plot(g)
 #'
@@ -293,7 +293,7 @@ sk_vec2mat = function(k, gdim, out='matrix')
 #' # sk_sub_idx returns a logical vector indexing the point (or the index itself)
 #' is_pt = sk_sub_idx(gdim, ij_list)
 #' idx_sub = sk_sub_idx(gdim, ij_list, idx=TRUE)
-#' sk_plot(is_pt, gdim, col_grid='white', ij=T,  zlab='index', breaks=c('other', idx_sub))
+#' sk_plot(is_pt, gdim, col_grid='white', ij=TRUE,  zlab='index', breaks=c('other', idx_sub))
 #'
 #' # equivalent call when ij_list is a single point
 #' sk_mat2vec(ij_list, gdim) == idx_sub
@@ -301,8 +301,8 @@ sk_vec2mat = function(k, gdim, out='matrix')
 #' # if i or j are omitted from ij, the function returns the full row or column
 #' is_col2 = sk_sub_idx(gdim, ij_list['i'])
 #' is_row3 = sk_sub_idx(gdim, ij_list['j'])
-#' sk_plot(is_col2, gdim, col_grid='white', ij=T, breaks=c('other', paste('row', ij_list['i'])))
-#' sk_plot(is_row3, gdim, col_grid='white', ij=T, breaks=c('other', paste('col', ij_list['j'])))
+#' sk_plot(is_col2, gdim, col_grid='white', ij=TRUE, breaks=c('other', paste('row', ij_list['i'])))
+#' sk_plot(is_row3, gdim, col_grid='white', ij=TRUE, breaks=c('other', paste('col', ij_list['j'])))
 #'
 #' # indices in column-vectorized order
 #' sk_sub_idx(gdim, list(i=2), idx=TRUE)
@@ -323,7 +323,7 @@ sk_vec2mat = function(k, gdim, out='matrix')
 #' sk_plot(vec_order, gdim, col_grid='black', ij=TRUE, zlab='vector idx')
 #'
 #' # example with j indices supplied in reverse (descending) order
-#' ij_list_xflip = modifyList(ij_list, list(j=rev(ij_list[['j']])))
+#' ij_list_xflip = utils::modifyList(ij_list, list(j=rev(ij_list[['j']])))
 #'
 #' # ordering in the vectors ij$i and ij$j doesn't matter if `nosort=FALSE` or `idx=FALSE`
 #' identical(is_sg, sk_sub_idx(gdim, ij=ij_list, nosort=TRUE))
@@ -584,7 +584,7 @@ sk_sub = function(g, ij_keep=NULL, ij_rem=NULL, idx=FALSE, mirror=FALSE)
 #'
 #' # define a grid and example data
 #' gdim = c(50, 53)
-#' pars = modifyList(sk_pars(gdim), list(eps=1e-12))
+#' pars = utils::modifyList(sk_pars(gdim), list(eps=1e-12))
 #' g = sk_sim(gdim, pars)
 #' plot(g)
 #'

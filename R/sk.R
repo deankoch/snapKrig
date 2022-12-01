@@ -90,7 +90,7 @@
 #' eg_vec = as.numeric( gyx[[2]] %% gyx[[1]] )
 #' eg_mat = matrix(eg_vec, gdim)
 #' g = sk(eg_mat)
-#' plot(g, ij=T, zlab='j mod i')
+#' plot(g, ij=TRUE, zlab='j mod i')
 #'
 #' # y is in descending order
 #' plot(g, xlab='x = j', ylab='y = 26 - i', zlab='j mod i')
@@ -102,7 +102,7 @@
 #' # multi-layer example from matrix
 #' n_pt = prod(gdim)
 #' n_layer = 3
-#' mat_multi = matrix(rnorm(n_pt*n_layer), n_pt, n_layer)
+#' mat_multi = matrix(stats::rnorm(n_pt*n_layer), n_pt, n_layer)
 #' g_multi = sk(gdim=gdim, gval=mat_multi)
 #' summary(g_multi)
 #'
@@ -163,6 +163,12 @@ sk = function(..., vals=TRUE)
   is_raster_or_terra = inherits(g, c('RasterLayer', 'RasterStack')) | is_terra
   if( is_raster_or_terra )
   {
+    # make sure the required package is loaded
+    is_valid = if(is_terra) { requireNamespace('terra', quietly=TRUE) } else {
+      requireNamespace('raster', quietly=TRUE)
+    }
+    if(!is_valid) stop(paste('package', ifelse(is_terra, 'terra', 'raster'), 'not loaded'))
+
     # order in dimensions is y, x, like in sk
     gdim = dim(g)[1:2]
     gval = NULL
@@ -384,7 +390,7 @@ sk_make = function(g)
 #' @examples
 #'
 #' sk_validate(list(gdim=10, gres=0.5))
-#' sk_validate(list(gval=rnorm(10^2), gdim=10, gres=0.5))
+#' sk_validate(list(gval=stats::rnorm(10^2), gdim=10, gres=0.5))
 sk_validate = function(g, res_tol=1e-6)
 {
   # order of list entries in the output

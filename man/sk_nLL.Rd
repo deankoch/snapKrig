@@ -18,6 +18,8 @@ sk_nLL(p, g_obs, pars_fix, X = 0, iso = FALSE, quiet = TRUE, log_scale = FALSE)
 \item{iso}{logical, indicates to use identical kernels for x and y (\code{pars$x} is ignored)}
 
 \item{quiet}{logical indicating to suppress console output}
+
+\item{log_scale}{logical, indicates that \code{pars_fix} contains log-parameter values}
 }
 \value{
 numeric, the negative log-likelihood of \code{p} given data \code{g_obs}
@@ -39,7 +41,7 @@ the desired parameter list is being constructed correctly by testing with:
 }
 \examples{
 # set up example grid and data
-g = sk(gdim=10, gval=rnorm(10^2))
+g = sk(gdim=10, gval=stats::rnorm(10^2))
 
 # get some default parameters and vectorize them
 pars = sk_pars(g, 'gau')

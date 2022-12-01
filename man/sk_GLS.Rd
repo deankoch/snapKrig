@@ -69,7 +69,7 @@ using the corresponding block-diagonal V. This is equivalent to (but faster than
 gdim = c(45, 31)
 g_empty = sk(gdim)
 n = length(g_empty)
-pars = modifyList(sk_pars(g_empty, 'gau'), list(psill=2))
+pars = utils::modifyList(sk_pars(g_empty, 'gau'), list(psill=2))
 
 # generate spatial noise
 g_noise = sk_sim(g_empty, pars)
@@ -77,7 +77,7 @@ plot(g_noise)
 
 # generate more spatial noise to use as covariates
 n_betas = 3
-betas = rnorm(n_betas, 0, 10)
+betas = stats::rnorm(n_betas, 0, 10)
 g_X = sk_sim(g_empty, pars, n_layer=n_betas-1L)
 X = g_X[]
 X_all = cbind(1, X)

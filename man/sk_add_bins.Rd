@@ -23,7 +23,7 @@ or, if \code{probs} is supplied, \code{stats::quantile}.
 }
 \details{
 By default, the function sets \code{probs} to a sequence of length \code{1+n_bin} evenly splitting
-the interval \link{0,1} to ensure approximately equal sample sizes for each bin. Setting
+the interval [0,1] to ensure approximately equal sample sizes for each bin. Setting
 \code{probs=NA} instead sets the bin endpoints such that the range of distances is split
 evenly (note this may produce empty bins)
 

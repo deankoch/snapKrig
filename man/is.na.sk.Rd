@@ -16,7 +16,7 @@ a logical vector the same length as x
 Returns a logical vector indicating which grid points have NA values assigned
 }
 \examples{
-g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 g[c(1,3)] = NA
 is.na(g)
 }

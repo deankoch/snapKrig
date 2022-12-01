@@ -59,11 +59,11 @@
 #' gdim = c(25, 12)
 #' n = prod(gdim)
 #' g_empty = g_lm = sk(gdim)
-#' pars = modifyList(sk_pars(g_empty, 'gau'), list(psill=0.7, eps=5e-2))
+#' pars = utils::modifyList(sk_pars(g_empty, 'gau'), list(psill=0.7, eps=5e-2))
 #'
 #' # generate some coefficients
 #' n_betas = 3
-#' betas = rnorm(n_betas)
+#' betas = stats::rnorm(n_betas)
 #'
 #' # generate covariates and complete data in grid and vector form
 #' g_X = sk_sim(g_empty, pars, n_layer=n_betas-1L)
@@ -378,6 +378,7 @@ sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, out='l')
 #' @param X numeric, vector, matrix, or NA, the mean or its linear predictors, passed to `sk_LL`
 #' @param iso logical, indicates to use identical kernels for x and y (`pars$x` is ignored)
 #' @param quiet logical indicating to suppress console output
+#' @param log_scale logical, indicates that `pars_fix` contains log-parameter values
 #'
 #' @return numeric, the negative log-likelihood of `p` given data `g_obs`
 #' @export
@@ -388,7 +389,7 @@ sk_LL = function(pars, g, X=0, fac_method='chol', fac=NULL, quiet=TRUE, out='l')
 #'
 #' @examples
 #' # set up example grid and data
-#' g = sk(gdim=10, gval=rnorm(10^2))
+#' g = sk(gdim=10, gval=stats::rnorm(10^2))
 #'
 #' # get some default parameters and vectorize them
 #' pars = sk_pars(g, 'gau')
@@ -468,6 +469,7 @@ sk_nLL = function(p, g_obs, pars_fix, X=0, iso=FALSE, quiet=TRUE, log_scale=FALS
 #' @param pars list, covariance parameters in form returned by `sk_pars`
 #' @param fac list, optional pre-computed factorization of component correlation matrices
 #' @param n_layer positive integer, the number of draws to return
+#' @param sk_out logical, if TRUE an sk grid is returned
 #'
 #' @return sk grid or its vectorized form (vector for single-layer case, matrix for multi-layer case)
 #' @export
@@ -487,12 +489,12 @@ sk_nLL = function(p, g_obs, pars_fix, X=0, iso=FALSE, quiet=TRUE, log_scale=FALS
 #' plot(g_sim)
 #'
 #' # repeat with smaller nugget effect for less noisy data
-#' pars_smooth = modifyList(pars_gau, list(eps=1e-2))
+#' pars_smooth = utils::modifyList(pars_gau, list(eps=1e-2))
 #' g_sim = sk_sim(g, pars_smooth)
 #' plot(g_sim)
 #'
 #' # the nugget effect can be very small, but users should avoid eps=0
-#' pars_smoother = modifyList(pars_gau, list(eps=1e-12))
+#' pars_smoother = utils::modifyList(pars_gau, list(eps=1e-12))
 #' g_sim = sk_sim(g, pars_smoother)
 #' plot(g_sim)
 #'
@@ -502,7 +504,7 @@ sk_nLL = function(p, g_obs, pars_fix, X=0, iso=FALSE, quiet=TRUE, log_scale=FALS
 #' plot(g_sim_multi, layer=2)
 #' plot(g_sim_multi, layer=3)
 #'
-sk_sim = function(g, pars=sk_pars(g), n_layer=1, fac=NULL, out='sk')
+sk_sim = function(g, pars=sk_pars(g), n_layer=1, fac=NULL, sk_out=TRUE)
 {
   # extract as sk object if not already a list
   if( !is.list(g) ) g = sk(g)
@@ -519,12 +521,12 @@ sk_sim = function(g, pars=sk_pars(g), n_layer=1, fac=NULL, out='sk')
   if( any(unlist(is_ev_negative)) ) stop('component correlation matrix has negative eigenvalue(s)')
 
   # multiply random iid normal vector(s) by covariance matrix square root
-  seed_noise = matrix(rnorm(n*n_layer), ncol=n_layer)
+  seed_noise = matrix(stats::rnorm(n*n_layer), ncol=n_layer)
   sim_gval = sk_var_mult(seed_noise, pars, fac=fac, fac_method='eigen', p=1/2)
 
   # build the sk object to return
   if(n_layer==1) sim_gval = as.vector(sim_gval)
-  if(out != 'sk') return(sim_gval)
-  return( sk(modifyList(g, list(idx_grid=NULL, gval=sim_gval))) )
+  if(!sk_out) return(sim_gval)
+  return( sk(utils::modifyList(g, list(idx_grid=NULL, gval=sim_gval))) )
 }
 

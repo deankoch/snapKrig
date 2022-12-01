@@ -230,7 +230,7 @@ sk_sample_pt = function(g, n=1e2, lag_max=0, up=0, over=FALSE, sk_out=TRUE, seed
   is_obs = !is.na(g)
 
   # extract only the first layer from multi-layer objects
-  if( is.matrix(g[['gval']]) ) g = sk(modifyList(g, list(gval=g[,1L])))
+  if( is.matrix(g[['gval']]) ) g = sk(utils::modifyList(g, list(gval=g[,1L])))
 
   # all-missing case treated as all-observed
   all_missing = !any(is_obs)
@@ -345,7 +345,7 @@ sk_sample_pt = function(g, n=1e2, lag_max=0, up=0, over=FALSE, sk_out=TRUE, seed
 
     # merge them into a multi-layer object
     g_sub = sk_sub(g, ij_list[[1]])
-    return( sk(modifyList(g_sub, list(gval=g_sub_mat))) )
+    return( sk(utils::modifyList(g_sub, list(gval=g_sub_mat))) )
   }
 
   # loop over boxes, computing index of all points in Moore neighbourhood
@@ -466,10 +466,10 @@ sk_sample_vg = function(g, n_pp=1e4, idx=NULL, n_bin=25, n_layer_max=NA, quiet=F
   ij_obs = sk_vec2mat(idx, dim(g))
 
   # anonymous function to compute lower triangular part of a 1d distance matrix
-  vec_dist = function(x) c(stats::dist(x, method='manhattan', diag=T))
+  vec_dist = function(x) c(stats::dist(x, method='manhattan', diag=TRUE))
 
   # compute dimension-wise grid line (i,j) distances between all point pairs
-  dmat = apply(ij_obs, 2, vec_dist, simplify=F)
+  dmat = apply(ij_obs, 2, vec_dist, simplify=FALSE)
   names(dmat) = c('di', 'dj')
 
   # indexes the distance matrix entries vectorized by the `c` in vec_dist
@@ -536,7 +536,7 @@ sk_sample_vg = function(g, n_pp=1e4, idx=NULL, n_bin=25, n_layer_max=NA, quiet=F
 #' or, if `probs` is supplied, `stats::quantile`.
 #'
 #' By default, the function sets `probs` to a sequence of length `1+n_bin` evenly splitting
-#' the interval [0,1] to ensure approximately equal sample sizes for each bin. Setting
+#' the interval \[0,1\] to ensure approximately equal sample sizes for each bin. Setting
 #' `probs=NA` instead sets the bin endpoints such that the range of distances is split
 #' evenly (note this may produce empty bins)
 #'
@@ -588,5 +588,5 @@ sk_add_bins = function(vg, n_bin=25, probs=NULL)
   if( anyNA(probs) ) return( utils::modifyList(vg, list( bin=as.integer(cut(d, breaks=n_bin))) ) )
 
   # otherwise find bins of roughly equal content
-  return( utils::modifyList(vg, list(bin=findInterval(d, quantile(d, probs=probs)))) )
+  return( utils::modifyList(vg, list(bin=findInterval(d, stats::quantile(d, probs=probs)))) )
 }

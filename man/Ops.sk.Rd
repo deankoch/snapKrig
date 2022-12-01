@@ -28,7 +28,7 @@ operations on two grids representing different areas, so long as they have the
 same \code{gdim}.
 }
 \examples{
-g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 
 # verify a trig identity using Ops and Math
 summary( cos(g)^2 + sin(g)^2 )

@@ -70,12 +70,12 @@ n = prod(gdim)
 n_obs = floor(n/3)
 idx_obs = sort(sample.int(n, n_obs))
 g = g_empty = sk(gdim)
-g[idx_obs] = rnorm(n_obs)
+g[idx_obs] = stats::rnorm(n_obs)
 plot(g)
 
 # example kernel
 psill = 0.3
-pars = modifyList(sk_pars(g), list(psill=psill))
+pars = utils::modifyList(sk_pars(g), list(psill=psill))
 
 # plot the covariance matrix for observed data, its cholesky factor and eigen-decomposition
 V_obs = sk_var(g, pars)
@@ -113,12 +113,12 @@ str(sk_var(g_empty, pars, fac_method='eigen'))
 
 # test quadratic form with X
 nX = 3
-X_all = cbind(1, matrix(rnorm(nX * n), ncol=nX))
+X_all = cbind(1, matrix(stats::rnorm(nX * n), ncol=nX))
 cprod_all = crossprod(X_all, chol2inv(chol(V_full))) \%*\% X_all
 abs(max(sk_var(g_empty, pars, X=X_all) - cprod_all ))
 
 # test products with inverse of quadratic form with X
-mult_test = rnorm(nX + 1)
+mult_test = stats::rnorm(nX + 1)
 cprod_all_inv = chol2inv(chol(cprod_all))
 cprod_all_inv_chol = sk_var(g_empty, pars, X=X_all, scaled=TRUE, fac_method='eigen')
 sk_var_mult(mult_test, pars, fac=cprod_all_inv_chol) - cprod_all_inv \%*\% mult_test
@@ -129,7 +129,7 @@ cprod_obs = crossprod(X_obs, chol2inv(chol(V_obs))) \%*\% X_obs
 
 abs(max(sk_var(g, pars, X=X_obs) - cprod_obs ))
 cprod_obs_inv = chol2inv(chol(cprod_obs))
-cprod_obs_inv_chol = sk_var(g, pars, X=X_obs, scaled=T, fac_method='eigen')
+cprod_obs_inv_chol = sk_var(g, pars, X=X_obs, scaled=TRUE, fac_method='eigen')
 sk_var_mult(mult_test, pars, fac=cprod_obs_inv_chol) - cprod_obs_inv \%*\% mult_test
 
 # `scaled` indicates to divide matrix by psill

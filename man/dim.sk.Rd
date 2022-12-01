@@ -16,6 +16,6 @@ integer vector
 Returns \code{gdim}, the number of y and x grid lines, in that order.
 }
 \examples{
-g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 dim(g)
 }

@@ -2,8 +2,7 @@
 % Please edit documentation in R/sk_methods.R
 \name{print.sk}
 \alias{print.sk}
-\title{\subsection{OTHER METHODS}{
-}}
+\title{Auto-printing}
 \usage{
 \method{print}{sk}(x, ...)
 }
@@ -16,11 +15,9 @@
 nothing
 }
 \description{
-Auto-printing
+Prints dimensions and indicates if the grid has values assigned
 }
 \details{
-Prints dimensions and indicates if the grid has values assigned
-
 This prints "(not validated)" if the sk object has no \code{is_na} entry,
 to remind users to run \code{sk_validate}.
 }

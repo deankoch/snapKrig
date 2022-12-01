@@ -2,8 +2,7 @@
 % Please edit documentation in R/sk_methods.R
 \name{Math.sk}
 \alias{Math.sk}
-\title{\subsection{GROUP GENERICS}{
-}}
+\title{Math group generics}
 \usage{
 \method{Math}{sk}(x, ...)
 }
@@ -16,13 +15,10 @@
 the "sk" object with data values transformed accordingly
 }
 \description{
-Math group generics
-}
-\details{
 All except the \code{cumsum} family are supported
 }
 \examples{
-g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 summary(g)
 summary(abs(g))
 summary(exp(g))

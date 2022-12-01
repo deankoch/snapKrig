@@ -145,6 +145,7 @@ sk_export = function(g, template='terra')
 #' @param g any object accepted or returned by `sk`, the destination grid
 #' @param crop_from logical, indicating to omit points not overlying `g`.
 #' @param crop_g logical, indicating to trim `g` to the extent of `from`.
+#' @param quiet logical, suppresses console output
 #'
 #' @return sk object, a grid containing the snapped points. These are assigned
 #' the corresponding data value in `from`, or if  `from` has no data, an integer mapping
@@ -157,7 +158,7 @@ sk_export = function(g, template='terra')
 #'
 #' # functions to scale arbitrary inverval to (1, 2,... 100) and make color palettes
 #' num_to_cent = function(x) 1L + floor(99*( x-min(x) ) / diff(range(x)))
-#' my_pal = function(x) hcl.colors(x, 'Spectral', rev=T)
+#' my_pal = function(x) grDevices::hcl.colors(x, 'Spectral', rev=TRUE)
 #' my_col = function(x) my_pal(1e2)[ num_to_cent(x) ]
 #'
 #' # create a grid object
@@ -173,7 +174,7 @@ sk_export = function(g, template='terra')
 #' from[['x']] = from[['x']] + 15
 #'
 #' # add example data values and plot
-#' from[['z']] = rnorm(length(from[['y']]))
+#' from[['z']] = stats::rnorm(length(from[['y']]))
 #' plot(g, reset=FALSE)
 #' graphics::points(from[c('x', 'y')], pch=16, col=my_col(from[['z']]))
 #' graphics::points(from[c('x', 'y')])
@@ -216,7 +217,7 @@ sk_export = function(g, template='terra')
 #' plot(eg_sfc, add=TRUE)
 #'
 #' # generate example data and plot
-#' eg_sf = sf::st_sf(data.frame(z=rnorm(length(g_pts))), geometry=eg_sfc)
+#' eg_sf = sf::st_sf(data.frame(z=stats::rnorm(length(g_pts))), geometry=eg_sfc)
 #' plot(g, reset=FALSE)
 #' plot(eg_sf, pch=16, add=TRUE, pal=my_pal)
 #' plot(eg_sfc, add=TRUE)
@@ -255,7 +256,7 @@ sk_snap = function(from, g=nrow(from), crop_from=FALSE, crop_g=FALSE, quiet=FALS
 
   # set up grid dimensions later when only gres specified (set dummy dimensions now)
   auto_gdim = ifelse(auto_gyx & is.list(g), ('gres' %in% names(g)) & !('gdim' %in% names(g)), FALSE)
-  if(auto_gdim & is.list(g) ) g = modifyList(g, list(gdim=c(y=2L, x=2L)))
+  if(auto_gdim & is.list(g) ) g = utils::modifyList(g, list(gdim=c(y=2L, x=2L)))
 
   # unpack g as snapKrig grid list but don't copy data values
   g = sk(g, vals=FALSE)
@@ -429,8 +430,9 @@ sk_snap = function(from, g=nrow(from), crop_from=FALSE, crop_g=FALSE, quiet=FALS
 #'
 #' @param g any object accepted by `sk`
 #' @param out character indicating return value type, either 'list', 'matrix', or 'sf'
-#' @param corners logical, indicates to only return the corner points
 #' @param na_omit logical, indicates to return only locations of observed points
+#' @param corner logical, indicates to return only the four corner points
+#' @param quiet logical, suppresses console output
 #'
 #' @return a matrix, list, or sf point collection in column vectorized order
 #' @export
@@ -454,7 +456,7 @@ sk_snap = function(from, g=nrow(from), crop_from=FALSE, crop_g=FALSE, quiet=FALS
 #' sk_coords(g, corner=TRUE, out='list')
 #'
 #' # repeat with multi-layer example
-#' g_multi = sk(modifyList(g, list(gval = cbind(g[], 2*g[]))))
+#' g_multi = sk(utils::modifyList(g, list(gval = cbind(g[], 2*g[]))))
 #' all.equal(sk_coords(g_multi, na_omit=TRUE), sk_coords(g_complete)[idx_obs,])
 #' sk_coords(g_multi, corner=TRUE)
 #'
@@ -516,7 +518,8 @@ sk_coords = function(g, out='matrix', corner=FALSE, na_omit=FALSE, quiet=FALSE)
   # console message
   if( !quiet )
   {
-    msg_get = ifelse(length(idx_get) == length(idx_get), 'all', paste(n_get, 'of'))
+    n_get = length(idx_get)
+    msg_get = ifelse(length(g) == n_get, 'all', paste(n_get, 'of'))
     cat(paste('processing', msg_get, length(g), 'grid points...\n'))
   }
 

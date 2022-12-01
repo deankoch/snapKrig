@@ -60,10 +60,10 @@ rel_err = \(x, y) ifelse(y == 0, 0, abs( (x - y) / y ) )
 gdim = c(10, 15)
 g = sk(gdim)
 n = length(g)
-g[] = rnorm(n)
+g[] = stats::rnorm(n)
 
 # define covariance parameters
-pars = modifyList(sk_pars(g, 'gau'), list(psill=2, eps=0.5))
+pars = utils::modifyList(sk_pars(g, 'gau'), list(psill=2, eps=0.5))
 
 # COMPLETE CASE
 
@@ -76,14 +76,14 @@ max( rel_err(sk_var_mult(g, pars), out_reference) )
 rel_err(sk_var_mult(g, pars, quad=TRUE), out_reference_quad)
 
 # pre-computed factorization on separable components of correlation matrix
-fac_corr = sk_var(modifyList(g, list(gval=NULL)), pars, fac_method='eigen', sep=TRUE)
+fac_corr = sk_var(utils::modifyList(g, list(gval=NULL)), pars, fac_method='eigen', sep=TRUE)
 max( rel_err(sk_var_mult(g, pars, fac=fac_corr), out_reference) )
 rel_err(sk_var_mult(g, pars, fac=fac_corr, quad=TRUE), out_reference_quad)
 
 # matrix powers
 out_reference = V \%*\% g[]
 max( rel_err(sk_var_mult(g, pars, fac_method='eigen', p=1), out_reference) )
-rel_err(sk_var_mult(g, pars, fac_method='eigen', p=1, quad=T), t(g[]) \%*\% out_reference)
+rel_err(sk_var_mult(g, pars, fac_method='eigen', p=1, quad=TRUE), t(g[]) \%*\% out_reference)
 
 # INCOMPLETE CASE
 

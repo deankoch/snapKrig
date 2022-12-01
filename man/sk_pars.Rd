@@ -10,6 +10,8 @@ sk_pars(g, pars = "gau", fill = "initial")
 \item{g}{list, a sk grid list (or any other object accepted by \code{sk})}
 
 \item{pars}{character or list defining kernels accepted by \code{sk_pars_make}}
+
+\item{fill}{character, either 'initial', 'lower' or 'upper'}
 }
 \value{
 a list defining the Kronecker covariance parameters

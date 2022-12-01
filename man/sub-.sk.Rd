@@ -13,6 +13,8 @@
 
 \item{j}{index of layer (only for multi-layer x)}
 
+\item{drop}{ignored}
+
 \item{...}{ignored}
 }
 \value{
@@ -33,7 +35,7 @@ layers, as a matrix.
 }
 \examples{
 # define a sk list and extract two of its elements
-g = sk_validate(list(gval=rnorm(4^2), gdim=4, gres=0.5))
+g = sk_validate(list(gval=stats::rnorm(4^2), gdim=4, gres=0.5))
 g[c('gdim', 'gres')]
 
 # display all the grid data as a vector or a matrix

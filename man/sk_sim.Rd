@@ -4,7 +4,7 @@
 \alias{sk_sim}
 \title{Random draw from multivariate normal distribution for sk grids}
 \usage{
-sk_sim(g, pars = sk_pars(g), n_layer = 1, fac = NULL, out = "sk")
+sk_sim(g, pars = sk_pars(g), n_layer = 1, fac = NULL, sk_out = TRUE)
 }
 \arguments{
 \item{g}{an sk object or any grid object accepted by \code{sk}}
@@ -14,6 +14,8 @@ sk_sim(g, pars = sk_pars(g), n_layer = 1, fac = NULL, out = "sk")
 \item{n_layer}{positive integer, the number of draws to return}
 
 \item{fac}{list, optional pre-computed factorization of component correlation matrices}
+
+\item{sk_out}{logical, if TRUE an sk grid is returned}
 }
 \value{
 sk grid or its vectorized form (vector for single-layer case, matrix for multi-layer case)
@@ -44,12 +46,12 @@ g_sim = sk_sim(g, pars_gau)
 plot(g_sim)
 
 # repeat with smaller nugget effect for less noisy data
-pars_smooth = modifyList(pars_gau, list(eps=1e-2))
+pars_smooth = utils::modifyList(pars_gau, list(eps=1e-2))
 g_sim = sk_sim(g, pars_smooth)
 plot(g_sim)
 
 # the nugget effect can be very small, but users should avoid eps=0
-pars_smoother = modifyList(pars_gau, list(eps=1e-12))
+pars_smoother = utils::modifyList(pars_gau, list(eps=1e-12))
 g_sim = sk_sim(g, pars_smoother)
 plot(g_sim)
 

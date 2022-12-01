@@ -92,7 +92,7 @@ iterations is set to \code{1e3} but this can be changed by manually setting 'max
 gdim = c(50, 53)
 g_empty = sk(gdim)
 pars_src = sk_pars(g_empty)
-pars_src = modifyList(pars_src, list(eps=runif(1, 0, 1e1), psill=runif(1, 0, 1e2)))
+pars_src = utils::modifyList(pars_src, list(eps=runif(1, 0, 1e1), psill=runif(1, 0, 1e2)))
 pars_src[['y']][['kp']] = pars_src[['x']][['kp']] = runif(1, 1, 50)
 
 # generate example data and fit to it
@@ -109,7 +109,7 @@ attr(fit_result, 'bds')
 # check a sequence of other psill values
 pars_out = fit_result
 psill_test = ( 2^(seq(5) - 3) ) * pars_out[['psill']]
-LL_test = sapply(psill_test, function(s) sk_LL(modifyList(pars_out, list(psill=s)), g_obs) )
+LL_test = sapply(psill_test, function(s) sk_LL(utils::modifyList(pars_out, list(psill=s)), g_obs) )
 plot(psill_test, LL_test)
 lines(psill_test, LL_test)
 print(data.frame(psill=psill_test, likelihood=LL_test))

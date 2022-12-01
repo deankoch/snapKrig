@@ -85,11 +85,11 @@ sk_pars_update(pars_filled)
 sk_pars_update(pars_filled, na_omit=TRUE)
 
 # when updating parameters, NAs in pars identify parameters to receive the new values
-p_update = abs(rnorm(2))
+p_update = abs(stats::rnorm(2))
 sk_pars_update(pars_filled, p_update, na_omit=TRUE)
 
 # when na_omit=FALSE, all parameters in pars are updated
-p_update = rnorm(5)
+p_update = stats::rnorm(5)
 sk_pars_update(pars_filled, p_update)
 
 # iso=TRUE is for when x kernel parameters are assigned values from the y kernel

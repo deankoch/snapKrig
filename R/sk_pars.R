@@ -13,6 +13,7 @@
 #'
 #' @param g list, a sk grid list (or any other object accepted by `sk`)
 #' @param pars character or list defining kernels accepted by `sk_pars_make`
+#' @param fill character, either 'initial', 'lower' or 'upper'
 #'
 #' @return a list defining the Kronecker covariance parameters
 #'
@@ -77,11 +78,11 @@ sk_pars = function(g, pars='gau', fill='initial')
 #' @examples
 #' gdim = c(10, 15)
 #' g = sk(gdim)
-#' g[] = rnorm(length(g))
+#' g[] = stats::rnorm(length(g))
 #' sk_bds('mat', g)
 #'
 #' # same result by passing in observed variance
-#' sk_bds('mat', g, var(g[]))
+#' sk_bds('mat', g, stats::var(g[]))
 #'
 #' # a less conservative bound for variance (only eps and psill affected)
 #' sk_bds('mat', g, var_mult=1)
@@ -105,7 +106,7 @@ sk_bds = function(pars, g, var_obs=NULL, var_mult=2)
   g = sk(g)
 
   # compute sample variance if not supplied, or set to default 1 when there is no data
-  if( is.null(var_obs) ) var_obs = ifelse(is.null(g[['gval']]), 1, var(g[], na.rm=TRUE))
+  if( is.null(var_obs) ) var_obs = ifelse(is.null(g[['gval']]), 1, stats::var(g[], na.rm=TRUE))
   if( is.na(var_obs) ) var_obs = 1
 
   # set up bounds for variance components
@@ -116,7 +117,7 @@ sk_bds = function(pars, g, var_obs=NULL, var_mult=2)
   # set up bounds for kernel ranges - initial is geometric mean of upper and lower
   bds_kp = Map(function(r,d) list(lower=r, initial=NA, upper=r*d), r=g[['gres']], d=dim(g))
   bds[idx_rho] = lapply(bds_kp, function(p) {
-    modifyList(p, list(initial = sqrt(p[['lower']]*p[['upper']])) ) })
+    utils::modifyList(p, list(initial = sqrt(p[['lower']]*p[['upper']])) ) })
 
   # set up bounds for kernel shape parameters
   has_kap = sapply(idx_kap, function(x) length(x) == 1 )
@@ -182,7 +183,7 @@ sk_pars_make = function(pars='gau')
 
   # check for y, x spatial components
   nm_pars = names(pars)
-  has_yx = (nm_yx %in% nm_pars) |> setNames(nm_yx)
+  has_yx = (nm_yx %in% nm_pars) |> stats::setNames(nm_yx)
 
   # convert character input to kernel definition list
   is_char = pars |> sapply(is.character)
@@ -190,37 +191,37 @@ sk_pars_make = function(pars='gau')
   {
     yx_pars = pars[which(is_char)]
     if( all(nm_yx %in% names(pars)) ) yx_pars = pars[nm_yx]
-    pars = yx_pars |> lapply(\(nm) list(k=nm)) |> setNames( nm_yx[seq_along(pars)] )
+    pars = yx_pars |> lapply(\(nm) list(k=nm)) |> stats::setNames( nm_yx[seq_along(pars)] )
   }
 
   # check for y, x spatial components
   nm_pars = names(pars)
-  has_yx = (nm_yx %in% nm_pars) |> setNames(nm_yx)
+  has_yx = (nm_yx %in% nm_pars) |> stats::setNames(nm_yx)
 
   # handle missing y, x entries
   if( sum(has_yx) == 0 )
   {
     # look for generic kernel definition (k, kp) in top level of list
-    has_k = (nm_yx_nested %in% nm_pars) |> setNames(nm_yx_nested)
+    has_k = (nm_yx_nested %in% nm_pars) |> stats::setNames(nm_yx_nested)
     if( !has_k['k'] ) stop('kernel name not found in pars$k, pars$y or pars$x')
 
     # recursive call with this kernel definition in sub-list 'y'
-    pars_new = modifyList(pars, list(k=NULL, kp=NULL, y=pars[ nm_yx_nested[has_k] ]))
+    pars_new = utils::modifyList(pars, list(k=NULL, kp=NULL, y=pars[ nm_yx_nested[has_k] ]))
     return( sk_pars_make(pars_new) )
   }
 
   # if only one spatial kernel is found, copy it to get identical y, x kernels
   if( sum(has_yx) == 1 )
   {
-    kernel_clone = pars[nm_yx[has_yx]] |> setNames(nm_yx[!has_yx])
-    pars = pars |> modifyList(kernel_clone)
+    kernel_clone = pars[nm_yx[has_yx]] |> stats::setNames(nm_yx[!has_yx])
+    pars = pars |> utils::modifyList(kernel_clone)
   }
 
   # checks for required spatial kernel parameters in sub-lists
   pars[nm_yx] = pars[nm_yx] |> lapply(\(p) {
 
     # check that each dimension has a kernel name defined
-    has_k = (nm_yx_nested %in% names(p)) |> setNames(nm_yx_nested)
+    has_k = (nm_yx_nested %in% names(p)) |> stats::setNames(nm_yx_nested)
     if( !has_k['k'] ) stop('kernel name k not found in sub-list')
     msg_kernel = paste(p[['k']], 'kernel')
 
@@ -327,11 +328,11 @@ sk_pars_make = function(pars='gau')
 #' sk_pars_update(pars_filled, na_omit=TRUE)
 #'
 #' # when updating parameters, NAs in pars identify parameters to receive the new values
-#' p_update = abs(rnorm(2))
+#' p_update = abs(stats::rnorm(2))
 #' sk_pars_update(pars_filled, p_update, na_omit=TRUE)
 #'
 #' # when na_omit=FALSE, all parameters in pars are updated
-#' p_update = rnorm(5)
+#' p_update = stats::rnorm(5)
 #' sk_pars_update(pars_filled, p_update)
 #'
 #' # iso=TRUE is for when x kernel parameters are assigned values from the y kernel

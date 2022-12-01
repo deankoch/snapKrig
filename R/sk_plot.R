@@ -57,7 +57,7 @@
 #'
 #' \describe{
 #'
-#' \item{adj, leg_just}{numeric in [0,1]: respectively, the horizontal justification
+#' \item{adj, leg_just}{numeric in \[0,1\]: respectively, the horizontal justification
 #' of the title and vertical justification of the color bar legend (default 0.5 for both) }
 #'
 #' \item{asp}{ numeric or NA: the aspect ratio parameter passed to graphics::image (default 1) }
@@ -130,16 +130,16 @@
 #'
 #' # example data: cosine of squared distance to top left corner
 #' z = apply(expand.grid(g$gyx), 1, \(z) cos( 2*sum(z^2) ) )
-#' g_example = modifyList(g, list(gval=z))
+#' g_example = utils::modifyList(g, list(gval=z))
 #' plot(g_example)
 #'
 #' # plot as matrix (changes default palette)
-#' plot(g_example, ij=T)
+#' plot(g_example, ij=TRUE)
 #'
 #' # alignment
-#' plot(g_example, ij=T, main='Centered title and legend by default')
-#' plot(g_example, ij=T, main='adj: left-right justification of title', adj=0)
-#' plot(g_example, ij=T, main='leg_just: top-bottom justification of color bar', leg_just=0)
+#' plot(g_example, ij=TRUE, main='Centered title and legend by default')
+#' plot(g_example, ij=TRUE, main='adj: left-right justification of title', adj=0)
+#' plot(g_example, ij=TRUE, main='leg_just: top-bottom justification of color bar', leg_just=0)
 #'
 #' # set the palette - see hcl.pals() for valid names
 #' pal = 'Zissou 1'
@@ -180,9 +180,9 @@
 #' plot(g_v, zlab=expression(V[ij]))
 #'
 #' # minimal versions
-#' plot(g_v, minimal=T)
-#' plot(g_v, minimal=T, leg=T)
-#' plot(g_v, minimal=T, col_grid='white', leg=TRUE)
+#' plot(g_v, minimal=TRUE)
+#' plot(g_v, minimal=TRUE, leg=TRUE)
+#' plot(g_v, minimal=TRUE, col_grid='white', leg=TRUE)
 #'
 #' # logical matrix plots are gray-scale by default
 #' plot(g_v > 1e-2, main='logical matrix')
@@ -202,11 +202,11 @@
 #' g_sim = sk_sim(c(100, 50), n_layer=3)
 #' split.screen(c(1,3))
 #' screen(1)
-#' plot(g_sim, main='layer 1', layer=1, minimal=T, col_box='black')
+#' plot(g_sim, main='layer 1', layer=1, minimal=TRUE, col_box='black')
 #' screen(2)
-#' plot(g_sim, main='layer 2', layer=2, minimal=T, col_box='black')
+#' plot(g_sim, main='layer 2', layer=2, minimal=TRUE, col_box='black')
 #' screen(3)
-#' plot(g_sim, main='layer 3', layer=3, minimal=T, col_box='black')
+#' plot(g_sim, main='layer 3', layer=3, minimal=TRUE, col_box='black')
 #'
 sk_plot = function(g, gdim=NULL, ...)
 {
@@ -427,7 +427,7 @@ sk_plot = function(g, gdim=NULL, ...)
   pal_known = any(startsWith(grDevices::hcl.pals(), pal[1]))
   if( length(breaks) == 1 ) breaks = seq(zlim[1], zlim[2], length.out=1L+breaks)
   if( pal_known ) pal = grDevices::hcl.colors(length(breaks)-1L, pal[1], rev=col_rev)
-  if( col_invert ) pal = rgb( ( 255 - t(col2rgb(pal)) ) / 255 )
+  if( col_invert ) pal = grDevices::rgb( ( 255 - t(grDevices::col2rgb(pal)) ) / 255 )
 
   # define margins with space for color bar, axes, titles
   mar_new = c(bottom = ( axes_w * (!x_ontop) ) + ( lab_w * has_xlab ),
@@ -436,8 +436,8 @@ sk_plot = function(g, gdim=NULL, ...)
               right = leg_w)
 
   # set new graphical parameters but keep a backup
-  if(reset) par_existing = par(no.readonly=TRUE)
-  par(mar=mar_new, oma=rep(oma_w, 4L))
+  if(reset) par_existing = graphics::par(no.readonly=TRUE)
+  graphics::par(mar=mar_new, oma=rep(oma_w, 4L))
 
   # draw the raster plot without axes or annotations
   graphics::image(g[['gyx']], z=z_image, axes=FALSE, ann=FALSE, xpd=NA,
@@ -463,7 +463,7 @@ sk_plot = function(g, gdim=NULL, ...)
     {
       # force labeling of first and last row/column in matrices and set new default labels
       tick_ij = lapply(gdim, function(d) unique(round(c(1, seq(1,d, length.out=5), d))))
-      tick_lab = modifyList(tick_ij, list( y = gdim['y'] + 1 - tick_ij[['y']] ))
+      tick_lab = utils::modifyList(tick_ij, list( y = gdim['y'] + 1 - tick_ij[['y']] ))
       tick_pos = Map(\(yx, idx) yx[idx], yx=g[['gyx']], idx=tick_ij)
 
       # reverse ordering of y axis for i labels, j labels go on top
@@ -485,9 +485,9 @@ sk_plot = function(g, gdim=NULL, ...)
   }
 
   # title and axis label line positions
-  main_nline = par('mar')[3] - 0.7 * main_w
-  y_nline = par('mar')[2L] - 0.7 * lab_w
-  x_nline = par('mar')[ axis_s['x'] ] - ( main_w * (ij & x_ontop) ) - 0.7 * lab_w
+  main_nline = graphics::par('mar')[3] - 0.7 * main_w
+  y_nline = graphics::par('mar')[2L] - 0.7 * lab_w
+  x_nline = graphics::par('mar')[ axis_s['x'] ] - ( main_w * (ij & x_ontop) ) - 0.7 * lab_w
 
   # print any titles
   graphics::mtext(main, side=3, line=main_nline, font=2, xpd=NA, adj=adj, cex=cex.main)
@@ -500,11 +500,11 @@ sk_plot = function(g, gdim=NULL, ...)
 
   # find line height for horizontal text, in same units as user coordinates
   y_inch = diff(graphics::grconvertY(0:1, 'inches', 'user'))
-  y_line = y_inch * par('cin')[2] * par('cex') * par('lheight')
+  y_line = y_inch * graphics::par('cin')[2] * graphics::par('cex') * graphics::par('lheight')
 
   # same for vertical text
   x_inch = diff(graphics::grconvertX(0:1, 'inches', 'user'))
-  x_line = x_inch * par('cin')[2] * par('cex') * par('lheight')
+  x_line = x_inch * graphics::par('cin')[2] * graphics::par('cex') * graphics::par('lheight')
 
   # draw x grid lines
   if( !is.na(col_grid_x) )
@@ -542,7 +542,7 @@ sk_plot = function(g, gdim=NULL, ...)
     bar_z = stats::approxfun(range(breaks), bar_y)(breaks)
 
     # draw the color bar strips then a black border around the whole thing
-    graphics::rect(bar_x[1], head(bar_z, -1), bar_x[2], bar_z[-1], col=pal, border=NA, xpd=NA)
+    graphics::rect(bar_x[1], utils::head(bar_z, -1), bar_x[2], bar_z[-1], col=pal, border=NA, xpd=NA)
     graphics::rect(bar_x[1], bar_y[1], bar_x[2], bar_y[2], xpd=NA)
 
     # draw annotations as another axis
@@ -568,7 +568,7 @@ sk_plot = function(g, gdim=NULL, ...)
   ## tidy up
 
   # restore old margin settings before the user's next plot call
-  if(reset) par(par_existing)
+  if(reset) graphics::par(par_existing)
   return(invisible(c(y=y_graphics, x=x_graphics)))
 }
 
@@ -590,6 +590,7 @@ sk_plot = function(g, gdim=NULL, ...)
 #'
 #' @param pars list of the form returned by `sk_pars` with entries 'y', 'x', ('eps', 'psill')
 #' @param g any object understood by `sk`
+#' @param simple logical, if FALSE the function adds some annotation
 #' @param ... additional arguments passed to `sk_plot`
 #'
 #' @return the same as `sk_plot`
@@ -718,7 +719,7 @@ sk_plot_pars = function(pars, g=NULL, simple=FALSE, ...)
 #'
 #' \describe{
 #'
-#' \item{alpha_bin, alpha_model, alpha_bin_b, alpha_model_b}{numeric in [0,1]: respectively,
+#' \item{alpha_bin, alpha_model, alpha_bin_b, alpha_model_b}{numeric in \[0,1\]: respectively,
 #' the transparency of the fill color for circles and ribbons (default 0.3), and their borders
 #' (default 0.5 )}
 #'
@@ -747,17 +748,13 @@ sk_plot_pars = function(pars, g=NULL, simple=FALSE, ...)
 #' \item{reset}{logical: indicates to reset graphical parameters to their original values
 #' when finished (default TRUE)}
 #'
-#' \item{unit_in, unit_out}{character: udunits2 strings specifying input distance units and
-#' the desired units for distances in the plot (default for both is meters 'm')}
-#'
 #' \item{xlab, ylab}{character: titles for the y and x axes. The default for y is
-#' 'semi-variance (gamma)', and for x 'distance (<unit_out>)'}
+#' 'semi-variance (gamma)', and for x 'distance'}
 #'
 #' }
 #'
 #' @return nothing
 #' @export
-#'
 #' @examples
 #'
 #' # make example grid and reference covariance model
@@ -772,10 +769,6 @@ sk_plot_pars = function(pars, g=NULL, simple=FALSE, ...)
 #' # change annotations, sharpen ribbon border
 #' sk_plot_semi(g_empty, pars, main='title', xlab='x', ylab='y')
 #' sk_plot_semi(g_empty, pars, alpha_model_b=1, main='example title', xlab='x', ylab='y')
-#'
-#' # input and output units are 'm' by default
-#' sk_plot_semi(g_empty, pars, unit_out='km')
-#' sk_plot_semi(g_empty, pars, unit_in='km', unit_out='km')
 #'
 #' # generate sample data and sample semivariogram
 #' g_obs = sk_sim(g_empty, pars)
@@ -827,8 +820,6 @@ sk_plot_semi = function(vg, pars=NULL, add=FALSE, fun='classical', ...)
   alpha_model = ifelse( is.null( list(...)[['alpha_model']] ), 0.3, list(...)[['alpha_model']])
   alpha_bin_b = ifelse( is.null( list(...)[['alpha_bin_b']] ), 0.5, list(...)[['alpha_bin_b']])
   alpha_model_b = ifelse( is.null( list(...)[['alpha_model_b']] ), 0.5, list(...)[['alpha_model_b']])
-  unit_in = ifelse( is.null( list(...)[['unit_in']] ), 'm', list(...)[['unit_in']])
-  unit_out = ifelse( is.null( list(...)[['unit_out']] ), 'm', list(...)[['unit_out']])
   ylab = ifelse( is.null( list(...)[['ylab']] ), 'semi-variance (gamma)', list(...)[['ylab']])
   leg = ifelse( is.null( list(...)[['leg']] ), TRUE, list(...)[['leg']])
   leg_main = ifelse( is.null( list(...)[['leg_main']] ), 'model', list(...)[['leg_main']])
@@ -840,7 +831,7 @@ sk_plot_semi = function(vg, pars=NULL, add=FALSE, fun='classical', ...)
   # set up the more complicated defaults
   d_max = list(...)[['d_max']]
   main_def = paste(ifelse(input_vg, 'sample', 'model'), 'semi-variogram')
-  xlab_def = paste0('distance (', unit_out, ')')
+  xlab_def = 'distance'
   xlab = ifelse( is.null( list(...)[['xlab']] ), xlab_def, list(...)[['xlab']])
   plot_max = 0
 
@@ -860,9 +851,9 @@ sk_plot_semi = function(vg, pars=NULL, add=FALSE, fun='classical', ...)
   }
 
   # set up new margins but keep a backup of existing graphical parameters
-  mar_new = mar_existing = par('mar')
+  mar_new = mar_existing = graphics::par('mar')
   mar_new[4] = ifelse(!add & input_vg, 6.1, mar_existing)
-  par(mar=mar_new, oma=c(0,0,0,0))
+  graphics::par(mar=mar_new, oma=c(0,0,0,0))
 
   # input is a variogram data frame
   if(input_vg)
@@ -883,8 +874,6 @@ sk_plot_semi = function(vg, pars=NULL, add=FALSE, fun='classical', ...)
 
     # convert size of circles to plot and distances in output units
     size_plot = 1 + cex_bin * ( s_bin / max(s_bin) )
-    d_bin_src = units::set_units(d_bin, unit_in, mode='s')
-    d_bin_out = units::drop_units( units::set_units(d_bin_src, unit_out, mode='s') )
 
   } else {
 
@@ -914,9 +903,7 @@ sk_plot_semi = function(vg, pars=NULL, add=FALSE, fun='classical', ...)
   {
     # set up axis limits, leaving space for bin size legend
     ylim_out = c(0, plot_max)
-    xlim_src = units::set_units(c(0, d_max) * c(1, 1 + ifelse(input_vg, 1e-1, 0)), unit_in, mode='s')
-    xlim_src = units::set_units(c(0, d_max), unit_in, mode='s')
-    xlim_out = units::drop_units( units::set_units(xlim_src, unit_out, mode='s') )
+    xlim_out = c(0, d_max)
 
     # set up title
     pars_out = ifelse(draw_model, paste(sk_to_string(pars)[['k']], 'kernel'), '')
@@ -930,8 +917,8 @@ sk_plot_semi = function(vg, pars=NULL, add=FALSE, fun='classical', ...)
     # find line height in same units as user coordinates
     y_inch = diff(graphics::grconvertY(0:1, 'lines', 'user'))
     x_inch = diff(graphics::grconvertX(0:1, 'lines', 'user'))
-    y_line = y_inch * par('cin')[2] * par('cex') * par('lheight')
-    x_line = x_inch * par('cin')[2] * par('cex') * par('lheight')
+    y_line = y_inch * graphics::par('cin')[2] * graphics::par('cex') * graphics::par('lheight')
+    x_line = x_inch * graphics::par('cin')[2] * graphics::par('cex') * graphics::par('lheight')
 
     # add points for sample semi-variance bins
     if(input_vg)
@@ -939,8 +926,8 @@ sk_plot_semi = function(vg, pars=NULL, add=FALSE, fun='classical', ...)
       # draw and color circles for sample semi-variance aggregated by distance
       col_bin_fill = grDevices::adjustcolor(col_bin, alpha.f=alpha_bin)
       col_bin_border = grDevices::adjustcolor(col_bin, alpha.f=alpha_bin_b)
-      points(d_bin_out, v_bin/2, pch=16, col=col_bin_fill, cex=size_plot)
-      points(d_bin_out, v_bin/2, col=col_bin_border, cex=size_plot)
+      graphics::points(d_bin, v_bin/2, pch=16, col=col_bin_fill, cex=size_plot)
+      graphics::points(d_bin, v_bin/2, col=col_bin_border, cex=size_plot)
 
       # add legend for the circles
       if(input_vg & leg)
@@ -954,9 +941,12 @@ sk_plot_semi = function(vg, pars=NULL, add=FALSE, fun='classical', ...)
 
         # draw the legend
         leg_plot = paste(' ', s_bin_plot)
-        legend(x=2*x_line + par('usr')[2], y=plot_max/2 + y_line, yjust=0, y.intersp=1,
-               title='sample size', legend=leg_plot, pch=1, pt.cex=size_leg_plot,
-               border=col_bin, bty='n', xpd=NA)
+        graphics::legend(x = 2*x_line + graphics::par('usr')[2],
+                         y = plot_max/2 + y_line, yjust=0, y.intersp=1,
+                         title = 'sample size', legend=leg_plot, pch=1,
+                         pt.cex = size_leg_plot,
+                         border = col_bin, bty='n', xpd=NA)
+
       }
     }
   }
@@ -964,26 +954,26 @@ sk_plot_semi = function(vg, pars=NULL, add=FALSE, fun='classical', ...)
   # add the theoretical variogram lines
   if(draw_model)
   {
-    # convert distances to output units before drawing lines
-    d_test_src = units::set_units(d_test, unit_in, mode='s')
-    d_test_out = units::drop_units( units::set_units(d_test_src, unit_out, mode='s') )
-
     # draw upper and lower as polygon
-    x_out = c(d_test_out, rev(d_test_out))
+    x_out = c(d_test, rev(d_test))
     y_out = c(sv_max, rev(sv_min))
     col_model_fill = grDevices::adjustcolor(col_model, alpha.f=alpha_model)
     col_model_border = grDevices::adjustcolor(col_model, alpha.f=alpha_model_b)
     graphics::polygon(x_out, y_out, col=col_model_fill, border=col_model_border, lwd=lwd)
 
     # add a legend
-    if(!add & input_vg & leg) legend(x=2*x_line + par('usr')[2], y=plot_max/2 - y_line,
-                               yjust=1,
-                               title=leg_main,
-                               fill=col_model_fill,
-                               border=col_model,
-                               xpd=NA, legend='', bty='n')
+    if(!add & input_vg & leg) graphics::legend(x = 2 * x_line + graphics::par('usr')[2],
+                                               y = plot_max/2 - y_line,
+                                               yjust = 1,
+                                               title = leg_main,
+                                               fill = col_model_fill,
+                                               border = col_model,
+                                               xpd = NA,
+                                               legend = '',
+                                               bty = 'n')
+
   }
 
   # restore old margin settings before the user's next plot call
-  if(reset) par(mar=mar_existing)
+  if(reset) graphics::par(mar=mar_existing)
 }

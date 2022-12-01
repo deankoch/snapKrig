@@ -96,7 +96,7 @@ gyx = as.list(expand.grid(lapply(gdim, seq)))
 eg_vec = as.numeric( gyx[[2]] \%\% gyx[[1]] )
 eg_mat = matrix(eg_vec, gdim)
 g = sk(eg_mat)
-plot(g, ij=T, zlab='j mod i')
+plot(g, ij=TRUE, zlab='j mod i')
 
 # y is in descending order
 plot(g, xlab='x = j', ylab='y = 26 - i', zlab='j mod i')
@@ -108,7 +108,7 @@ all.equal(g, sk(gdim=gdim, gval=as.vector(eg_mat)))
 # multi-layer example from matrix
 n_pt = prod(gdim)
 n_layer = 3
-mat_multi = matrix(rnorm(n_pt*n_layer), n_pt, n_layer)
+mat_multi = matrix(stats::rnorm(n_pt*n_layer), n_pt, n_layer)
 g_multi = sk(gdim=gdim, gval=mat_multi)
 summary(g_multi)
 

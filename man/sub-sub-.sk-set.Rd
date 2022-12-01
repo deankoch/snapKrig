@@ -17,19 +17,16 @@ S3 methods for sk grid list objects}
 a "sk" object
 }
 \description{
-\subsection{INDEXING METHODS}{
-}
+Replace a sk list element (double-bracket assign)
 }
 \details{
-Replace a sk list element (double-bracket assign)
-
 Replaces entries in the sk list object. This does no validation. If it did, then
 \code{sk_validate} would have an infinite recursion problem (it uses \verb{[[<-}). Users should
 pass the results to \code{sk_validate} afterwards unless they know what they're doing.
 }
 \examples{
 # sk list elements are interrelated - for example gres must match spacing in gyx
-g = sk_validate(list(gval=rnorm(10^2), gdim=10, gres=0.5))
+g = sk_validate(list(gval=stats::rnorm(10^2), gdim=10, gres=0.5))
 g[['gres']] = 2 * g[['gres']]
 g[['gyx']] = lapply(g[['gyx']], function(x) 2*x)
 sk_validate(g)

@@ -11,9 +11,11 @@ sk_coords(g, out = "matrix", corner = FALSE, na_omit = FALSE, quiet = FALSE)
 
 \item{out}{character indicating return value type, either 'list', 'matrix', or 'sf'}
 
+\item{corner}{logical, indicates to return only the four corner points}
+
 \item{na_omit}{logical, indicates to return only locations of observed points}
 
-\item{corners}{logical, indicates to only return the corner points}
+\item{quiet}{logical, suppresses console output}
 }
 \value{
 a matrix, list, or sf point collection in column vectorized order
@@ -50,7 +52,7 @@ sk_coords(g, corner=TRUE)
 sk_coords(g, corner=TRUE, out='list')
 
 # repeat with multi-layer example
-g_multi = sk(modifyList(g, list(gval = cbind(g[], 2*g[]))))
+g_multi = sk(utils::modifyList(g, list(gval = cbind(g[], 2*g[]))))
 all.equal(sk_coords(g_multi, na_omit=TRUE), sk_coords(g_complete)[idx_obs,])
 sk_coords(g_multi, corner=TRUE)
 

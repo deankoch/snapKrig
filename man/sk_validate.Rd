@@ -34,6 +34,6 @@ an error.
 \examples{
 
 sk_validate(list(gdim=10, gres=0.5))
-sk_validate(list(gval=rnorm(10^2), gdim=10, gres=0.5))
+sk_validate(list(gval=stats::rnorm(10^2), gdim=10, gres=0.5))
 }
 \keyword{internal}

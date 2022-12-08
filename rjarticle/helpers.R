@@ -1,5 +1,3 @@
-
-
 # copy of the fitted parameters for Meuse, to display them at the beginning
 meuse_OK_fitted_pars_iso = list(y=list(k='gau', kp=c(rho=590.4317)),
                                 x=list(k='gau', kp=c(rho=590.4317)),
@@ -178,7 +176,3 @@ run_cv = function(g, g_X, n_fold=5, n_rep=25)
   close(pb)
   return(out_df)
 }
-
-# load the results from the benchmarking vignette
-
-

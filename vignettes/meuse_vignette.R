@@ -32,7 +32,13 @@
 
 # load snapKrig
 library(devtools)
+document()
 load_all()
+
+# ###
+# check_results = check()
+# check_results$notes |> cat()
+# ###
 
 #+ dependencies
 
@@ -40,6 +46,7 @@ load_all()
 library(sp)
 library(sf)
 library(terra)
+source('helpers.R')
 
 #'
 #' ## Example data
@@ -50,70 +57,6 @@ library(terra)
 #' [tutorial pdf](https://cran.r-project.org/web/packages/gstat/vignettes/gstat.pdf)
 #' for gstat. Load the data with `data(meuse)` and `data(meuse.riv)`. I have a helper function
 #' `get_meuse` to do this (see source code for this document).
-
-#+ meuse_hide, include=FALSE
-
-# load the Meuse data into a convenient format
-get_meuse = function(dfMaxLength = units::set_units(50, m))
-{
-  # Note: dfMaxLength sets the interval used to sample line geometries of the river
-  # using Voronoi tiles. This is a fussy and not well-tested algorithm for finding the
-  # centre line of a river polygon, but it seems to work well enough for the example here
-
-  # EPSG code for the coordinate system
-  epsg_meuse = 28992
-
-  # open river location data
-  utils::data(meuse.riv)
-  crs_meuse = sf::st_crs(epsg_meuse)[['wkt']]
-
-  # reshape the river (edge) point data as a more densely segmented polygon
-  colnames(meuse.riv) = c('x', 'y')
-  meuse_river_points = sf::st_as_sf(as.data.frame(meuse.riv), coords=c('x', 'y'), crs=crs_meuse)
-  meuse_river_seg = sf::st_cast(sf::st_combine(meuse_river_points), 'LINESTRING')
-  meuse_river_poly = sf::st_cast(st_segmentize(meuse_river_seg, dfMaxLength), 'POLYGON')
-
-  # skeletonization trick to get a single linestring at center of the river
-  meuse_river_voronoi = sf::st_cast(sf::st_voronoi(meuse_river_poly, bOnlyEdges=TRUE), 'POINT')
-  meuse_river_skele = sf::st_intersection(meuse_river_voronoi, meuse_river_poly)
-  n_skele = length(meuse_river_skele)
-
-  # compute distance matrix
-  dmat_skele = units::drop_units(sf::st_distance(meuse_river_skele))
-
-  # re-order to start from northernmost point
-  idx_first = which.max(st_coordinates(meuse_river_skele)[,2])
-  idx_reorder = c(idx_first, integer(n_skele-1L))
-  for(idx_skele in seq(n_skele-1L))
-  {
-    # find least distance match
-    idx_tocheck = seq(n_skele) != idx_first
-    idx_first = which(idx_tocheck)[ which.min(dmat_skele[idx_tocheck, idx_first]) ]
-    idx_reorder[1L+idx_skele] = idx_first
-
-    # modify distance matrix so the matching point is not selected again
-    dmat_skele[idx_first, ] = Inf
-  }
-
-  # connect the points to get the spine
-  meuse_river = sf::st_cast(sf::st_combine(meuse_river_skele[idx_reorder]), 'LINESTRING')
-
-  # load soil points data
-  utils::data(meuse)
-  meuse_soils = sf::st_as_sf(meuse, coords=c('x', 'y'), crs=epsg_meuse)
-
-  # add 'distance' (to river) and 'logzinc' columns
-  meuse_soils[['distance']] = units::drop_units( sf::st_distance(meuse_soils, meuse_river))
-  meuse_soils[['log_zinc']] = log(meuse_soils[['zinc']])
-
-  # crop the river objects to buffered bounding box of soils data
-  bbox_padded = st_buffer(sf::st_as_sfc(sf::st_bbox(meuse_soils)), units::set_units(500, m))
-  meuse_river_poly = sf::st_crop(meuse_river_poly, bbox_padded)
-  meuse_river = sf::st_crop(meuse_river, bbox_padded)
-
-  # return three geometry objects in a list
-  return( list(soils=meuse_soils, river_poly=meuse_river_poly, river_line=meuse_river) )
-}
 
 #+ meuse_load
 

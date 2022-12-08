@@ -3,11 +3,6 @@
 .Rdata
 .httr-oauth
 .DS_Store
-/previous_versions
-/rjarticle/data
-/rjarticle/snapKrig.html
-/rjarticle/snapKrig.pdf
-/rjarticle/rjarticle_template
-/vignettes_backup
-/vignettes/data
+rjarticle/
 data
+inst/doc

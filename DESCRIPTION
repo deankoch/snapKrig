@@ -16,9 +16,12 @@ Imports:
     stats,
     utils
 Suggests: 
+    knitr,
     raster,
     rgdal,
+    rmarkdown,
     sf,
+    units,
     sp,
     terra,
     testthat (>= 3.0.0)
@@ -27,3 +30,4 @@ Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.1
+VignetteBuilder: knitr

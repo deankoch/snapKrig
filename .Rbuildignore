@@ -4,10 +4,7 @@
 ^LICENSE\.md$
 ^README\.Rmd$
 ^pkg_update\.R$
-^rjarticle$
-^vignettes$
-^vignettes_backup$
-^previous_versions$
+^rjarticle
 ^NEWS\.md$
 ^cran-comments.md$
 ^CRAN-RELEASE$

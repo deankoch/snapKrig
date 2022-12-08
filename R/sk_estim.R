@@ -452,7 +452,7 @@ sk_GLS = function(g, pars, X=NA, out='s', fac_method='eigen', fac=NULL)
 #' max(abs(z_var_uk - g_uk_v))
 #'
 #'
-#' ## repeat verification for subgrid case
+#' ## repeat verification for sub-grid case
 #'
 #' # rebuild matrices
 #' V_full = sk_var(g_super_uk, pars)
@@ -804,15 +804,18 @@ sk_fit = function(g, pars=NULL, X=NA, iso=TRUE, n_max=1e3, quiet=FALSE,
     log_scale = TRUE
   }
 
-  # unpack grid input and count observations
+  # convert to sk object and check for sub-grid
   g_obs = sk(g)
+  is_sg = !is.null(sk_sub_find(g_obs))
+
+  # unpack grid input and count observations
   n_all = length(g_obs)
   is_obs = !is.na(g_obs)
   n_obs = sum(is_obs)
   if(n_obs == 0) stop('no data found in g_obs')
 
   # problem size sanity check
-  if( (n_obs < n_all) & (n_obs > n_max) ) stop('number of observed points exceeded n_max')
+  if( !is_sg & (n_obs > n_max) ) stop('number of observed points exceeded n_max')
 
   # parse character string arguments to pars
   pars = ifelse(is.null(pars), 'gau', pars)

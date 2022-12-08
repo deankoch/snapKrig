@@ -31,7 +31,7 @@ sk_pars(c(10,15), 'mat')
 sk_pars(c(10,15), 'mat', 'upper')
 }
 \seealso{
-sk
+sk sk_corr
 
 Other parameter managers: 
 \code{\link{sk_bds}()},

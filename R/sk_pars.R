@@ -19,7 +19,7 @@
 #'
 #' @export
 #' @family parameter managers
-#' @seealso sk
+#' @seealso sk sk_corr
 #'
 #' @examples
 #' sk_pars(g=10)

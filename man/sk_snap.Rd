@@ -57,7 +57,7 @@ bounding box of \code{g}.
 
 # functions to scale arbitrary inverval to (1, 2,... 100) and make color palettes
 num_to_cent = function(x) 1L + floor(99*( x-min(x) ) / diff(range(x)))
-my_pal = function(x) hcl.colors(x, 'Spectral', rev=TRUE)
+my_pal = function(x) grDevices::hcl.colors(x, 'Spectral', rev=TRUE)
 my_col = function(x) my_pal(1e2)[ num_to_cent(x) ]
 
 # create a grid object

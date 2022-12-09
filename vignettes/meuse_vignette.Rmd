@@ -1,8 +1,8 @@
 ---
-title: "snapKrig Meuse vignette"
+title: "Introduction to snapKrig"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{snapKrig Meuse vignette}
+  %\VignetteIndexEntry{Introduction to snapKrig}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -20,30 +20,41 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
+
+# this avoids console spam below
+library(terra)
+library(units)
+library(sf)
+library(sp)
 ```
+
+## Getting started
+
+snapKrig is for modeling spatial processes in 2-dimensions and working with associated
+grid data. There is an emphasis on computationally fast methods for kriging and
+likelihood but the package offers much more, including its own (S3) grid object class sk.
+
+This vignette introduces the sk class and basic snapKrig functionality before showing
+an example of how to do universal kriging with the Meuse soils data from the `sp`
+package.
+
+We recommend using the more up-to-date `sf` package to work with geo-referenced vector
+data, and for geo-referenced raster data we recommend `terra`. Both are loaded below.   
 
 ```{r setup}
 library(snapKrig)
+
+# used in examples
+library(sp)
 library(terra)
+library(sf)
 library(units)
-
-# copy default graphical parameters
-.par_default = par(no.readonly=TRUE)
-
-# set up a common color palette (this is the default in snapKrig)
-.pal = function(n) { hcl.colors(n, 'Spectral', rev=TRUE) }
 ```
 
-## A brief introduction to snapKrig
-
-snapKrig is for modeling spatial processes in 2-dimensions and working with associated
-grid data. There is an emphasis on computationally fast methods for kriging
-but the package offers much more, including its own (S3) grid object class, via the
-grid constructor function `sk`. 
 
 ### sk grid objects
 
-Start with a simple example, the identity matrix. Pass this (or any other) matrix to `sk` to get a grid object
+Pass any matrix to `sk` to get a grid object. Start with a simple example, the identity matrix:
 
 ```{r intro_id}
 # define a matrix and pass it to sk to get a grid object
@@ -55,7 +66,7 @@ print(g)
 class(g)
 ```
 
-An sk object stores the matrix values (if any) and the dimensions, and it assigns default x and y
+An sk object stores the matrix values (if any) and the dimensions in a list, and it assigns default x and y
 coordinates to rows and columns. This makes it easy to visualize a matrix as a heatmap 
 
 ```{r intro_id_plot, out.width='50%', fig.dim=c(5,5), fig.align='center'}
@@ -64,9 +75,9 @@ plot(g, ij=TRUE, main='identity matrix')
 ```
 
 `sk` has its own custom plot method. The result is similar to `graphics::image(mat_id)` except that image
-is not flipped and (when `ij=TRUE`) the axes use matrix row and column annotations, instead of y and x.
+is not flipped and (when `ij=TRUE`) the axes use matrix row and column annotations instead of y and x.
 
-snapKrig has many other useful methods implemented for the sk class, including operators like `+` and `==`
+snapKrig has many useful methods implemented for the sk class, including operators like `+` and `==`
 
 ```{r intro_id_logi_plot, out.width='50%', fig.dim=c(5,5), fig.align='center'}
 # make a grid of logical values
@@ -76,11 +87,11 @@ print(g0)
 # plot 
 plot(g0, ij=TRUE, col_grid='white', main='matrix off-diagonals')
 ```
-The logical class prompts a gray-scale palette by default and we added grid cell borders with
-`col_grid`. See `sk_plot` for more styling options.
+The logical class prompts a gray-scale palette by default (and we added grid cell borders with
+`col_grid`). See `sk_plot` for more styling options.
 
 Spatial statistics is full of large, structured matrices and I find these heatmaps
-helpful for getting some intuition about their structure. For example the next plot shows a covariance
+helpful for getting some intuition about that structure. For example the next plot shows a covariance
 matrix for a square grid of points (n=100)
 
 ```{r intro_varmat_plot, out.width='50%', fig.dim=c(5,5), fig.align='center'}
@@ -91,7 +102,7 @@ vmat = sk_var(sk(10))
 plot(sk(vmat), ij=TRUE, main='a covariance matrix')
 ```
 
-Some symmetries are immediately obvious: the banding; the blocks; the Toeplitz structures - both
+Various symmetries stand out: the banding; the blocks; the Toeplitz structures - both
 within and among blocks; and the unit diagonal. Visualize any matrix this way. Just pass it to `sk`
 then `plot`.
 
@@ -145,12 +156,12 @@ plot(g_sim, main='an example snapKrig simulation (near-zero nugget)', cex=1.5)
 
 snapKrag is unusually fast at generating spatially auto-correlated data like this and it supports
 a number of different covariance models. In simple terms, this changes the general
-appearance, size, and connectivity of the random blobs in the image above. See `?sk_corr` for
+appearance, size, and connectivity of the random blobs seen in the image above. See `?sk_corr` for
 more on these models.
 
 ### Covariance plots
 
-Use `sk_plot_pars` to visualize a covariance parameter set. This shows the footprint of
+Use `sk_plot_pars` to visualize a covariance parameter set by showing the footprint of
 covariances surrounding the central point in a grid. For our simulated data, that looks like this:
 
 ```{r intro_sim_pars_plot, out.width='50%', fig.dim=c(5,5), fig.align='center'}
@@ -168,10 +179,10 @@ The simulation plot calls above used `ij=FALSE` (the default), which displays th
 summary(g_sim)
 ```
 
-However, snapKrig functionality is focused on spatial models and kriging. Outside of that context we
+However, snapKrig functionality is more focused on spatial modeling and kriging. Outside of that context we
 recommend managing raster data with other packages (`terra` in particular). `sk` will accept single
-and multi-layer rasters from the `terra` and `raster` packages, reshaping them as sk grid objects,
-and any sk grid can be converted to a SpatRaster or Rasterlayer using `sk_export`.
+and multi-layer rasters from the `terra` and `raster` packages, reshaping them as sk grid objects;
+and sk grids can be converted to SpatRaster or Rasterlayer using `sk_export`.
 
 ```{r intro_export}
 sk_export(g_sim)
@@ -223,15 +234,20 @@ resolution) based only on the 1250 observed points in `g_sim_down` (1/4 resoluti
 is optimized for raster data of this form (`NA` except for a sub-grid), and extremely fast compared
 to most kriging packages, making snapKrig a powerful down-scaling tool.
 
-### Fitting models
-
-The results in the above plot look impressive - the predictions are almost identical to the earlier
+These results look impressive - the predictions look almost identical to our earlier
 plot of the full dataset (`g_sim`). But we are cheating here. We knew exactly which model was best
 for imputation (`pars`) because we used it to simulate the data in the first place. More often users
 will estimate `pars` from the data using maximum likelihood estimation (MLE).
 
-To illustrate, suppose the two range parameters in the model are the only unknowns. We could
-make a list of plausible values for the parameters and check the likelihood for each one.
+### Fitting models
+
+We recommend using MLE to fit snapKrig models. This is the process of looking for the model parameters
+that maximize a statistic called the likelihood, which is a function of both the parameters and the data.
+Roughly speaking, the likelihood scores how well the model parameters match the data.
+
+To illustrate, consider the model (`pars`) that we used to generate the simulation data. Suppose the
+two range parameters in the model are unknown to us, but the other parameters are known. We could make a list
+of plausible values for the ranges and check the likelihood for each one, given the data.
 
 ```{r intro_LL_bounds}
 # pick two model parameters for illustration
@@ -244,7 +260,7 @@ bds_test = list(y=seq(bds['y.rho', 1], bds['y.rho', 2], length.out=n_test),
                 x=seq(bds['x.rho', 1], bds['x.rho', 2], length.out=n_test))
 ```
 
-To organize our results, we make a grid out of the test values (similar to
+To organize the results, make a grid out of the test values (similar to
 `expand.grid`) then fill it with likelihood values in a loop.
 
 ```{r intro_LL_surface}
@@ -253,23 +269,24 @@ g_test = sk(gyx=bds_test)
 p_all = sk_coords(g_test)
 
 # fill in the grid with log-likelihood values
-p_test = sk_pars_update(pars)
 for(i in seq_along(g_test))
 {
+  # modify the model parameters with test values
+  p_test = sk_pars_update(pars)
   p_test[p_nm] = p_all[i,]
+  
+  # compute likelihood and copy to grid
   g_test[i] = sk_LL(sk_pars_update(pars, p_test), g_sim_up)
 }
 ```
 The resulting likelihood surface is plotted below, and its maximum is circled.
 
 ```{r intro_LL_surface_plot, out.width='50%', fig.dim=c(5, 5), fig.align='center'}
-# identify the maximum likelihood test point
-i_best = which.max(g_test[])
-
 # plot the likelihood surface
 plot(g_test, asp=2, main='log-likelihood surface', ylab=names(p_nm)[1], xlab=names(p_nm)[2])
 
 # highlight the MLE
+i_best = which.max(g_test[])
 points(p_all[i_best,'x'], p_all[i_best,'y'], cex=2)
 ```
 
@@ -283,10 +300,10 @@ So if we didn't know `pars` ahead of time (and usually we don't), we could inste
 principle and simply churn through plausible parameter candidates until we find the best scoring
 one. 
 
-However the grid search approach used here is not a very efficient way of doing MLE and there are many good
-alternatives (just have a look at the CRAN's Optimization Task View). snapKrig implements MLE for
-covariance models in `sk_fit` using `stats::optim`. The next section demonstrates it on a real life
-dataset.
+However this grid search approach is usually not a very efficient way of doing MLE, and there are
+many good alternatives (just have a look through the CRAN's Optimization Task View). snapKrig
+implements MLE for covariance models in `sk_fit` using `stats::optim`. The next section demonstrates
+it on a real life dataset.
 
 
 ## Example data: Meuse soils
@@ -296,14 +313,7 @@ This section looks at real geo-referenced points in the Meuse soils dataset
 These points are the subject of a
 [kriging vignette for gstat](https://cran.r-project.org/web/packages/gstat/vignettes/gstat.pdf) -
 which we loosely follow in this vignette -
-and they are lazy-loaded with the `sp` package. For general purpose work on geo-referenced
-vector data in R, we recommend using the more up-to-date `sf` package. Both are loaded below:   
-
-```{r meuse_setup}
-library(sp)
-library(sf)
-```
-
+and they are lazy-loaded with the `sp` package.
 
 Users can access the Meuse data directly by calling `data(meuse)` and `data(meuse.riv)`, which returns
 data frames containing coordinates. For this vignette, however, I use a helper function, `get_meuse`,
@@ -392,7 +402,10 @@ respect to the points. If this polygon had a different CRS (it doesn't), we woul
 align it using `sf::st_transform`.
 
 ```{r meuse_source_plot, out.width='50%', fig.dim=c(5,5), fig.align='center'}
-# plot source data using sf package, restoring default graphical parameters afterwards
+# set up a common color palette (this is the default in snapKrig)
+.pal = function(n) { hcl.colors(n, 'Spectral', rev=TRUE) }
+
+# plot source data using sf package
 plot(pts, pch=16, reset=FALSE, pal=.pal, key.pos=1, main='Meuse log[zinc]')
 plot(meuse_sf[['river_poly']], col='lightblue', border=NA, add=TRUE)
 plot(st_geometry(pts), pch=1, add=TRUE)
@@ -408,7 +421,6 @@ and snap the Meuse points to it using `sk_snap`. The extent and resolution can b
 # snap points with default settings
 g = sk_snap(pts)
 print(g)
-summary(g)
 ```
 
 Or they can be set manually, for example by supplying a template grid with the same CRS as `pts`,
@@ -427,12 +439,11 @@ the units of the CRS. This is often meters (as it is with Meuse), but if you are
 have a look at `sf::st_crs(pts)` for your `pts`.
 
 Call `plot` on the output of `sk_snap` to see how these points look after snapping to the grid. As
-with `sk` object plots, one can overlay additional spatial vector layers using the `reset` and `add`
-arguments.
+with `sk` object plots, you can overlay additional spatial vector layers using the `add` argument.
 
 ```{r meuse_snapped_plot, out.width='50%', fig.dim=c(5,5), fig.align='center'}
 # plot gridded version using the snapKrig package
-plot(g, reset=FALSE, zlab='log(ppb)', main='snapped Meuse log[zinc] data')
+plot(g, zlab='log(ppb)', main='snapped Meuse log[zinc] data')
 plot(meuse_sf[['river_poly']], col='lightblue', border=NA, add=TRUE)
 
 ```
@@ -483,7 +494,7 @@ The result is plotted below, along with the center line of the river channel in 
 
 ```{r meuse_make_x_plot, out.width='50%', fig.dim=c(5,5), fig.align='center'}
 # plot the result
-plot(X, reset=FALSE, zlab='distance\n(scaled)', main='distance to river covariate')
+plot(X, zlab='distance\n(scaled)', main='distance to river covariate')
 plot(meuse_sf[['river_line']], add=TRUE)
 ```
 
@@ -544,14 +555,13 @@ plot(g_uk, zlab='log[zinc]', main='universal kriging predictions')
 plot(meuse_sf[['river_line']], add=TRUE)
 ```
 We can think of this as being two images superimposed - one is the linear combination
-of covariates (*ie* the trend) and the other is the random spatial component, which has
-been interpolated from the observed points.
+of covariates (*ie* the trend) and the other is the random spatial component, which is interpolated from the observed points.
 
 In ordinary and universal kriging these two components are interrelated - the trend estimate
 influences the spatial component estimate and vice versa. In some special cases however, the users may
-wish to disentagle them (for example if the trend is known *a priori*), in which case the response 
-data (`g`) should be de-trended, and `X` should be set to 0 (not `NA`) in the `sk_fit` and `sk_cmean`
-calls. This is called *simple kriging*
+wish to disentagle them (for example if the trend is known *a priori*, or a nonlinear trend is being
+modeled separately), in which case the response  data (`g`) should be de-trended, and `X` should be set
+to 0 (not `NA`) in the `sk_fit` and `sk_cmean` calls. This is called *simple kriging*
 
 ### Uncertainty
 
@@ -559,7 +569,7 @@ Of all linear unbiased predictors, the kriging predictor is by definition optima
 minimizing prediction uncertainty. This is a good reason to prefer kriging, but
 it doesn't mean you shouldn't worry about uncertainty in your problem. In fact, one of the
 nice things about kriging theory is its explicit formula for prediction variance. We can
-compute it directly, rather than having to approximate (through bootstrap, CV, MCMC etc).
+compute it directly, rather than having to approximate.
 
 To compute kriging variance, call sk_cmean with argument `what='v'`.
 
@@ -581,25 +591,28 @@ the nearest observation. It also increases as values of the covariates veer into
 river channel), as these covariate values have no associated (zinc) observations.
 
 Notice that even when a grid point coincides exactly with an observation, there is nonzero
-uncertainty. This reflects a (spatially constant) measurement error that is represented in the model by the nugget
-effect (find it in list element 'eps' of the parameter list returned by `sk_fit`).
+uncertainty. This reflects a spatially constant measurement error that is represented in the
+model by the nugget effect. Find this parameter in list element 'eps' of the parameter list
+returned by `sk_fit`.
 
 This nugget effect is important for realism, as virtually all real-life datasets have
 measurement error, but it is also important for numerical stability. While it is possible to set
-the nugget to zero (producing an exact interpolator), this can have unpredictable effects resulting
-from numerical precision limits on computers.
+the nugget to zero - producing an exact interpolator - this can have unpredictable results due
+to numerical precision issues.
 
 ### Back-transformations
 
 So far we have been been working with the logarithms of the zinc concentrations. This produces something closer
 to a Gaussian random variable - a requirement of kriging theory. But when it comes to predictions and applications,
-we are probably after the untransformed values. Taking `exp(g_uk)`, while intuitive, would introduce a negative bias.
+we are probably after the un-transformed values.
+
+Taking `exp(g_uk)`, while intuitive, would introduce a negative bias.
 The mistake is in assuming that `E(f(X))` is the same as `f(E(X))` (for expected value operator `E` and
 transformation `f`), which is only true if `f` is linear.
 
-In short, to get zinc concentration predictions on the original scale, we need a bias adjustment. Cressie
-supplies one for logarithm in his book, and we use a simplified version of that below (add half the variance
-before exponentiating). The plot below shows the result, with the original observed point data overlaid.
+In short, to get zinc concentration predictions on the original scale, we need a bias adjustment. We use a
+simplified version of the one given in Cressie (2015) - addding half the variance before exponentiating. The plot
+below shows the result, with the original observed point data overlaid.
 
 ```{r meuse_uk_orig_plot, out.width='100%', fig.dim=c(10,10), fig.align='center'}
 # prediction bias adjustment from log scale
@@ -610,7 +623,7 @@ pts_orig = meuse_sf[['soils']]['zinc']
 
 # full plot
 zlim = range(exp(g), na.rm=TRUE)
-sk_plot(g_uk_orig, zlab='zinc (ppm)', main='[zinc] predictions and observations', cex=1.5, zlim=zlim, reset=FALSE)
+sk_plot(g_uk_orig, zlab='zinc (ppm)', main='[zinc] predictions and observations', cex=1.5, zlim=zlim)
 plot(meuse_sf[['river_line']], add=TRUE)
 
 # overlay observation points
@@ -620,6 +633,11 @@ plot(sf::st_geometry(pts_orig), add=TRUE)
 
 The underlying heatmap is our final predictor and on top we have plotted the observed data. In order to
 make the color scales match, we have masked the heatmap in this plot to have the same range as the observations.
+
+
+## References
+
+* Cressie, Noel (2015) "Statistics for spatial data". John Wiley & Sons
 
 
 

@@ -1,14 +1,19 @@
 Package: snapKrig
-Title: Fast Kriging with Kronecker Covariance
+Title: Fast Kriging and Geostatistics on Grids with Kronecker Covariance
 Version: 0.0.0.9000
 Authors@R: 
     person("Dean", "Koch", , "dkoch@ualberta.ca", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-8849-859X"))
-Description: Functions for fitting geostatistical models and kriging with
-    gridded data with spatially separable covariance functions (Kronecker
-    covariance). Kronecker products are used to simplify computations for
-    likelihood, conditional mean, and more.
+Description: Functions for geostatistical modeling and kriging with
+    gridded data, and spatially separable covariance functions (Kronecker
+    covariances). Kronecker products in these models provide shortcuts for
+    solving large matrix problems in likelihood and conditional mean, making
+    snapKrig computationally efficent with large grids. The package supplies
+    its own S3 grid object class, and a host of methods including plot, print,
+    Ops, square bracket replace/assign, and more.
 License: MIT + file LICENSE
+URL: https://github.com/deankoch/snapKrig
+BugReports: https://github.com/deankoch/snapKrig/issues
 Imports: 
     graphics,
     grDevices,
@@ -29,5 +34,5 @@ Config/testthat/edition: 3
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.2
 VignetteBuilder: knitr

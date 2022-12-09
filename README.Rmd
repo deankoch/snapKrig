@@ -79,7 +79,6 @@ plot(g_pred, main='snapKrig prediction at 10X resolution')
 summary(g_pred)
 ```
 
-
 # Technical Features
 
 snapKrig's computational efficiency makes it useful in situations where interpolation or

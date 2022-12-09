@@ -68,7 +68,7 @@ g_pred = sk_cmean(g_down, pars, X=0)
 # print time elapsed in computation
 t_end = Sys.time()
 t_end - t_start
-#> Time difference of 0.5442128 secs
+#> Time difference of 0.547658 secs
 ```
 
 ``` r
@@ -84,7 +84,7 @@ plot(g_pred, main='snapKrig prediction at 10X resolution')
 summary(g_pred)
 #> complete sk grid
 #> 1973081 points
-#> range [-2.40, 2.39]
+#> range [-2.08, 2.13]
 #> ..............................
 #> dimensions : 991 x 1991
 #> resolution : 0.1 x 0.1

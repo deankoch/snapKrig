@@ -46,7 +46,7 @@
 #' @param ... plotting parameters (see details)
 #'
 #' @return The function returns a vector of suggested plot height and width values in units of
-#'  inches wich minimize the unused margin space. For example to save a trim version of your
+#'  inches which minimize the unused margin space. For example to save a trim version of your
 #'  plot as png, call `sk_plot` first to get the suggested height and width, say `y` and `x`,
 #'  then pass the result to `png(filename, height=m*y, width=m*x, pointsize=m*12, ...)`,
 #'  where `m` is any positive scaling factor.

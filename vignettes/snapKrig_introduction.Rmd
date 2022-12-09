@@ -154,7 +154,7 @@ g_sim = sk_sim(gdim, pars)
 plot(g_sim, main='an example snapKrig simulation (near-zero nugget)', cex=1.5)
 ```
 
-snapKrag is unusually fast at generating spatially auto-correlated data like this and it supports
+snapKrig is unusually fast at generating spatially auto-correlated data like this and it supports
 a number of different covariance models. In simple terms, this changes the general
 appearance, size, and connectivity of the random blobs seen in the image above. See `?sk_corr` for
 more on these models.
@@ -182,7 +182,7 @@ summary(g_sim)
 However, snapKrig functionality is more focused on spatial modeling and kriging. Outside of that context we
 recommend managing raster data with other packages (`terra` in particular). `sk` will accept single
 and multi-layer rasters from the `terra` and `raster` packages, reshaping them as sk grid objects;
-and sk grids can be converted to SpatRaster or Rasterlayer using `sk_export`.
+and sk grids can be converted to SpatRaster or RasterLayer using `sk_export`.
 
 ```{r intro_export}
 sk_export(g_sim)
@@ -611,7 +611,7 @@ The mistake is in assuming that `E(f(X))` is the same as `f(E(X))` (for expected
 transformation `f`), which is only true if `f` is linear.
 
 In short, to get zinc concentration predictions on the original scale, we need a bias adjustment. We use a
-simplified version of the one given in Cressie (2015) - addding half the variance before exponentiating. The plot
+simplified version of the one given in Cressie (2015) - adding half the variance before exponentiating. The plot
 below shows the result, with the original observed point data overlaid.
 
 ```{r meuse_uk_orig_plot, out.width='100%', fig.dim=c(10,10), fig.align='center'}

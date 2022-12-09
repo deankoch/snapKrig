@@ -2,7 +2,8 @@ Package: snapKrig
 Title: Fast Kriging and Geostatistics on Grids with Kronecker Covariance
 Version: 0.0.0.9000
 Authors@R: 
-    person("Dean", "Koch", email = "dkoch@ualberta.ca",
+    person("Dean", "Koch",
+    email = "dkoch@ualberta.ca",
     role = c("aut", "cre", "cph"),
     comment = c(ORCID = "0000-0002-8849-859X"))
 Description: Functions for geostatistical modeling and kriging with

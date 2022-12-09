@@ -399,6 +399,7 @@ sk_sub_idx = function(gdim, ij=NULL, idx=FALSE, nosort=FALSE)
 #' @param idx logical, if TRUE the function returns a list containing `ij_keep` and `ij_rem`
 #' @param mirror logical, whether to mirror the selection in `ij_rem` (see details)
 #'
+#' @return an sk grid object, the requested sub-grid of `g`
 #' @export
 #' @keywords internal
 #' @family sk constructors

@@ -17,6 +17,9 @@ sk_sub(g, ij_keep = NULL, ij_rem = NULL, idx = FALSE, mirror = FALSE)
 
 \item{mirror}{logical, whether to mirror the selection in \code{ij_rem} (see details)}
 }
+\value{
+an sk grid object, the requested sub-grid of \code{g}
+}
 \description{
 Creates a "sk" object containing only the grid-lines specified in \code{idx_keep}. Alternatively,
 grid lines to remove can be specified in \code{idx_rem}.

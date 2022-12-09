@@ -6,5 +6,5 @@
 ^pkg_update\.R$
 ^rjarticle
 ^NEWS\.md$
-^cran-comments.md$
 ^CRAN-RELEASE$
+^cran-comments\.md$

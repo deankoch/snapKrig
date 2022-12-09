@@ -310,10 +310,8 @@ it on a real life dataset.
 
 This section looks at real geo-referenced points in the Meuse soils dataset
 (Pebesma, 2009), which reports heavy metal concentrations in a river floodplain in the Netherlands.
-These points are the subject of a
-[kriging vignette for gstat](https://cran.r-project.org/web/packages/gstat/vignettes/gstat.pdf) -
-which we loosely follow in this vignette -
-and they are lazy-loaded with the `sp` package.
+These points are used in the kriging vignette for [gstat](https://CRAN.R-project.org/package=gstat),
+which we loosely follow in this vignette, and they are lazy-loaded with the `sp` package.
 
 Users can access the Meuse data directly by calling `data(meuse)` and `data(meuse.riv)`, which returns
 data frames containing coordinates. For this vignette, however, I use a helper function, `get_meuse`,

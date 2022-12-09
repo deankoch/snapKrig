@@ -8,9 +8,9 @@
 
 snapKrig is a computationally lean implementation of a 2-dimensional
 spatial correlation model for gridded data. By restricting to models
-with (separable) Kronecker covariance, the package speeds computations
-on certain likelihood and kriging problems (orders of magnitude
-difference) compared to alternatives like `gstat`, `fields`, `geoR`,
+with (separable) Kronecker covariance, the package can speed
+computations on certain likelihood and kriging problems by orders of
+magnitude compared to alternatives like `gstat`, `fields`, `geoR`,
 `spatial`, and `LatticeKrig`.
 
 ## Installation
@@ -41,9 +41,11 @@ g_empty
 Generate some random auto-correlated data for this grid
 
 ``` r
-# simulate data on a square grid and plot
+# simulate data on a square grid
 pars = sk_pars(g_empty)
 g_sim = sk_sim(g_empty, pars)
+
+# plot
 plot(g_sim, main='snapKrig simulation')
 ```
 
@@ -57,19 +59,32 @@ g_sim
 Downscale and filter noise by simple kriging
 
 ``` r
+# downscale and predict, timing computations
+t_start = Sys.time()
 g_down = sk_rescale(g_sim, down=10)
 g_pred = sk_cmean(g_down, pars, X=0)
 #> 100 x 200 complete sub-grid detected
+
+# print time elapsed in computation
+t_end = Sys.time()
+t_end - t_start
+#> Time difference of 0.5442128 secs
+```
+
+``` r
+# plot grid
 plot(g_pred, main='snapKrig prediction at 10X resolution')
 ```
 
-<img src="man/figures/README-intro_down-1.png" width="75%" style="display: block; margin: auto;" />
+<img src="man/figures/README-intro_down_plot-1.png" width="75%" style="display: block; margin: auto;" />
 
 ``` r
+
+# print summary
 summary(g_pred)
 #> complete sk grid
 #> 1973081 points
-#> range [-1.97, 2.41]
+#> range [-2.40, 2.39]
 #> ..............................
 #> dimensions : 991 x 1991
 #> resolution : 0.1 x 0.1
@@ -81,8 +96,8 @@ summary(g_pred)
 snapKrig’s computational efficiency makes it useful in situations where
 interpolation or down-scaling would pose a problem due to long
 computation times and/or high memory demands. Such problems are common
-when working with geo-referenced data in earth sciences. Features
-include:
+when working with geo-referenced data in earth sciences. snapKrig’s
+features include:
 
 - anisotropic Gaussian processes on 2-dimensional regular grids for a
   choice of covariance kernels

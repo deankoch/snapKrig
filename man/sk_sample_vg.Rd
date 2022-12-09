@@ -80,6 +80,9 @@ n_sp = 10
 vg = sk_sample_vg(g_obs, idx=sample.int(n, n_sp))
 sk_plot_semi(vg, pars)
 
+# skipped to reduce check time
+\donttest{
+
 # repeat with all point pairs sampled (not recommended for big data sets)
 vg = sk_sample_vg(g_obs, n_pp=Inf)
 sk_plot_semi(vg, pars)
@@ -97,6 +100,8 @@ sk_plot_semi(vg, pars)
 # change this behaviour with n_layer_max
 vg = sk_sample_vg(g_obs_multi, n_layer_max=5)
 sk_plot_semi(vg, pars)
+
+}
 
 }
 \seealso{

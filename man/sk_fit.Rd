@@ -89,16 +89,18 @@ iterations is set to \code{1e3} but this can be changed by manually setting 'max
 \examples{
 
 # define a grid
-gdim = c(50, 53)
+gdim = c(50, 51)
 g_empty = sk(gdim)
 pars_src = sk_pars(g_empty)
 pars_src = utils::modifyList(pars_src, list(eps=runif(1, 0, 1e1), psill=runif(1, 0, 1e2)))
 pars_src[['y']][['kp']] = pars_src[['x']][['kp']] = runif(1, 1, 50)
 
-# generate example data and fit to it
+# generate example data
 g_obs = sk_sim(g_empty, pars_src)
 sk_plot(g_obs)
-fit_result = sk_fit(g_obs, pars='gau')
+
+# fit (set maxit low to keep check time short)
+fit_result = sk_fit(g_obs, pars='gau', control=list(maxit=25), quiet=TRUE)
 
 # compare estimates with true values
 rbind(true=sk_pars_update(pars_src), fitted=sk_pars_update(fit_result))
@@ -116,15 +118,15 @@ print(data.frame(psill=psill_test, likelihood=LL_test))
 
 # repeat with most data missing
 n = prod(gdim)
-n_obs = 200
+n_obs = 25
 g_obs = sk_sim(g_empty, pars_src)
 idx_miss = sample.int(length(g_empty), length(g_empty) - n_obs)
 g_miss = g_obs
 g_miss[idx_miss] = NA
 sk_plot(g_miss)
 
-# fit and compare
-fit_result = sk_fit(g_miss, pars='gau')
+# fit (set maxit low to keep check time short) and compare
+fit_result = sk_fit(g_miss, pars='gau', control=list(maxit=25), quiet=TRUE)
 rbind(true=sk_pars_update(pars_src), fitted=sk_pars_update(fit_result))
 
 }

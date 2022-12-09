@@ -418,6 +418,9 @@ sk_sample_pt = function(g, n=1e2, lag_max=0, up=0, over=FALSE, sk_out=TRUE, seed
 #' vg = sk_sample_vg(g_obs, idx=sample.int(n, n_sp))
 #' sk_plot_semi(vg, pars)
 #'
+#' # skipped to reduce check time
+#' \donttest{
+#'
 #' # repeat with all point pairs sampled (not recommended for big data sets)
 #' vg = sk_sample_vg(g_obs, n_pp=Inf)
 #' sk_plot_semi(vg, pars)
@@ -435,6 +438,8 @@ sk_sample_pt = function(g, n=1e2, lag_max=0, up=0, over=FALSE, sk_out=TRUE, seed
 #' # change this behaviour with n_layer_max
 #' vg = sk_sample_vg(g_obs_multi, n_layer_max=5)
 #' sk_plot_semi(vg, pars)
+#'
+#' }
 #'
 sk_sample_vg = function(g, n_pp=1e4, idx=NULL, n_bin=25, n_layer_max=NA, quiet=FALSE)
 {

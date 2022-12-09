@@ -126,6 +126,8 @@ max(abs( g_multi[] - g_multi_miss[] ), na.rm=TRUE)
 # vals=FALSE drops multi-layer information
 sk(gdim=gdim, gval=mat_multi, vals=FALSE)
 
+# skipped to reduce check time
+\donttest{
 if( requireNamespace('raster') ) {
 
 # open example file as RasterLayer
@@ -157,6 +159,7 @@ summary(g_multi)
 g = sk(r[[1]])
 summary(g)
 
+}
 }
 }
 }

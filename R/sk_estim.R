@@ -755,16 +755,18 @@ sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NUL
 #' @examples
 #'
 #' # define a grid
-#' gdim = c(50, 53)
+#' gdim = c(50, 51)
 #' g_empty = sk(gdim)
 #' pars_src = sk_pars(g_empty)
 #' pars_src = utils::modifyList(pars_src, list(eps=runif(1, 0, 1e1), psill=runif(1, 0, 1e2)))
 #' pars_src[['y']][['kp']] = pars_src[['x']][['kp']] = runif(1, 1, 50)
 #'
-#' # generate example data and fit to it
+#' # generate example data
 #' g_obs = sk_sim(g_empty, pars_src)
 #' sk_plot(g_obs)
-#' fit_result = sk_fit(g_obs, pars='gau')
+#'
+#' # fit (set maxit low to keep check time short)
+#' fit_result = sk_fit(g_obs, pars='gau', control=list(maxit=25), quiet=TRUE)
 #'
 #' # compare estimates with true values
 #' rbind(true=sk_pars_update(pars_src), fitted=sk_pars_update(fit_result))
@@ -782,15 +784,15 @@ sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NUL
 #'
 #' # repeat with most data missing
 #' n = prod(gdim)
-#' n_obs = 200
+#' n_obs = 25
 #' g_obs = sk_sim(g_empty, pars_src)
 #' idx_miss = sample.int(length(g_empty), length(g_empty) - n_obs)
 #' g_miss = g_obs
 #' g_miss[idx_miss] = NA
 #' sk_plot(g_miss)
 #'
-#' # fit and compare
-#' fit_result = sk_fit(g_miss, pars='gau')
+#' # fit (set maxit low to keep check time short) and compare
+#' fit_result = sk_fit(g_miss, pars='gau', control=list(maxit=25), quiet=TRUE)
 #' rbind(true=sk_pars_update(pars_src), fitted=sk_pars_update(fit_result))
 #'
 sk_fit = function(g, pars=NULL, X=NA, iso=TRUE, n_max=1e3, quiet=FALSE,
@@ -902,7 +904,8 @@ sk_fit = function(g, pars=NULL, X=NA, iso=TRUE, n_max=1e3, quiet=FALSE,
     # n-d optimization case
 
     # set default control parameters and run the optimizer
-    control = utils::modifyList(list(maxit=1e3, parscale=optim_scale), control)
+    if( is.null(control[['maxit']]) ) control[['maxit']] = 1e3
+    if( is.null(control[['parscale']]) ) control[['parscale']] = optim_scale
     optim_out = suppressWarnings(stats::optim(par = pars_df[['initial']],
                                               lower = pars_df[['lower']],
                                               upper = pars_df[['upper']],

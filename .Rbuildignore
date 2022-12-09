@@ -5,6 +5,7 @@
 ^README\.Rmd$
 ^pkg_update\.R$
 ^rjarticle
+^vignettes\github
 ^NEWS\.md$
 ^cran-comments.md$
 ^CRAN-RELEASE$

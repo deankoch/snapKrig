@@ -88,6 +88,7 @@ iterations is set to \code{1e3} but this can be changed by manually setting 'max
 }
 \examples{
 
+\dontrun{
 # define a grid
 gdim = c(50, 51)
 g_empty = sk(gdim)
@@ -128,6 +129,7 @@ sk_plot(g_miss)
 # fit (set maxit low to keep check time short) and compare
 fit_result = sk_fit(g_miss, pars='gau', control=list(maxit=25), quiet=TRUE)
 rbind(true=sk_pars_update(pars_src), fitted=sk_pars_update(fit_result))
+}
 
 }
 \seealso{

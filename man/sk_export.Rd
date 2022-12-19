@@ -21,7 +21,7 @@ a RasterLayer or SpatRaster containing the data from \code{g} (or a sub-grid)
 Convert "sk" grid to SpatRaster
 }
 \examples{
-
+\dontrun{
 if( requireNamespace('raster') ) {
 
 # open example file as RasterLayer
@@ -51,7 +51,7 @@ r_from_g = sk_export(g)
 all.equal(r_from_g, r)
 
 }
-
+}
 
 }
 \seealso{

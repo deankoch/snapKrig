@@ -146,6 +146,9 @@ X_trans = t(X_all_obs) \%*\% solve(V)
 betas_compare = solve( X_trans \%*\% X_all_obs ) \%*\% X_trans \%*\% z
 betas_compare - betas_est
 
+# multilayer examples skipped to limit R CMD CHECK times on slower machines
+\dontrun{
+
 # generate some extra noise for 10-layer example
 g_noise_multi = sk_sim(g_empty, pars, n_layer=10)
 g_multi = g_lm + g_noise_multi
@@ -158,9 +161,9 @@ summary(sk_GLS(g_multi, pars, g_X))
 summary(sk_GLS(g_multi, pars, X))
 
 # note that X cannot be missing data where `g` is observed
-\dontrun{
+
 summary(sk_GLS(g_multi, pars, X_obs))
-}
+
 
 # repeat with missing data
 g_multi[!is_obs,] = NA
@@ -173,6 +176,7 @@ summary(sk_GLS(g_multi, pars, g_X))
 summary(sk_GLS(g_multi, pars, X))
 summary(sk_GLS(g_multi, pars, g_X_obs))
 summary(sk_GLS(g_multi, pars, X_obs))
+}
 
 }
 \seealso{

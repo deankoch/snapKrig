@@ -141,6 +141,9 @@
 #' betas_compare = solve( X_trans %*% X_all_obs ) %*% X_trans %*% z
 #' betas_compare - betas_est
 #'
+#' # multilayer examples skipped to limit R CMD CHECK times on slower machines
+#' \dontrun{
+#'
 #' # generate some extra noise for 10-layer example
 #' g_noise_multi = sk_sim(g_empty, pars, n_layer=10)
 #' g_multi = g_lm + g_noise_multi
@@ -153,9 +156,9 @@
 #' summary(sk_GLS(g_multi, pars, X))
 #'
 #' # note that X cannot be missing data where `g` is observed
-#' \dontrun{
+#'
 #' summary(sk_GLS(g_multi, pars, X_obs))
-#' }
+#'
 #'
 #' # repeat with missing data
 #' g_multi[!is_obs,] = NA
@@ -168,6 +171,7 @@
 #' summary(sk_GLS(g_multi, pars, X))
 #' summary(sk_GLS(g_multi, pars, g_X_obs))
 #' summary(sk_GLS(g_multi, pars, X_obs))
+#' }
 #'
 sk_GLS = function(g, pars, X=NA, out='s', fac_method='eigen', fac=NULL)
 {
@@ -754,6 +758,7 @@ sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NUL
 #'
 #' @examples
 #'
+#' \dontrun{
 #' # define a grid
 #' gdim = c(50, 51)
 #' g_empty = sk(gdim)
@@ -794,6 +799,7 @@ sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NUL
 #' # fit (set maxit low to keep check time short) and compare
 #' fit_result = sk_fit(g_miss, pars='gau', control=list(maxit=25), quiet=TRUE)
 #' rbind(true=sk_pars_update(pars_src), fitted=sk_pars_update(fit_result))
+#' }
 #'
 sk_fit = function(g, pars=NULL, X=NA, iso=TRUE, n_max=1e3, quiet=FALSE,
                   lower=NULL, initial=NULL, upper=NULL,

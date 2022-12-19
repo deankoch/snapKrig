@@ -17,7 +17,7 @@
 #' @export
 #'
 #' @examples
-#'
+#' \dontrun{
 #' if( requireNamespace('raster') ) {
 #'
 #' # open example file as RasterLayer
@@ -47,7 +47,7 @@
 #' all.equal(r_from_g, r)
 #'
 #' }
-#'
+#' }
 #'
 sk_export = function(g, template='terra')
 {

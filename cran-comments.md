@@ -6,6 +6,8 @@
 * The second note only occurs on rhub with the Windows platform. I believe it is due to [R-hub issue #503](https://github.com/r-hub/rhub/issues/503).
 * The third note only occurs on rhub with Fedora Linux. I believe this is due to a missing dependency ("tidy") on rhub's test machine 
 
+This is a re-submission
+
 ## Test environments
 
 with `devtools::check()`

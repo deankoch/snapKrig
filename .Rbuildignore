@@ -5,6 +5,5 @@
 ^README\.Rmd$
 ^pkg_update\.R$
 ^rjarticle
-^NEWS\.md$
 ^CRAN-RELEASE$
 ^cran-comments\.md$

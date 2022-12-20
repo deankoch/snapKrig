@@ -1,9 +1,10 @@
 ## R CMD check results
 
-0 errors | 0 warnings | 2 notes
+0 errors | 0 warnings | 3 notes
 
 * The first note indicates that this is a new release
-* the second note only occurs on rhub with the windows platform. I believe it is due to [R-hub issue #503](https://github.com/r-hub/rhub/issues/503).
+* The second note only occurs on rhub with the Windows platform. I believe it is due to [R-hub issue #503](https://github.com/r-hub/rhub/issues/503).
+* The third note only occurs on rhub with Fedora Linux. I believe this is due to a missing dependency ("tidy") on rhub's test machine 
 
 ## Test environments
 
@@ -23,7 +24,7 @@ with `rhub::check_for_cran()`
 
 ## Notes
 
-The note from `rhub::check_for_cran()` is copied here
+The notes from `rhub::check_for_cran()` are copied below
 
 ```
 ❯ On windows-x86_64-devel (r-devel)
@@ -31,3 +32,10 @@ The note from `rhub::check_for_cran()` is copied here
   Found the following files/directories:
     'lastMiKTeXException'
 ```
+
+```
+❯ On fedora-clang-devel (r-devel)
+  checking HTML version of manual ... NOTE
+  Skipping checking HTML validation: no command 'tidy' found
+```
+

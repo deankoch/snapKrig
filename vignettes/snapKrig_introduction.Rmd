@@ -180,7 +180,7 @@ summary(g_sim)
 ```
 
 However, snapKrig functionality is more focused on spatial modeling and kriging. Outside of that context we
-recommend managing raster data with other packages (`terra` in particular). `sk` will accept single
+recommend managing raster data with other packages (`terra` and `sk` in particular). `sk` will accept single
 and multi-layer rasters from the `terra` and `raster` packages, reshaping them as sk grid objects;
 and sk grids can be converted to SpatRaster or RasterLayer using `sk_export`.
 

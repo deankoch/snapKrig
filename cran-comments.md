@@ -3,9 +3,9 @@
 Thanks for your kind feedback on my last submission. I have implement your suggested changes:
 
 * DESCRIPTION is cleaned up and now references a methods paper
+* `on.exit()` is now used to restore user parameters wherever they are modified (such as in R/sk_plot.R)
 * `\dontrun{}` is no longer used in the package
-* `\donttest{}` is used sparingly and always has a comment explaining why
-* `on.exit()` is now used to restore user parameters (such as in R/sk_plot.R)
+* `\donttest{}` is used sparingly (usually to limit execution time, based on rhub check results) and always has a comment explaining why
 
 
 ## R CMD check results

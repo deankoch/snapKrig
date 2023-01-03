@@ -120,6 +120,8 @@
 #' # vals=FALSE drops multi-layer information
 #' sk(gdim=gdim, gval=mat_multi, vals=FALSE)
 #'
+#' # raster import examples skipped to keep CMD check time < 5s on slower machines
+#' \donttest{
 #' if( requireNamespace('raster') ) {
 #'
 #' # open example file as RasterLayer
@@ -151,6 +153,7 @@
 #' g = sk(r[[1]])
 #' summary(g)
 #'
+#' }
 #' }
 #' }
 sk = function(..., vals=TRUE)

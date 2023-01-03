@@ -4,7 +4,7 @@ Thanks for your kind feedback on my last submission. I have implement your sugge
 
 * DESCRIPTION is cleaned up and now references a methods paper
 * `\dontrun{}` is no longer used in the package
-* `donttest{}` is used sparingly and always has a comment explaining why
+* `\donttest{}` is used sparingly and always has a comment explaining why
 * `on.exit()` is now used to restore user parameters (such as in R/sk_plot.R)
 
 

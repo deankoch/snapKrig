@@ -291,7 +291,7 @@ sk_plot = function(g, gdim=NULL, ...)
   zlab = ifelse( is.null( list(...)[['zlab']] ), zlab, list(...)[['zlab']])
   adj = ifelse( is.null( list(...)[['adj']] ), 0.5, list(...)[['adj']])
   x_ontop = ifelse( is.null( list(...)[['x_ontop']] ), ij, list(...)[['x_ontop']])
-  reset = ifelse( is.null( list(...)[['reset']] ), FALSE, list(...)[['reset']])
+  reset = ifelse( is.null( list(...)[['reset']] ), TRUE, list(...)[['reset']])
   px_max = ifelse( is.null( list(...)[['px_max']] ), 2e3, list(...)[['px_max']])
 
 
@@ -438,7 +438,8 @@ sk_plot = function(g, gdim=NULL, ...)
               right = leg_w)
 
   # set new graphical parameters but keep a backup
-  if(reset) par_existing = graphics::par(no.readonly=TRUE)
+  par_existing = graphics::par(no.readonly=TRUE)
+  if(reset) on.exit( { graphics::par(par_existing) } )
   graphics::par(mar=mar_new, oma=rep(oma_w, 4L))
 
   # draw the raster plot without axes or annotations
@@ -566,11 +567,6 @@ sk_plot = function(g, gdim=NULL, ...)
   y_graphics = ( ( bmax['y'] - bmin['y'] ) + sum( mar_new[c(1,3)] ) * y_line ) / y_inch
   x_graphics = ( ( bmax['x'] - bmin['x'] ) + sum( mar_new[1+c(1,3)] ) * x_line ) / x_inch
 
-  ###################################################################################
-  ## tidy up
-
-  # restore old margin settings before the user's next plot call
-  if(reset) graphics::par(par_existing)
   return(invisible(c(y=y_graphics, x=x_graphics)))
 }
 
@@ -854,6 +850,7 @@ sk_plot_semi = function(vg, pars=NULL, add=FALSE, fun='classical', ...)
 
   # set up new margins but keep a backup of existing graphical parameters
   mar_new = mar_existing = graphics::par('mar')
+  if(reset) on.exit( { graphics::par(mar=mar_existing) } )
   mar_new[4] = ifelse(!add & input_vg, 6.1, mar_existing)
   graphics::par(mar=mar_new, oma=c(0,0,0,0))
 
@@ -975,7 +972,4 @@ sk_plot_semi = function(vg, pars=NULL, add=FALSE, fun='classical', ...)
                                                bty = 'n')
 
   }
-
-  # restore old margin settings before the user's next plot call
-  if(reset) graphics::par(mar=mar_existing)
 }

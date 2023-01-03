@@ -80,7 +80,7 @@ n_sp = 10
 vg = sk_sample_vg(g_obs, idx=sample.int(n, n_sp))
 sk_plot_semi(vg, pars)
 
-# skipped to reduce check time
+# non-essential examples skipped to stay below 5s exec time on slower machines
 \donttest{
 
 # repeat with all point pairs sampled (not recommended for big data sets)

@@ -21,8 +21,6 @@ a RasterLayer or SpatRaster containing the data from \code{g} (or a sub-grid)
 Convert "sk" grid to SpatRaster
 }
 \examples{
-# skipped in testing to avoid dependency on raster and terra packages
-\donttest{
 if( requireNamespace('raster') ) {
 
 # open example file as RasterLayer
@@ -51,7 +49,6 @@ r_from_g = sk_export(g)
 # NOTE: various metadata are lost
 all.equal(r_from_g, r)
 
-}
 }
 
 }

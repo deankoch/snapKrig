@@ -108,7 +108,7 @@ rbind(true=sk_pars_update(pars_src), fitted=sk_pars_update(fit_result))
 # extract bounds data frame
 attr(fit_result, 'bds')
 
-# skip in testing to stay below 5s limit
+# non-essential examples skipped to stay below 5s exec time on slower machines
 \donttest{
 # check a sequence of other psill values
 pars_out = fit_result

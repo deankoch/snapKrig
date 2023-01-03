@@ -17,8 +17,6 @@
 #' @export
 #'
 #' @examples
-#' # skipped in testing to avoid dependency on raster and terra packages
-#' \donttest{
 #' if( requireNamespace('raster') ) {
 #'
 #' # open example file as RasterLayer
@@ -47,7 +45,6 @@
 #' # NOTE: various metadata are lost
 #' all.equal(r_from_g, r)
 #'
-#' }
 #' }
 #'
 sk_export = function(g, template='terra')

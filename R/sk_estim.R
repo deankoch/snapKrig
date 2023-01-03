@@ -141,7 +141,7 @@
 #' betas_compare = solve( X_trans %*% X_all_obs ) %*% X_trans %*% z
 #' betas_compare - betas_est
 #'
-#' # multilayer examples skipped to limit R CMD CHECK times on slower machines
+#' # multi-layer examples skipped to stay below 5s exec time on slower machines
 #' \donttest{
 #'
 #' # generate some extra noise for 10-layer example
@@ -154,11 +154,7 @@
 #' # multi-layer input shares covariates matrix X, and output is to a single layer
 #' summary(sk_GLS(g_multi, pars, g_X))
 #' summary(sk_GLS(g_multi, pars, X))
-#'
 #' # note that X cannot be missing data where `g` is observed
-#'
-#' summary(sk_GLS(g_multi, pars, X_obs))
-#'
 #'
 #' # repeat with missing data
 #' g_multi[!is_obs,] = NA
@@ -778,7 +774,7 @@ sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NUL
 #' # extract bounds data frame
 #' attr(fit_result, 'bds')
 #'
-#' # skip in testing to stay below 5s limit
+#' # non-essential examples skipped to stay below 5s exec time on slower machines
 #' \donttest{
 #' # check a sequence of other psill values
 #' pars_out = fit_result

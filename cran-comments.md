@@ -1,3 +1,13 @@
+## Resubmission
+
+Thanks for your kind feedback on my last submission. I have implement your suggested changes:
+
+* DESCRIPTION is cleaned up and now references a methods paper
+* \dontrun{} is no longer used in the package
+* \donttest{} is used sparingly and always has a comment explaining why
+* on.exit() is now used to restore user parameters (such as in R/sk_plot.R)
+
+
 ## R CMD check results
 
 0 errors | 0 warnings | 3 notes
@@ -5,8 +15,6 @@
 * The first note indicates that this is a new release
 * The second note only occurs on rhub with the Windows platform. I believe it is due to [R-hub issue #503](https://github.com/r-hub/rhub/issues/503).
 * The third note only occurs on rhub with Fedora Linux. I believe this is due to a missing dependency ("tidy") on rhub's test machine 
-
-This is a re-submission to fix an issue with the LICENSE file. The file has been replaced with the CRAN template in this submission.
 
 ## Test environments
 

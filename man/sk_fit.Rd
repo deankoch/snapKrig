@@ -88,7 +88,6 @@ iterations is set to \code{1e3} but this can be changed by manually setting 'max
 }
 \examples{
 
-\dontrun{
 # define a grid
 gdim = c(50, 51)
 g_empty = sk(gdim)
@@ -109,6 +108,8 @@ rbind(true=sk_pars_update(pars_src), fitted=sk_pars_update(fit_result))
 # extract bounds data frame
 attr(fit_result, 'bds')
 
+# skip in testing to stay below 5s limit
+\donttest{
 # check a sequence of other psill values
 pars_out = fit_result
 psill_test = ( 2^(seq(5) - 3) ) * pars_out[['psill']]

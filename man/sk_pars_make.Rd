@@ -37,7 +37,7 @@ sk_pars_make(list(k='exp', kp=c(rho=1)))
 sk_pars_make(list(psill=1, x=list(k='mat', kp=c(1,2))))
 
 # incorrectly named parameters raise errors
-\dontrun{
+\donttest{
 sk_pars_make(list(psill=1, x=list(k='exp', kp=c(foo=1))))
 }
 

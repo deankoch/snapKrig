@@ -142,7 +142,7 @@
 #' betas_compare - betas_est
 #'
 #' # multilayer examples skipped to limit R CMD CHECK times on slower machines
-#' \dontrun{
+#' \donttest{
 #'
 #' # generate some extra noise for 10-layer example
 #' g_noise_multi = sk_sim(g_empty, pars, n_layer=10)
@@ -758,7 +758,6 @@ sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NUL
 #'
 #' @examples
 #'
-#' \dontrun{
 #' # define a grid
 #' gdim = c(50, 51)
 #' g_empty = sk(gdim)
@@ -779,6 +778,8 @@ sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NUL
 #' # extract bounds data frame
 #' attr(fit_result, 'bds')
 #'
+#' # skip in testing to stay below 5s limit
+#' \donttest{
 #' # check a sequence of other psill values
 #' pars_out = fit_result
 #' psill_test = ( 2^(seq(5) - 3) ) * pars_out[['psill']]

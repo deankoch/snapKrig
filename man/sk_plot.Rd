@@ -133,7 +133,6 @@ g = sk(gdim)
 plot(g)
 plot(g, ij=TRUE)
 
-\dontrun{
 # example data: cosine of squared distance to top left corner
 z = apply(expand.grid(g$gyx), 1, \(z) cos( 2*sum(z^2) ) )
 g_example = utils::modifyList(g, list(gval=z))
@@ -213,7 +212,6 @@ screen(2)
 plot(g_sim, main='layer 2', layer=2, minimal=TRUE, col_box='black')
 screen(3)
 plot(g_sim, main='layer 3', layer=3, minimal=TRUE, col_box='black')
-}
 
 }
 \seealso{

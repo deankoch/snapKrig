@@ -147,7 +147,7 @@ betas_compare = solve( X_trans \%*\% X_all_obs ) \%*\% X_trans \%*\% z
 betas_compare - betas_est
 
 # multilayer examples skipped to limit R CMD CHECK times on slower machines
-\dontrun{
+\donttest{
 
 # generate some extra noise for 10-layer example
 g_noise_multi = sk_sim(g_empty, pars, n_layer=10)

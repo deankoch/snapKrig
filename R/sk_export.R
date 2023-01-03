@@ -17,7 +17,8 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' # skipped in testing to avoid dependency on raster and terra packages
+#' \donttest{
 #' if( requireNamespace('raster') ) {
 #'
 #' # open example file as RasterLayer

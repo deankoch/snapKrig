@@ -21,7 +21,8 @@ a RasterLayer or SpatRaster containing the data from \code{g} (or a sub-grid)
 Convert "sk" grid to SpatRaster
 }
 \examples{
-\dontrun{
+# skipped in testing to avoid dependency on raster and terra packages
+\donttest{
 if( requireNamespace('raster') ) {
 
 # open example file as RasterLayer

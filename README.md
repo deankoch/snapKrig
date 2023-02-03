@@ -3,31 +3,50 @@
 
 # snapKrig
 
+An R package for fast spatial analysis and kriging on grids
+
 <!-- badges: start -->
+
+[![CRAN
+status](https://www.r-pkg.org/badges/version/snapKrig)](https://CRAN.R-project.org/package=snapKrig)
+[![Lifecycle:
+stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
+[![](https://cranlogs.r-pkg.org/badges/rasterbc)](https://cran.r-project.org/package=rasterbc)
+
 <!-- badges: end -->
 
-snapKrig is a computationally lean implementation of a 2-dimensional
+snapKrig uses a computationally lean implementation of a 2-dimensional
 spatial correlation model for gridded data. By restricting to models
 with (separable) Kronecker covariance, the package can speed
 computations on certain likelihood and kriging problems by orders of
 magnitude compared to alternatives like `gstat`, `fields`, `geoR`,
 `spatial`, and `LatticeKrig`.
 
+Here are some benchmarking results for computation time to downscale a
+32 x 43 raster onto grids of increasing size by ordinary kriging (code
+and instructions to reproduce these results can be found
+[here](https://github.com/deankoch/snapKrig/tree/master/rjarticle/data)).
+
+<img src="man/figures/README-preview-1.png" width="100%" />
+
 ## Installation
 
-You can install the development version of snapKrig from
-[GitHub](https://github.com/) with:
+snapKrig is on [CRAN](https://cran.r-project.org/package=snapKrig).
+Install it with
 
 ``` r
-# install.packages("devtools")
-devtools::install_github("deankoch/snapKrig")
+install.packages('snapKrig')
 ```
 
-A CRAN release is expected soon.
+Check out the [introduction
+vignette](https://cran.r-project.org/web/packages/snapKrig/vignettes/snapKrig_introduction.html)
+for a worked example with the Meuse soils data, or the example below to
+get started right away. We plan to publish a more detailed tutorial and
+benchmarking study in an upcoming paper.
 
 ## Example
 
-Define an empty grid to get started
+To get started define an empty grid
 
 ``` r
 library(snapKrig)
@@ -41,6 +60,9 @@ g_empty
 Generate some random auto-correlated data for this grid
 
 ``` r
+# set a random seed
+set.seed(1234567)
+
 # simulate data on a square grid
 pars = sk_pars(g_empty)
 g_sim = sk_sim(g_empty, pars)
@@ -68,7 +90,7 @@ g_pred = sk_cmean(g_down, pars, X=0)
 # print time elapsed in computation
 t_end = Sys.time()
 t_end - t_start
-#> Time difference of 0.547658 secs
+#> Time difference of 0.5982912 secs
 ```
 
 ``` r
@@ -84,7 +106,7 @@ plot(g_pred, main='snapKrig prediction at 10X resolution')
 summary(g_pred)
 #> complete sk grid
 #> 1973081 points
-#> range [-2.08, 2.13]
+#> range [-1.95, 2.26]
 #> ..............................
 #> dimensions : 991 x 1991
 #> resolution : 0.1 x 0.1

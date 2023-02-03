@@ -15,28 +15,77 @@ knitr::opts_chunk$set(
 
 # snapKrig
 
+An R package for fast spatial analysis and kriging on grids
+
 <!-- badges: start -->
+
+[![CRAN status](https://www.r-pkg.org/badges/version/snapKrig)](https://CRAN.R-project.org/package=snapKrig)
+[![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
+[![](https://cranlogs.r-pkg.org/badges/rasterbc)](https://cran.r-project.org/package=rasterbc)
+
 <!-- badges: end -->
 
-snapKrig is a computationally lean implementation of a 2-dimensional spatial correlation model for
-gridded data. By restricting to models with (separable) Kronecker covariance, the package can speed
-computations on certain likelihood and kriging problems by orders of magnitude compared
-to alternatives like `gstat`, `fields`, `geoR`, `spatial`, and `LatticeKrig`.
+snapKrig uses a computationally lean implementation of a 2-dimensional spatial correlation model for gridded data. By restricting to models with (separable) Kronecker covariance, the package can speed computations on certain likelihood and kriging problems by orders of magnitude compared to alternatives like `gstat`, `fields`, `geoR`, `spatial`, and `LatticeKrig`.
+
+Here are some benchmarking results for computation time to downscale a 32 x 43 raster onto grids of increasing size by ordinary kriging (code and instructions to reproduce these results can be found [here](https://github.com/deankoch/snapKrig/tree/master/rjarticle/data)).
+
+```{r preview, echo = FALSE, message = FALSE, warning = FALSE, fig.width=6, fig.height=2, dpi=300}
+library(here)
+library(ggplot2)
+
+path_bench_result = here('rjarticle/data/bench_results.csv')
+
+results_df = read.csv(path_bench_result, row.names=NULL)
+results_df = results_df[results_df[['name']] == 'treed_1376',]
+results_df[['is_complete']] = c('no', 'yes')[1 + as.integer(results_df[['complete']])]
+
+# make a plotting data frame with single column for both times
+n_case = nrow(results_df)
+results_plot = results_df[rep(seq(n_case), 2),]
+results_plot[['with_var']] = rep(c('yes', 'no'), each=n_case)
+results_plot[['teval']] = results_plot[['teval_pred']]
+results_plot[['teval']][seq(n_case)] = results_plot[['teval_both']][seq(n_case)]
+
+# make the plot
+ggplot(results_plot) +
+  aes(x=n_out, y=teval, color=pkg, lty=with_var) +
+  geom_point(size=1, pch=1) +
+  geom_line(linewidth=0.5) +
+  scale_linetype_manual(values = c(no='11', yes='solid')) +
+  xlab('number of points predicted') + 
+  ylab('prediction time (seconds)') +
+  labs(color='R package',
+       lty='with variance') +
+  scale_x_log10(
+   breaks = scales::trans_breaks('log10', function(x) 10^x),
+   labels = scales::trans_format('log10', scales::math_format(10^.x))
+  ) +
+  scale_y_log10(
+   breaks = scales::trans_breaks('log10', function(x) 10^x),
+   labels = scales::trans_format('log10', scales::math_format(10^.x))
+  ) +
+  theme_bw() +
+  theme(text=element_text(size=8),
+        strip.text.x=element_text(face='bold'),
+        strip.text.y=element_text(face='bold'))
+
+```
+
+
 
 ## Installation
 
-You can install the development version of snapKrig from [GitHub](https://github.com/) with:
+snapKrig is on [CRAN](https://cran.r-project.org/package=snapKrig). Install it with
 
 ``` r
-# install.packages("devtools")
-devtools::install_github("deankoch/snapKrig")
+install.packages('snapKrig')
 ```
 
-A CRAN release is expected soon.
+Check out the [introduction vignette](https://cran.r-project.org/web/packages/snapKrig/vignettes/snapKrig_introduction.html) for a worked example with the Meuse soils data, or the example below to get started right away. We plan to publish a more detailed tutorial and benchmarking study in an upcoming paper.
 
 ## Example
 
-Define an empty grid to get started
+To get started define an empty grid
 
 ```{r intro_empty}
 library(snapKrig)
@@ -48,6 +97,9 @@ g_empty
 Generate some random auto-correlated data for this grid
 
 ```{r intro_sim, out.width='75%', fig.dim=c(9, 5), fig.align='center'}
+# set a random seed
+set.seed(1234567)
+
 # simulate data on a square grid
 pars = sk_pars(g_empty)
 g_sim = sk_sim(g_empty, pars)
@@ -92,8 +144,7 @@ include:
 * automated maximum likelihood model fitting and support for sample semi-variograms
 * user friendly helper functions for raster down-scaling and point interpolation
 
-`snapKrig` depends only on packages included by default in R (like `graphics` and `stats`), but supports 
-raster and geometry classes from `sf` and `terra`. 
+`snapKrig` depends only on packages included by default in R (like `graphics` and `stats`), but supports raster and geometry classes from `sf` and `terra`. 
 
 
 # History

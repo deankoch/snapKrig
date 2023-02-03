@@ -5,7 +5,7 @@
 .DS_Store
 rjarticle/data/treed.tif
 rjarticle/data/treed_dem.tif
-rjarticle/data/snapKrig_files/
+rjarticle/snapKrig_files/
 rjarticle/rjarticle_complete.zip
 *.aux
 *.bbl
@@ -15,5 +15,4 @@ rjarticle/rjarticle_complete.zip
 *.out
 *.pdf
 *.html
-data
 inst/doc

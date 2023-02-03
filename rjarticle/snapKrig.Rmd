@@ -1,9 +1,9 @@
 ---
 title: "snapKrig: An R Package for Fast Geostatistics with Kronecker Covariances"
 abstract: >
-  We introduce a new R package, called \CRANpkg{snapKrig}, for modelling two-dimensional stationary Gaussian Processes. The package assumes gridded data and a special covariance structure where the joint covariance matrix V can factored using Kronecker products. This scheme implictly supports both isotropic and anisotropic random fields, and it greatly simplifies several important modelling equations, including the likelihood function, generalized least squares, and the kriging predictor and variance equations. Our package offers computationally lean implementations of these functions, and much more. We demonstrate kriging functionality with predictions on the Meuse soils dataset, and also report on a benchmark experiment for computation time that shows improvements of several orders of magnitude compared to three major alternative R packages for spatial kriging. 
+  We introduce a new R package, called \CRANpkg{snapKrig}, for modelling two-dimensional stationary Gaussian Processes. The package assumes gridded data and a special covariance structure where the joint covariance matrix V can factored using Kronecker products. This scheme implicitly supports both isotropic and anisotropic random fields, and it greatly simplifies several important modelling equations, including the likelihood function, generalized least squares, and the kriging predictor and variance equations. Our package offers computationally lean implementations of these functions, and much more. We demonstrate kriging functionality with predictions on the Meuse soils dataset, and also report on a benchmark experiment for computation time that shows improvements of several orders of magnitude compared to three major alternative R packages for spatial kriging. 
   
-draft: true
+draft: false
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
 author:  
   # see ?rjournal_article for more information
@@ -35,31 +35,29 @@ header-includes:
   - \usepackage{booktabs}
 type: package
 output: 
-  rjtools::rjournal_web_article:
-    self_contained: yes
-    toc: no
-    highlight: default
-bibliography: RJreferences.bib
+  rjtools::rjournal_pdf_article:
+    self_contained: false
+    toc: false
+    keep_tex: true
+    pandoc_args: --natbib
+bibliography: snapKrig
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk[['set']](echo = FALSE, warning = FALSE, message = FALSE)
 # Try adding \usepackage{float} with chunk option fig.pos='h' if floating figures are driving you crazy.
 
-# TODO: publish package and replace this with normal load call
-library(devtools)
-load_all()
-
 # spatial libraries
 library(sp)
 library(sf)
 library(terra)
+library(snapKrig)
 
 # directory management
 library(here)
 
-# define paths to required files
-dir_project = here('vignettes/comparisons')
+# define paths to test result files
+dir_project = here('rjarticle')
 dir_storage = file.path(dir_project, 'data')
 path_cv_result = file.path(dir_storage, 'cv_results.csv')
 path_bench_result = file.path(dir_storage, 'bench_results.csv')
@@ -67,7 +65,7 @@ path_dem = file.path(dir_storage, 'treed_dem.tif')
 path_treed = file.path(dir_storage, 'treed.tif')
 
 # load helpers and prepared datasets
-source(file.path(dir_project, 'helper_get_data.R'))
+source(file.path(dir_storage, 'data_helpers.R'))
 meuse_list = get_meuse(dfMaxLength=NA)
 
 # copy the log zinc points data
@@ -92,34 +90,34 @@ In the SGP model, the joint probability distribution for $n$ points $z_k$, with 
 
 However, $V$ is a major headache for computer programmers. The number of entries in this matrix is $n^2$, so as sample sizes grow large, seemingly routine matrix expressions become surprisingly difficult to evaluate. For large enough $n$ readers will find that either $V$ is too large to fit in computer memory or the order-$n^3$ complexity of its factorization is prohibitively slow [@lindgren2011explicit].
 
-These are major obstacles to software implementations of SGP, particularly when it comes to kriging. Kriging workflows with popular packages like \CRANpkg{gstat}, \CRANpkg{geoR}, and \CRANpkg{fields} can become so slow as to be unworkable, or even fail entirely due to out-of-memory errors, when the number of point locations of interest are large in number. 
+These are major obstacles to software implementations of SGP, particularly when it comes to kriging. Kriging workflows with popular packages like \CRANpkg{gstat} [@pebesma2004gstat; @bivand2013applied], \CRANpkg{geoR}, [@ribeiro1999splus; @diggle2007model] and \CRANpkg{fields} [@nychka2021fields] can become so slow as to be unworkable, or even fail entirely due to out-of-memory errors, when the number of point locations of interest are large in number. 
 
-This practical upper limit on sample sizes motivates us to introduce a new package, \CRANpkg{snapKrig}, whose implementation of the SGP is customized for Kronecker covariances on grids. These models are extremely fast compared to conventional alternatives. The computational ceiling is still there, but it is extended much higher. \CRANpkg{snapKrig} offers:  
+This practical upper limit on sample sizes motivates us to introduce a new package, \CRANpkg{snapKrig}, whose implementation of the SGP is customized for Kronecker covariances on grids. These models are extremely fast compared to conventional alternatives. The computational ceiling is still there, but it is extended much higher. \pkg{snapKrig} offers:  
 
 * Optimized functions for likelihood, GLS, kriging, and simulation
 * Flexible parametric covariance structures supporting anisotropy and measurement error
 * Simple beginner-friendly workflows for down-scaling
-* Compatibility with data objects from \CRANpkg{raster}, \CRANpkg{terra}, and \CRANpkg{sf} packages
+* Compatibility with data objects from \CRANpkg{raster} [@hijmansraster], \CRANpkg{terra} [@hijmansterra], and \CRANpkg{sf} [@pebesma2018sf] packages
 
-The likelihood function is particularly useful because it will enable modelers to adapt the methods in \CRANpkg{snapKrig} as an engine for more complex numerical techniques, such as Bayesian MCMC [@flaxman2015fast] or maximum likelihood for nonlinear trend parameters. In fact, this package is built from code that was originally written for the latter problem, in a study on mountain pine beetle outbreaks using integro-difference equations [@koch2020computationally].
+The likelihood function is particularly useful because it will enable modelers to adapt the methods in \pkg{snapKrig} as an engine for more complex numerical techniques, such as Bayesian MCMC [@flaxman2015fast] or maximum likelihood for nonlinear trend parameters. In fact, this package is built from code that was originally written for the latter problem, in a study on mountain pine beetle outbreaks using integro-difference equations [@koch2020computationally].
 
-We illustrate the speed-up offered by \CRANpkg{snapKrig} in the [Computations] section, with a comparison of computation times for likelihood and prediction. This follows the [Kriging Example] section, where we present a detailed demonstration of a universal kriging workflow on the Meuse soils dataset. First we review some related tools and introduce the modelling approach that makes \CRANpkg{snapKrig} unique.
+We illustrate the speed-up offered by \pkg{snapKrig} in the [Computations] section, with a comparison of computation times for likelihood and prediction. This follows the [Kriging Example] section, where we present a detailed demonstration of a universal kriging workflow on the Meuse soils dataset. First we review some related tools and introduce the modelling approach that makes \pkg{snapKrig} unique.
 
 ## Background
 
-One strategy for computation with $V$ on large-$n$ problems is parallelization. The \CRANpkg{bigGP} [@paciorek2015biggp] and the  \CRANpkg{laGP} [@gramacy2016lagp] packages, for example, distribute the task of block factorization to multiple linked processes. This can speed likelihood calculations by several orders of magnitude in large-$n$ problems. However, these packages have steep learning curves, and are intended for high-memory, many-core computers. \CRANpkg{snapKrig} instead aims to be simple to learn and operate, with a memory footprint suitable for use on ordinary desktop computers, and no reliance on parallelization.
+One strategy for computation with $V$ on large-$n$ problems is parallelization. The \pkg{bigGP} [@paciorek2015biggp] and the  \CRANpkg{laGP} [@gramacy2016lagp] packages, for example, distribute the task of block factorization to multiple linked processes. This can speed likelihood calculations by several orders of magnitude in large-$n$ problems. However, these packages have steep learning curves, and are intended for high-memory, many-core computers. \pkg{snapKrig} instead aims to be simple to learn and operate, with a memory footprint suitable for use on ordinary desktop computers, and no reliance on parallelization.
 
-Most existing packages of this type make use of local approximations to the desired covariance function, with the goal of introducing sparsity in $V$ or its inverse (the precision matrix). Examples include covariance tapering and fixed rank kriging, as in the \CRANpkg{LatticeKrig} [@nychka2016latticekrig] and \CRANpkg{FRK} [@zammit2021frk] packages. Markov Random Field approximations [@lindgren2011explicit] are also popular [despite the interpretability drawbacks discussed by @wall2004close], as are Bayesian approximations like \CRANpkg{spBayes} [@finley2007spbayes; @finley2015spbayes], \CRANpkg{laGP} [@gramacy2016lagp], and R-INLA [@lindgren2015bayesian]. 
+Most existing packages of this type make use of local approximations to the desired covariance function, with the goal of introducing sparsity in $V$ or its inverse (the precision matrix). Examples include covariance tapering and fixed rank kriging, as in the \CRANpkg{LatticeKrig} [@nychka2016latticekrig] and \CRANpkg{FRK} [@zammit2021frk] packages. Markov Random Field approximations [@lindgren2011explicit] are also popular [despite the interpretability drawbacks discussed by @wall2004close], as are Bayesian approximations like \CRANpkg{spBayes} [@finley2007spbayes; @finley2015spbayes], \pkg{laGP} [@gramacy2016lagp], and R-INLA [@lindgren2015bayesian]. 
 
-The strategy in \CRANpkg{snapKrig} is different in that it does *exact* computations of the likelihood function for both compact and non-compact (*ie.* long-tailed) covariance functions, including the very common Gaussian covariance function. The resulting dense covariance matrix $V$ would normally be a problem in computations, but our package does not rely on sparsity. 
+The strategy in \pkg{snapKrig} is different in that it does *exact* computations of the likelihood function for both compact and non-compact (*ie.* long-tailed) covariance functions, including the very common Gaussian covariance function. The resulting dense covariance matrix $V$ would normally be a problem in computations, but our package does not rely on sparsity. 
 
 Instead we use an algebraic shortcut that emerges when gridded data are paired with certain covariance models, called Kronecker covariances [@flaxman2015fast; @koch2020computationally; @drton2021existence]. This shortcut appears in many areas of SGP research, including auto-regression [@martin1979subclass], space-time models [@kyriakidis1999geostatistical; @genton2007separable], and Bayesian hierarchical models for both spatial problems [@wilson2014fast; @flaxman2015fast2] and aspatial ones [@stegle2011efficient; @ronneberg2021bayesynergy]. Kronecker covariances also appear in spatial machine learning applications [@rasmussen2006gaussian; @neal2012bayesian; @yang2015carte], where a more general class of fast spatial operators, known as kernels, takes the place of $C$.
 
-Yet despite their elegant algebraic and computational properties [@van2000ubiquitous], we rarely see Kronecker covariances exploited in software for exact geostatistical inference techniques like kriging. To our knowledge, all existing CRAN R packages for exact kriging implement a more general covariance model that does not exploit Kronecker structure (even when it is implicitly guaranteed). \CRANpkg{snapKrig} fills this gap by dealing exclusively in Kronecker covariances, for faster performance.
+Despite their elegant algebraic and computational properties [@van2000ubiquitous], we rarely see Kronecker covariances exploited in software for exact geostatistical inference techniques like kriging. To our knowledge, all existing CRAN R packages for exact kriging implement a more general covariance model that does not exploit Kronecker structure (even when it is implicitly guaranteed). \pkg{snapKrig} fills this gap by dealing exclusively in Kronecker covariances, for faster performance.
 
-CRAN lists a number of alternatives for exact inference with geostatistical models [@bivand2022cran], but three stand out for their scope, maturity, and quality of documentation: The \CRANpkg{gstat} package for variogram-based geostatistical modeling [@pebesma2004gstat; @bivand2013applied]; The \CRANpkg{geoR} package, which supports variogram, likelihood, and Bayesian techniques [@ribeiro1999splus; @diggle2007model], and \CRANpkg{fields}, a feature-rich interpolation package by @nychka2021fields for SGPs and spline models. In the [Computations] section we compare  the most recent major release of these three packages with \CRANpkg{snapKrig}.
+CRAN lists a number of alternatives for exact inference with geostatistical models [@bivand2022cran], but three stand out for their scope, maturity, and quality of documentation: The \pkg{gstat} package for variogram-based geostatistical modeling; The \pkg{geoR} package, which supports variogram, likelihood, and Bayesian techniques, and \pkg{fields}, a feature-rich interpolation package for SGPs and spline models. In the [Computations] section we compare the most recent major release of these three packages with \pkg{snapKrig}.
 
-\CRANpkg{snapKrig} is a model for grid data. All observations, and all locations of interest for inference and prediction, must lie on the same regular grid. Many important datasets arrive in this form naturally, including: satellite imagery, digital elevation models (DEMs) and other remote sensing products [@cracknell1998review]; model outputs such as numerical weather prediction grids and maps of ecological parameters [@beaudoin2018tracking]; and grid-based transect surveys [@foster2020spatially].
+\pkg{snapKrig} is a model for grid data. All observations, and all locations of interest for inference and prediction, must lie on the same regular grid. Many important datasets arrive in this form naturally, including: satellite imagery, digital elevation models (DEMs) and other remote sensing products [@cracknell1998review]; model outputs such as numerical weather prediction grids and maps of ecological parameters [@beaudoin2018tracking]; and grid-based transect surveys [@foster2020spatially].
 
 Point data that are not gridded can be made so by simply defining a grid and translating the coordinates of each point to the closest grid point. *Snapping* points in this way introduces positional error, but this error can be made arbitrarily small, as we control the grid resolution.
 
@@ -170,7 +168,7 @@ kableExtra::kable_styling(knitr::kable(cfun_df, format='latex', col.names=cfun_c
 
 Parameters $\sigma^2$ and $\epsilon$ are the partial sill, and nugget variance, respectively. The partial sill, along with range parameters $\rho_x$ and $\rho_y$ (and any shape parameters), describe the variance of point values and the spatial profile of correlations between them. Any pair of correlograms $c_x$ and $c_y$ can be used, and their parameters may take on different values in the $x$ and $y$ directions.
 Table `r knitr::asis_output(ifelse(knitr::is_html_output(), '\\@ref(tab:cfun-table)', '\\@ref(tab:cfun-table-latex)'))`
-lists the functional forms for $c$ currently implemented in \CRANpkg{snapKrig}.
+lists the functional forms for $c$ currently implemented in \pkg{snapKrig}.
 
 The nugget variance owes its name to historical applications in mining, where it originally accounted for fine-scale granular structure (nuggets) in the geological variables of interest. More generally, it can be interpreted as a measurement error term, where we assume that each observation $z_k$ is composed of a noise-free signal process plus an identically and independently distributed Gaussian random variable.
 
@@ -178,13 +176,13 @@ Readers are directed to the discussion in Chapter 3 of @cressie2015statistics fo
 
 We call Equation \@ref(eq:covfun) a *Kronecker covariance* because when the observed data lie on a regular grid (and we assume they do), the matrix $V - \epsilon I$ takes the form of a Kronecker product. 
 
-# Kriging Example
+# Kriging example
 
-\CRANpkg{snapKrig} is primarily a kriging package, so we will demonstrate its core features in a point interpolation problem. Those familiar with the documentation for the \CRANpkg{sp} and \CRANpkg{gstat} packages will recognize the Meuse dataset, which appears in many of its R code examples [*eg.* @pebesma2022meuse].
+\pkg{snapKrig} is primarily a kriging package, so we will demonstrate its core features in a point interpolation problem. Those familiar with the documentation for the \pkg{gstat} and \CRANpkg{sp} [@pebesma2005sp] packages will recognize the Meuse dataset, which appears in many of its R code examples [*eg.* @pebesma2022meuse].
 
-The Meuse dataset is a survey of soil heavy metal concentrations in a river floodplain in the Netherlands, introduced by @burrough2015principles and later reproduced as part of the \CRANpkg{sp} package by @pebesma2005sp. We will interpolate the Meuse zinc concentration data while adjusting for a linear covariate, distance to river. 
+The Meuse dataset is a survey of soil heavy metal concentrations in a river floodplain in the Netherlands, introduced by @burrough2015principles. We will interpolate the Meuse zinc concentration data while adjusting for a linear covariate, distance to river. 
 
-The SGP is a model for a multivariate normal random variable, so users should always begin by considering whether their data fits this assumption closely enough. In our case, log-transforming the concentration data produces a response variable that more closely resembles a sample from the expected distribution. These log-zinc values been loaded already into a data-frame named `pts`. The following code uses `sk_snap` to snap them to a grid so that they can be used with \CRANpkg{snapKrig}'s modelling functions.
+The SGP is a model for a multivariate normal random variable, so users should always begin by considering whether their data fits this assumption closely enough. In our case, log-transforming the concentration data produces a response variable that more closely resembles a sample from the expected distribution. These log-zinc values been loaded already into a data-frame named `pts`. The following code uses `sk_snap` to snap them to a grid so that they can be used with \pkg{snapKrig}'s modelling functions.
 
 ```{r meuse-setup, include=TRUE, echo=TRUE}
 # snap log zinc data to grid of specified resolution
@@ -193,7 +191,7 @@ summary(g)
 ```
 
 
-```{r meuse-png, echo=FALSE, results='hide', fig.show='hold', out.width='50%', fig.dim=c(5,5), fig.cap='Zinc concentrations (in log parts per billion) from the Meuse dataset, a soil survey on the floodplain of the Meuse River (left). These data are snapped to a grid for use with snapKrig (right)', fig.alt='In the left pane, a diagram showing the winding Meuse river surrounded by about a hundred colored points indicating zinc levels at sample sites. In the right pane, a black-and-white grid of intersecting lines, with a small number of colored cells, one for each point on the left pane.'}
+```{r meuse-png, echo=FALSE, results='hide', fig.show='hold', out.width='50%', fig.dim=c(5,5), fig.cap='Zinc concentrations (in log parts per billion) from the Meuse dataset, a soil survey on the floodplain of the Meuse River (left). These data are snapped to a grid for use with snapKrig (right)', fig.alt='Two panes show two versions of the same soils data. The left pane shows a diagram of the winding Meuse river surrounded by about a hundred colored points. The points are coloured according to zinc levels at sample sites, and all are located in the vicinity of the river floodplain. In the right pane, a black-and-white grid of intersecting lines covers the same area. This grid is mostly empty (white), but a small number of cells are coloured - one for each point on the left pane.'}
 
 # snap points to 50m x 50m grid
 g = sk_snap(pts, g=list(gres=c(y=50, x=50)))
@@ -214,9 +212,9 @@ Here we specified a resolution of 50 x 50 metres, and the function automatically
 
 At the selected resolution each Meuse data point is mapped to a unique grid point, and most positional errors are in the range of 10-25 metres distance which is good enough for this demonstration. In cases where two or more observations would snap to the same grid point, `sk_snap` omits all but the first observation, with a warning. In our experience, model-fitting results are insensitive to slight positional errors as long as the snapping process does not discard too many data points.    
 
-## Ordinary Kriging
+## Ordinary kriging
 
-The snapped data are now in the format expected by the \CRANpkg{snapKrig}'s core modelling functions. A covariates data matrix `X` may optionally be supplied to account for linear trends, as we do later. First, by way of comparison, we will ignore covariates and fit a spatially constant trend.
+The snapped data are now in the format expected by the \pkg{snapKrig}'s core modelling functions. A covariates data matrix `X` may optionally be supplied to account for linear trends, as we do later. First, by way of comparison, we will ignore covariates and fit a spatially constant trend.
 
 `sk_fit` attempts to automatically find maximum likelihood estimators (MLEs) for the mean and covariance parameters by numerically optimizing the full joint likelihood for all observed points in `g`, using R's `stats::optim`.
 
@@ -237,7 +235,7 @@ g_ok_var = sk_cmean(g, pars=fit_result_ok, what='v', quiet=TRUE)
 ```
 
 
-```{r meuse-ok-pred-png, results='hide', fig.show='hold', out.width='50%', fig.dim=c(5,5), fig.cap='Ordinary kriging prediction and variance heatmaps generated by snapKrig for the Meuse example. Predictions are generated for the entire grid, but they are masked in this plot to show detail in areas nearest the observed points.', fig.alt='Two heatmap images are shown, both masked to the same region, covering the convex hull of the observed points, and displaying a range of smoothly varying colors'}
+```{r meuse-ok-pred-png, results='hide', fig.show='hold', out.width='50%', fig.dim=c(5,5), fig.cap='Ordinary kriging prediction and variance heatmaps generated by snapKrig for the Meuse example. Predictions are generated for the entire grid, but they are masked in this plot to show detail in areas nearest the observed points.', fig.alt='Two heatmap images are shown, both masked to the same region as the previous figure. These heatmaps cover the convex hull of the observed zinc sample points, and within this region they show a range of smoothly varying colors.'}
 # make a mask for high variance locations
 is_var_high = g_ok_var[] > quantile(g_ok_var, 0.4, na.rm=TRUE)
 
@@ -278,9 +276,9 @@ par(.par_default)
 
 Figure \@ref(fig:meuse-ok-pred-png) displays the output, masked to a neighbourhood of the observed data. Here we have requested predictions over the same grid that was used for fitting. However, users can request any output grid they like, by snapping the observed data to it and passing it to `sk_cmean` in argument `g`. 
 
-The workflow up to this point has been ordinary kriging (OK), as we did not use any covariates to adjust for linear trends. We will do that now, by including distance to river (along with its square root) as example predictors, and re-fitting the model to demonstrate universal kriging (UK).
+The workflow up to this point has been ordinary kriging (OK), as we did not use any covariates to adjust for linear trends. We will do that now, by including distance to river as example predictors, and re-fitting the model to demonstrate universal kriging (UK).
 
-## Universal Kriging
+## Universal kriging
 
 To include covariates in a model fit, simply pass a matrix `X` in your call to `sk_fit` containing covariate values at the observed point locations. For prediction, the `X` argument in `sk_cmean` should include all of the output grid point locations.
 
@@ -291,7 +289,7 @@ Covariate data (rows) must be supplied in the same order as the grid data vector
 river_dist = sf::st_distance(sk_coords(g, out='sf'), meuse_list[['river_line']])
 river_dist = units::drop_units(river_dist)
 
-# include both distance and its square root
+# include distance covariate (and optionally its square root)
 X = g
 X[] = scale(river_dist)
 #X[] = scale(cbind(river_dist, sqrt(river_dist)))
@@ -316,7 +314,7 @@ These functions account for `X` by using the generalized least squares (GLS) equ
 g_lm = sk_GLS(g, fit_result_uk, X=X)
 ```
 
-```{r meuse-uk-pred-png, results='hide', fig.show='hold', out.width='33%', fig.dim=c(6,8), fig.cap='Universal kriging predictions and variance generated by snapKrig for the Meuse example. The response variable (log zinc concentration) is de-trended using a linear predictor (left) based on distance to river, resulting in more detail in kriging predictions (middle) and variance (right)', fig.alt='Three heatmap images are shown: The first displays a winding river from above, with colours becoming brighter near the river; The second and third cover the same region, showing smoothly varying colors in two different palettes'}
+```{r meuse-uk-pred-png, results='hide', fig.show='hold', out.width='33%', fig.dim=c(6,8), fig.cap='Universal kriging predictions and variance generated by snapKrig for the Meuse example. The response variable (log zinc concentration) is de-trended using a linear predictor (left) based on distance to river, resulting in more detail in kriging predictions (middle) and variance (right)', fig.alt='Three heatmap images are shown, all masked to the same region as the previous two figures (centered over the winding Meuse River). In the left pane, colours becoming brighter near the river; In middle pane, colors vary smoothly to roughly match the colours of the point data in the previous figure. In the right pane, colors vary smoothly in a way that matches the density of the points in the previous figure.'}
 
 # mask same pixels as previous plot
 g_lm_plot = g_lm
@@ -373,11 +371,11 @@ par(.par_default)
 
 Kriging theory guarantees that `sk_cmean` will return the best linear unbiased predictor (in the sense of minimizing variance) provided that the covariance model is a good fit to the data. To find the best fitting model for their data, users are encouraged to seek out informative covariates to include in `X` and to check model fitting diagnostics for problems that would impact predictions.
 
-\CRANpkg{snapKrig} offers two visual diagnostics for covariance parameters. The first, `sk_plot_pars`, draws a heatmap of covariances between a given grid-point and its surroundings. This indicates the degree of smoothing to be expected in predictions, and the direction of anisotropy (if any).
+\pkg{snapKrig} offers two visual diagnostics for covariance parameters. The first, `sk_plot_pars`, draws a heatmap of covariances between a given grid-point and its surroundings. This indicates the degree of smoothing to be expected in predictions, and the direction of anisotropy (if any).
 
 The second diagnostic, `sk_plot_semi`, plots the semi-variogram function, ${\gamma}$, for a given covariance model. It is common practice in geostatistics to compare candidates for ${\gamma}$ against a point cloud of sample semi-variances, $\hat{\gamma}$, which are estimated directly from the data (*ie.* independently of the covariance model). If the estimator $\hat{\gamma}$ is constructed properly, its distribution should be centered around the true $\gamma$.
 
-Sample semi-variograms are computationally fast and easy to interpret, but it is not always clear which form of $\hat{\gamma}$ to use, or how much to trust it. Errors in trend estimation cause $\hat{\gamma}$ to overestimate $\gamma$ [@cressie2015statistics], and even when $\hat{\gamma}$ is unbiased it can vary substantially from sample to sample, causing problems of reproducibility. For these reasons \CRANpkg{snapKrig} does not provide any methods for fitting ${\gamma}$ by least squares. However it implements common methods for visualizing $\hat{\gamma}$ in the functions `sk_plot_semi` and `sk_sample_vg`. Users are encouraged to experiment with simulated data for a known $\gamma$ (*eg.* using `sk_sim`) to get a sense of the variability to expect in sample distributions of $\hat{\gamma}$.
+Sample semi-variograms are computationally fast and easy to interpret, but it is not always clear which form of $\hat{\gamma}$ to use, or how much to trust it. Errors in trend estimation cause $\hat{\gamma}$ to overestimate $\gamma$ [@cressie2015statistics], and even when $\hat{\gamma}$ is unbiased it can vary substantially from sample to sample, causing problems of reproducibility. For these reasons \pkg{snapKrig} does not provide any methods for fitting ${\gamma}$ by least squares. However it implements common methods for visualizing $\hat{\gamma}$ in the functions `sk_plot_semi` and `sk_sample_vg`. Users are encouraged to experiment with simulated data for a known $\gamma$ (*eg.* using `sk_sim`) to get a sense of the variability to expect in sample distributions of $\hat{\gamma}$.
 
 As a final diagnostic for MLE, users should check that the initial values and bounds used in model-fitting are reasonable. These are reported in the output of `sk_fit` (attribute `'bds'`) and can be adjusted manually in the function call. Be on the lookout for common optimization issues, such as parameters converging to a bound, or not moving from their initial values. Both can indicate problems of model-misspecification, or simply a poor choice of initial values. 
 
@@ -390,7 +388,7 @@ vg_ok = sk_sample_vg(g)
 vg_UK = sk_sample_vg(g - g_lm)
 ```
 
-```{r meuse-vg-png, fig.show='hold', out.width='50%', fig.dim=c(4, 3), fig.pos='!htb', fig.cap='Fitted covariance models from kriging on the Meuse dataset, visualized in two ways: On the left, estimated semi-variogram values (circles) are plotted next to fitted model values (blue curves). On the right, a heatmap displays covariances with respect to the central point. The top two plots show the fitted OK model. The bottom two plots show the UK model, where removing a linear trend from the response data has resulted in higher variance and a smaller range.', fig.alt='A four panel plot: On the top row, the left panel is a raster image resembling a blurry photo of a purple ball occupying the middle third of the image, and the right panel is a scatterplot of points in the shape of a hill, with a smoothly varying blue line running through the point cloud. The bottom row is similar but the fuzzy ball is much smaller.'}
+```{r meuse-vg-png, fig.show='hold', out.width='50%', fig.dim=c(4, 3), fig.pos='!htb', fig.cap='Fitted covariance models from kriging on the Meuse dataset, visualized in two ways: On the left, estimated semi-variogram values (circles) are plotted next to fitted model values (blue curves). On the right, a heatmap displays covariances with respect to the central point. The top two plots show the fitted OK model. The bottom two plots show the UK model, where removing a linear trend from the response data has resulted in higher variance and a smaller range.', fig.alt='A four panel plot arranged in a square: the top-left pane is a scatterplot of points in the shape of a hill, with a smooth blue curve approximately following the pattern of points. The top-right pane shows a heatmap resembling a blurry photo of a ball. The bottom two panes are similar, but the point pattern in the scatterplot (bottom-left) traces out a much shallower hill, and in the blurry heatmap image (bottom-right), the ball is much smaller.'}
 
 # plot the sample semi-variogram with theoretical curve in blue for OK model fit
 par(mar=c(5.1, 5.1, 4.1, 2.1))
@@ -432,9 +430,9 @@ sk_plot_pars(fit_result_uk, g_plot, ij=T, main='', col_box = 'grey')
 Diagnostics from the OK and UK workflows are plotted together in Figure \@ref(fig:meuse-vg-png) for comparison. Accounting for distance to the river has a dramatic effect on the fitted covariance model. In the UK model the partial sill is higher, indicating more spatial variability, but the estimated measurement error and effective range are much smaller. This leads to more spatial detail and less smoothing in the kriging prediction and variance (Figure \@ref(fig:meuse-uk-pred-png)) compared with OK (Figure \@ref(fig:meuse-ok-pred-png)).
 
 
-## Anistropic Models
+## Anistropic models
 
-Another way to refine model fit is using anisotropic covariance functions. The term *isotropic* refers to radial symmetry in $C$, where equal distance implies equal covariance, and *anisotropic* refers to its absence. By default `sk_fit` uses an isotropic Gaussian model, but \CRANpkg{snapKrig} supports covariance functions of both kinds.
+Another way to refine model fit is using anisotropic covariance functions. The term *isotropic* refers to radial symmetry in $C$, where equal distance implies equal covariance, and *anisotropic* refers to its absence. By default `sk_fit` uses an isotropic Gaussian model, but \pkg{snapKrig} supports covariance functions of both kinds.
 
 Users can relax the isotropy assumption by calling `sk_fit` with argument `iso=FALSE`. This allows the component range parameters, $\rho_x$ and $\rho_y$, to vary independently.
 
@@ -456,7 +454,7 @@ fit_result_uk_gxp = sk_fit(g, pars='gxp', X=X, iso=FALSE, quiet=TRUE)
 The Matérn and gamma-exponential correlograms (`'mat'` and `'gxp'`) include an additional shape parameter $p$ that controls the degree of kurtosis. As with the range, `iso=FALSE` allows this parameter to vary independently in the x and y directions. The fitted parameters from all five anisotropic models are illustrated as heatmaps in Figure \@ref(fig:meuse-alt-fit). 
 
 
-```{r meuse-alt-fit, fig.show='hold', out.width='19%', fig.dim=c(5,5), fig.pos='!htb', fig.cap='Five examples of anisotropic covariance structures fitted to the Meuse data. As in the previous figure, darker pixels indicate stronger correlation with the central point. From left to right, these are the Kronecker covariances formed by setting both $c_x$ and $c_y$ equal to "gau", "mat", "gxp", "sph", and "exp" models, respectively.'}
+```{r meuse-alt-fit, fig.show='hold', out.width='19%', fig.dim=c(5,5), fig.pos='!htb', fig.cap='Five examples of anisotropic covariance structures fitted to the Meuse data. As in the previous figure, darker pixels indicate stronger correlation with the central point. From left to right, these are the Kronecker covariances formed by setting both $c_x$ and $c_y$ equal to "gau", "mat", "gxp", "sph", and "exp" models, respectively.', fig.alt='A sequence of five heatmap panes are displayed side by side. Each one shows an image resembling a blurry photo of a small object. In the first three panes, this ball is egg-shaped and the heatmaps are nearly identical. In the last two panes (and particularly, in the far right pane), the ball is shaped more like a diamond, with corners oriented up-down and left-right.'}
 
 # compile all fitted parameters
 pars_list = list(uk_gau = fit_result_uk_gau,
@@ -484,29 +482,6 @@ plot_result = Map(\(p, m) {
   }, p=pars_list, m=title_list)
 
 par(.par_default)
-
-# second row
-# 
-# # prepare sample variograms and find common distance limits
-# vg_list = lapply(pars_list, \(p) sk_sample_vg(g-sk_GLS(g, p, X=X), quiet=TRUE) )
-# dmax = 2 * max( sapply(pars_list, \(p) p$y$kp[1]) )
-# 
-# plot_result = Map(\(v, p) {
-#   
-#   sk_plot_semi(v, p, 
-#                main = '',
-#                leg = FALSE,
-#                lwd = 2,
-#                d_max = dmax, 
-#                alpha_bin_b = 0.2, 
-#                alpha_bin = 0.2,
-#                alpha_model = 0.3)
-#   
-#   box('outer', col='lightgrey')
-# 
-#   }, v=vg_list, p=pars_list)
-# 
-# par(.par_default)
 
 ```
 
@@ -556,7 +531,7 @@ g_uk_exp_var = sk_cmean(g, fit_result_uk_exp, X, what='v')
 
 ```
 
-```{r meuse-alt-pred-png, results='hide', fig.show='hold', out.width='33%', fig.dim=c(5,6), fig.pos='!bht', fig.cap='Universal kriging predictions for the Meuse example using three anisotropic Kronecker covariance models, based on the Gaussian, exponential, and spherical correlograms.', fig.alt=''}
+```{r meuse-alt-pred-png, results='hide', fig.show='hold', out.width='33%', fig.dim=c(5,6), fig.pos='!bht', fig.cap='Universal kriging predictions for the Meuse example using three anisotropic Kronecker covariance models, based on the Gaussian, exponential, and spherical correlograms.', fig.alt='A set of three heatmaps are shown side-by-side.These depicting the same aerial view of the Meuse river floodplain as shown in the the first two figures of this paper. Each pane shows a smoothly varying field of colours roughly matching to the colours of the sample points displayed in Figure 1. The three images are very similar, but the first pane is noticeably smoother than the others'}
 
 # mask same pixels as previous plot
 g_uk_gau_plot = g_uk_mat 
@@ -612,9 +587,9 @@ par(.par_default)
 Figure \@ref(fig:meuse-alt-pred-png) shows predictions from three of the anisotropic UK models fitted in the previous section. These have more spatial complexity than the isotropic UK model fitted earlier on. Will this improve predictions at unseen locations, or are we over-fitting?
 
 
-## Model Comparisons
+## Model comparisons
 
-The easiest way to compare model fit is using information criteria such as AIC or BIC. These balance negative log-likelihood with a penalty for complexity (lower is better). \CRANpkg{snapKrig}'s log-likelihood function, `sk_LL`, can be called with argument `what='m'` to return these statistics. They are reported in Table
+The easiest way to compare model fit is using information criteria such as AIC or BIC. These balance negative log-likelihood with a penalty for complexity (lower is better). \pkg{snapKrig}'s log-likelihood function, `sk_LL`, can be called with argument `what='m'` to return these statistics. They are reported in Table
 `r knitr::asis_output(ifelse(knitr::is_html_output(), '\\@ref(tab:cv-table)', '\\@ref(tab:cv-table-latex)'))` for all of the models fitted so far.
 
 Both AIC and BIC tell the same story here. Introducing a covariate (UK) improves the fit compared with OK, but allowing anisotropy does not. The preferred covariance model is the default isotropic Gaussian (Figure \@ref(fig:meuse-uk-pred-png)), with the anisotropic Gaussian (Figure \@ref(fig:meuse-alt-pred-png), left) a close second.
@@ -687,27 +662,27 @@ When predictions are required on the original scale (ppb, instead of its logarit
 
 # Computations
 
-This last section looks at the computational bottlenecks that can make kriging slow, and that techniques that \CRANpkg{snapKrig} uses to circumvent them. The core idea is to rewrite the matrix $V - \epsilon I$ as a Kronecker product (see the [Model] section), so that operations involving sub-matrices of $V$ can be simplified.
+This last section looks at the computational bottlenecks that can make kriging slow, and that techniques that \pkg{snapKrig} uses to circumvent them. The core idea is to rewrite the matrix $V - \epsilon I$ as a Kronecker product (see the [Model] section), so that operations involving sub-matrices of $V$ can be simplified.
 
 Two sub-matrices are particularly important. The first is the $n_o \times n_o$ covariance $V_o$, for the $n_o$ observed points. $V_o$ has to be generated (its entries calculated), then factorized, so that products of the form $V_o^{-1} z$ can be calculated. This happens in many routine spatial statistical operations, including likelihood, GLS, kriging equations, and conditional simulation, and it is the reason they become computationally intensive for large $n_o$.  
 
 The second important sub-matrix is the $n_p \times n_o$ cross-covariance $V_p$, between the observed locations and the $n_p$ unseen prediction locations. $n_p$ can be very large, making products with $V_p$ expensive both in terms of computation time and memory use. Such products appear in both the kriging prediction and variance equations.
 
-\CRANpkg{snapKrig} generates the entries of $V_o$ and $V_p$ directly from the Kronecker product factorization of $V - \epsilon I$. This speeds construction time for $V_o$ and $V_p$, and, more importantly, it enables the package to multiply a vector by $V_p$ without having to explicitly build $V_p$ in computer memory. 
+\pkg{snapKrig} generates the entries of $V_o$ and $V_p$ directly from the Kronecker product factorization of $V - \epsilon I$. This speeds construction time for $V_o$ and $V_p$, and, more importantly, it enables the package to multiply a vector by $V_p$ without having to explicitly build $V_p$ in computer memory. 
 
 
-## Benchmark Comparisons
+## Benchmark comparisons
 
-To illustrate the speed of \CRANpkg{snapKrig} we timed computations for the Meuse OK exercise presented earlier in the [Kriging Example] section, repeating it several times over a range of output resolutions (varying $n_p$) and recording median evaluation times in five repetitions using \CRANpkg{microbenchmark}.  To limit the total length of the experiment, all function calls were halted (timed-out) at around two minutes. 
+To illustrate the speed of \pkg{snapKrig} we timed computations for the Meuse OK exercise presented earlier in the [Kriging Example] section, repeating it several times over a range of output resolutions (varying $n_p$) and recording median evaluation times in five repetitions using \CRANpkg{microbenchmark} [@mersmann2021micro]. To limit the total length of the experiment, all function calls were halted (timed-out) at around two minutes. 
 
-For comparison we tested three popular R packages mentioned in the introduction, \CRANpkg{gstat}, \CRANpkg{geoR}, \CRANpkg{fields}, all using the same isotropic Gaussian model fitted with default settings. To get a range of observed sample sizes ($n_o$) values we repeated this process with two other point datasets, one on ozone concentration, and one on forest density. 
+For comparison we tested three popular R packages mentioned in the introduction, \pkg{gstat}, \pkg{geoR}, \pkg{fields}, all using the same isotropic Gaussian model fitted with default settings. To get a range of observed sample sizes ($n_o$) values we repeated this process with two other point datasets, one on ozone concentration, and one on forest density. 
 
-The ozone data are included as the object `ChicagoO3` in the \CRANpkg{fields} package [@nychka2021fields] and appear frequently in its example code. They are Environmental Protection Agency recordings of average ozone concentration in the air at $n_o=20$ Chicago-area stations in 1987.
+The ozone data are included as the object `ChicagoO3` in the \pkg{fields} package [@nychka2021fields] and appear frequently in its example code. They are Environmental Protection Agency recordings of average ozone concentration in the air at $n_o=20$ Chicago-area stations in 1987.
 
-The forest data come from Canada-wide estimates of forest characteristics by @beaudoin2018tracking. Estimates of areal tree cover (%) for the province of British Columbia (BC) are re-published in \CRANpkg{rasterbc} as (raster) tiles, each containing around one million data points. We created a much smaller example dataset, called treed, by sampling one thousand points at random from one of these tiles, located in Central BC (Figure \@ref(fig:treed-png), left).
+The forest data come from Canada-wide estimates of forest characteristics by @beaudoin2018tracking. Estimates of areal tree cover (%) for the province of British Columbia (BC) are reproduced in \CRANpkg{rasterbc} [@koch2022rasterbc] as raster tiles, each containing around one million data points. We created a much smaller example dataset, which we call "treed", by sampling one thousand points at random from one of these tiles, located in Central BC (Figure \@ref(fig:treed-png), left).
 
 
-```{r treed-png, results='hide', fig.dim=c(4.5,4), fig.show='hold', out.width='33%', fig.pos='htb', fig.cap='A 1021 x 1349 raster on forest density in central BC, Canada (left) was up-scaled to produce a much coarser resolution version with dimensions 32 x 43 (middle). snapKrig is optimized for downscaling rasters like these. Model fitting and prediction of over a million points at original resolution (right), with elevation as a predictor, took less than three seconds.'}
+```{r treed-png, results='hide', fig.dim=c(4.5,4), fig.show='hold', out.width='33%', fig.pos='htb', fig.cap='A 1021 x 1349 raster on forest density in central BC, Canada (left) was up-scaled to produce a much coarser resolution version with dimensions 32 x 43 (middle). snapKrig is optimized for downscaling rasters like these. Model fitting and prediction of over a million points at original resolution (right), with elevation as a predictor, took less than three seconds.', fig.alt='Three panels are shown side-by-side, each one showing pine forest cover over a common area, as it would appear looking down from an aircraft. The images are dominated by green, corresponding to dense forest, with exceptions like high alpine and river valleys in depicted in white, where no pine grow. The left panel is a high-resolution image of the source data. The middle panel shows the same image at very coarse resolution. The right panel has the same resolution as the left panel, and contains much of the same information, but the image is more blurry.'}
 
 # load the treed raster data and a matching DEM
 g_treed = sk(rast(path_treed))
@@ -720,7 +695,7 @@ g_train_dem = sk_rescale(g_dem, up=32)
 # snap training points to original grid (NAs everywhere else)
 g_out = sk_snap(sk_coords(g_train, out='sf'), g_treed)
 
-# use elevation and its square root as covariates
+# use elevation and (optionally its square root) as covariate
 X = g_dem
 #X[] = scale(cbind(X[], sqrt(X)[]))
 X[] = scale(X[])
@@ -781,9 +756,9 @@ sk_plot(g_treed_pred, zlim=zlim,
 
 We also created a sequence of eight up-scaled (coarser resolution) versions of this raster, to serve as examples of raster data inputs. We name these datasets according to their sample sizes, with the suffix indicating $n_o$ (treed_88, treed_352, and so on). Figure \@ref(fig:treed-png) (middle) plots the third in the sequence, with $n_o=1376$. These raster examples are special because they are complete, having no `NA` values. The three irregularly sampled point sets (ozone, Meuse, and treed) on the other hand are incomplete, since their empty un-sampled spaces are filled with `NA`s. 
 
-## Complete Data
+## Complete data
 
-This distinction between complete and incomplete is important because both $V - \epsilon I$ and $V_o - \epsilon I$ have Kronecker product factorizations in the complete case, making $V_o$ much easier to deal with. The result is big performance improvements in \CRANpkg{snapKrig} on large $n_o$ problems, particularly in evaluations of the likelihood function.
+This distinction between complete and incomplete is important because both $V - \epsilon I$ and $V_o - \epsilon I$ have Kronecker product factorizations in the complete case, making $V_o$ much easier to deal with. The result is big performance improvements in \pkg{snapKrig} on large $n_o$ problems, particularly in evaluations of the likelihood function.
 
 ```{r bench-results}
 # load the benchmarking results
@@ -793,7 +768,7 @@ results_df[['is_complete']] = c('no', 'yes')[1 + as.integer(results_df[['complet
 
 ```
 
-```{r bench-fit-png, fig.dim=c(5,2.5), fig.pos='!htb', fig.cap='Time required to evaluate the likelihood function for example data sets with a range of sample sizes ($n_o$). Cases where the observed data form a complete regular grid are indicated by dashed lines, whereas incomplete cases are indicated with solid lines. The likelihood function in snapKrig optimized for low memory use and fast computation in the complete case.'}
+```{r bench-fit-png, fig.dim=c(5,2.5), fig.pos='!htb', fig.cap='Time required to evaluate the likelihood function for example data sets with a range of sample sizes ($n_o$). Cases where the observed data form a complete regular grid are indicated by dashed lines, whereas incomplete cases are indicated with solid lines. The likelihood function in snapKrig optimized for low memory use and fast computation in the complete case.', fig.alt='A line chart shows several different coloured lines (representing different packages) increasing at an exponential rate. Each one roughly follows the same trajectory except the blue dotted line (snapKrig, with complete data), which has a much shallower growth rate.'}
 
 # plot time to fit the model against number of observed points
 ggplot(subset(results_df, pkg != 'gstat')) +
@@ -819,18 +794,18 @@ ggplot(subset(results_df, pkg != 'gstat')) +
         strip.text.y=element_text(face='bold'))
 ```
 
-This improvement is illustrated in Figure \@ref(fig:bench-fit-png), which plots likelihood evaluation time against $n_o$. We excluded \CRANpkg{gstat} from this comparison because it uses variograms (not MLE) to parametrize covariance. The other packages all follow a similar trajectory of rising computation times, with the exception of \CRANpkg{snapKrig} in the complete data case (dotted lines). Speedy likelihood function evaluations by \CRANpkg{snapKrig} led to dramatically faster fitting times for complete data with large $n_o$. 
+This improvement is illustrated in Figure \@ref(fig:bench-fit-png), which plots likelihood evaluation time against $n_o$. We excluded \pkg{gstat} from this comparison because it uses variograms (not MLE) to parametrize covariance. The other packages all follow a similar trajectory of rising computation times, with the exception of \pkg{snapKrig} in the complete data case (dotted lines). Speedy likelihood function evaluations by \pkg{snapKrig} led to dramatically faster fitting times for complete data with large $n_o$. 
 
-In a log-log plot like Figure \@ref(fig:bench-fit-png), a linear trend with slope $s$ reflects a complexity power law with exponent $s$. What is noteworthy here is in the large-$n_o$ behavior, which shows a similar $s$ for all packages except \CRANpkg{snapKrig} on complete examples, where it is faster than the rest by a factor that grows *exponentially* with $n_o$. These differences reflects the rate-limiting operation of factoring $V_o$. In \CRANpkg{snapKrig} its algorithmic complexity is $O( n_o^3 )$ for incomplete data, and closer to $O(n_o^{3/2})$ for complete data.
+In a log-log plot like Figure \@ref(fig:bench-fit-png), a linear trend with slope $s$ reflects a complexity power law with exponent $s$. What is noteworthy here is in the large-$n_o$ behavior, which shows a similar $s$ for all packages except \pkg{snapKrig} on complete examples, where it is faster than the rest by a factor that grows *exponentially* with $n_o$. These differences reflects the rate-limiting operation of factoring $V_o$. In \pkg{snapKrig} its algorithmic complexity is $O( n_o^3 )$ for incomplete data, and closer to $O(n_o^{3/2})$ for complete data.
 
-\CRANpkg{snapKrig}'s performance edge with complete data is not limited to kriging-related problems. We can expect similar improvements in computation time for any application of likelihood, GLS, or simulations from SGPs. Note however that the completeness requirement is strict - any number of `NA`s in the data grid means the grid is incomplete
+\pkg{snapKrig}'s performance edge with complete data is not limited to kriging-related problems. We can expect similar improvements in computation time for any application of likelihood, GLS, or simulations from SGPs. Note however that the completeness requirement is strict - any number of `NA`s in the data grid means the grid is incomplete
 
 
-## Prediction and Variance
+## Prediction and variance
 
-We timed evaluations of the kriging prediction and variance equations for ten prediction grids, ranging in size from $8 \times 11$ ($n_p=88$) to $4084 \times 5396$ ($n_p>$ 22 million). For \CRANpkg{snapKrig} and \CRANpkg{fields}, we timed kriging prediction and variance separately. In \CRANpkg{gstat} and \CRANpkg{geoR}, both are returned from a single function call, so we only recorded the combined time.
+We timed evaluations of the kriging prediction and variance equations for ten prediction grids, ranging in size from $8 \times 11$ ($n_p=88$) to $4084 \times 5396$ ($n_p>$ 22 million). For \pkg{snapKrig} and \pkg{fields}, we timed kriging prediction and variance separately. In \pkg{gstat} and \pkg{geoR}, both are returned from a single function call, so we only recorded the combined time.
 
-```{r bench-pred-png, fig.dim=c(6,4), fig.pos='[!tb]', escape=FALSE, fig.cap='A comparison of computational performance in kriging as a function of the number of points predicted, $n_p$. Dashed lines indicate prediction time on its own, and solid lines indicate time to compute both predictions and variance. Panels separate results from six examples. Prediction with snapKrig is much faster on large-$n_p$ problems than the tested alternatives. This improvement grows with number of observed points $n_o$, and is most pronounced on complete grid problems (bottom row).'}
+```{r bench-pred-png, fig.dim=c(6,4), fig.pos='[!tb]', escape=FALSE, fig.cap='A comparison of computational performance in kriging as a function of the number of points predicted, $n_p$. Dashed lines indicate prediction time on its own, and solid lines indicate time to compute both predictions and variance. Panels separate results from six examples. Prediction with snapKrig is much faster on large-$n_p$ problems than the tested alternatives. This improvement grows with number of observed points $n_o$, and is most pronounced on complete grid problems (bottom row).', fig.alt='A set of six panels are shown, one for each of the (differently sized) datasets. In each panel a set of coloured lines run from the lower left to the upper right, showing computation time increasing with prediction set size.'}
 # names of the two groups of example datasets (pts = incomplete, rast = complete)
 pts_names = c('ozone', 'meuse', 'treed')
 rast_names = paste0('treed_', c(88, 352, 1376))
@@ -880,27 +855,24 @@ ggplot(results_plot_df) +
 
 The times are plotted in Figure \@ref(fig:bench-pred-png) as a function of prediction grid size, $n_p$. The top three panels show results from the incomplete data examples, and the bottom three show the smallest of the complete (raster) examples.
 
-Notice the relative speed of prediction (dashed lines) compared to variance and prediction (solid lines). This is because in the variance equation $V_p$ is multiplied by an $n_o \times n_o$ matrix, whereas in prediction it is multiplied by a length-$n_o$ vector (lowering complexity by a factor of $n_o$). This makes \CRANpkg{fields}, and \CRANpkg{snapKrig} stand in out the large $n_p$ results for having fast prediction-only methods.
+Notice the relative speed of prediction (dashed lines) compared to variance and prediction (solid lines). This is because in the variance equation $V_p$ is multiplied by an $n_o \times n_o$ matrix, whereas in prediction it is multiplied by a length-$n_o$ vector (lowering complexity by a factor of $n_o$). This makes \pkg{fields}, and \pkg{snapKrig} stand in out the large $n_p$ results for having fast prediction-only methods.
 
-Even with incomplete data, \CRANpkg{snapKrig} was the fastest on all but the smallest $n_p$ and $n_o$ examples. As with likelihood, this relative speed-up increases with $n_o$. By $n_o=1000$, prediction for large $n_p$ is 2+ orders of magnitude faster than the next fastest method. Variance was also faster with large $n_o$ on the incomplete examples, but to a lesser extent.
+Even with incomplete data, \pkg{snapKrig} was the fastest on all but the smallest $n_p$ and $n_o$ examples. As with likelihood, this relative speed-up increases with $n_o$. By $n_o=1000$, prediction for large $n_p$ is 2+ orders of magnitude faster than the next fastest method. Variance was also faster with large $n_o$ on the incomplete examples, but to a lesser extent.
 
-Computation times improved even further with complete data, particularly with respect to variance. Combined times for \CRANpkg{snapKrig} were faster than any other package by 1-2 orders of magnitude in all but the smallest $n_p$ examples. The addition of covariates and anisotropy introduces little additional computational complexity. See for example Figure \@ref(fig:treed-png) where we demonstrate UK with anisotropic covariance for the treed_1376 dataset.
+Computation times improved even further with complete data, particularly with respect to variance. Combined times for \pkg{snapKrig} were faster than any other package by 1-2 orders of magnitude in all but the smallest $n_p$ examples. The addition of covariates and anisotropy introduces little additional computational complexity. See for example Figure \@ref(fig:treed-png) where we demonstrate UK with anisotropic covariance for the treed_1376 dataset.
 
-\CRANpkg{snapKrig} computes the variance in an unusual way for both complete and incomplete problems. Instead of multiplying $V_p$ by the $n_o \times n_o$ matrix $V_o^{-1}$, `sk_cmean` multiplies it by the eigen-vectors of $V_o$ in a (length-$n_o$) loop, combining results as it goes. This is slower than matrix multiplication but it greatly reduces computer memory demands on problems with $n_o$ and $n_p$ both large, as we avoid ever having to write $V_p$ or the product $V_p V_o^{-1}$ entirely in memory during kriging.
+\pkg{snapKrig} computes the variance in an unusual way for both complete and incomplete problems. Instead of multiplying $V_p$ by the $n_o \times n_o$ matrix $V_o^{-1}$, `sk_cmean` multiplies it by the eigen-vectors of $V_o$ in a (length-$n_o$) loop, combining results as it goes. This is slower than matrix multiplication but it greatly reduces computer memory demands on problems with $n_o$ and $n_p$ both large, as we avoid ever having to write $V_p$ or the product $V_p V_o^{-1}$ entirely in memory during kriging.
 
 
 
 # Summary
 
-By specializing for Kronecker covariance, \CRANpkg{snapKrig} raises the upper limits for practical sample sizes and resolutions in SGP-based analysis, leading to a more interactive and less frustrating user experience for analysts.
+By specializing for Kronecker covariance, \pkg{snapKrig} raises the upper limits for practical sample sizes and resolutions in SGP-based analysis, leading to a more interactive and less frustrating user experience for analysts.
 
-Kronecker covariances are common enough in geostatistics. We see them everywhere in the form of Gaussian covariance functions, and separable space-time models. Nevertheless, we are unaware of any other CRAN R package for geostatistics that factors the *spatial* covariance $V$ into a Kronecker product, as we do in \CRANpkg{snapKrig}.
+Kronecker covariances are common enough in geostatistics. We see them everywhere in the form of Gaussian covariance functions, and separable space-time models. Nevertheless, we are unaware of any other CRAN R package for geostatistics that factors the *spatial* covariance $V$ into a Kronecker product, as we do in \pkg{snapKrig}.
 
 This factorization leads to huge computational advantages in evaluating important modelling equations such as likelihood (Figure \@ref(fig:bench-fit-png)) in kriging (Figure \@ref(fig:bench-pred-png)), with speed-ups of 1-3 orders of magnitude on problems with hundreds to thousands of observed points.
 
-We showed, for example, how this makes it straightforward to downscale a small raster onto a grid of several million points in seconds (rather than minutes) using an MLE-based OK or UK model. \CRANpkg{snapKrig} is naturally suited down-scaling with complete data, and its computational speed makes it a practical yet statistically principled alternative to other fast interpolation methods like inverse distance weighting and Voronoi tiling, which, despite their bias issues, are often considered as reasonable fill-ins for when kriging is computationally impractical. 
+We showed, for example, how this makes it straightforward to downscale a small raster onto a grid of several million points in seconds (rather than minutes) using an MLE-based OK or UK model. \pkg{snapKrig} is naturally suited down-scaling with complete data, and its computational speed makes it a practical yet statistically principled alternative to other fast interpolation methods like inverse distance weighting and Voronoi tiling, which, despite their bias issues, are often considered as reasonable fill-ins for when kriging is computationally impractical. 
 
-\CRANpkg{snapKrig} gets its performance edge through restrictions on covariance and point layout, but we nevertheless think it has wide applicability. Users can simply snap irregular points to a reasonably large grid, as we did in the Meuse example. And while some important covariance functions like the 2-dimensional Matérn are excluded, the alternatives provided will be flexible enough approximations in many cases [@koch2020computationally]. These alternatives may also prove to be better predictive models than conventional alternatives in some situations, as we saw in the [Model Comparisons] section.
-
-
-# References
+\pkg{snapKrig} gets its performance edge through restrictions on covariance and point layout, but we nevertheless think it has wide applicability. Users can simply snap irregular points to a reasonably large grid, as we did in the Meuse example. And while some important covariance functions like the 2-dimensional Matérn are excluded, the alternatives provided will be flexible enough approximations in many cases [@koch2020computationally]. These alternatives may also prove to be better predictive models than conventional alternatives in some situations, as we saw in the [Model Comparisons] section.

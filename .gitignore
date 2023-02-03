@@ -16,3 +16,4 @@ rjarticle/rjarticle_complete.zip
 *.pdf
 *.html
 inst/doc
+*.tar.gz

@@ -19,8 +19,12 @@ snapKrig uses a computationally lean implementation of a 2-dimensional
 spatial correlation model for gridded data. By restricting to models
 with (separable) Kronecker covariance, the package can speed
 computations on certain likelihood and kriging problems by orders of
-magnitude compared to alternatives like `gstat`, `fields`, `geoR`,
-`spatial`, and `LatticeKrig`.
+magnitude compared to alternatives like
+[gstat](https://cran.r-project.org/package=gstat),
+[fields](https://cran.r-project.org/package=fields),
+[geoR](https://cran.r-project.org/package=geoR),
+[spatial](https://cran.r-project.org/package=spatial), and
+[LatticeKrig](https://cran.r-project.org/package=LatticeKrig).
 
 Here are some benchmarking results for computation time to downscale a
 32 x 43 raster onto grids of increasing size by ordinary kriging (code
@@ -42,7 +46,8 @@ Check out the [introduction
 vignette](https://cran.r-project.org/web/packages/snapKrig/vignettes/snapKrig_introduction.html)
 for a worked example with the Meuse soils data, or the example below to
 get started right away. We plan to publish a more detailed tutorial and
-benchmarking study in an upcoming paper.
+benchmarking study in an [upcoming
+paper](https://github.com/deankoch/snapKrig/tree/master/rjarticle).
 
 ## Example
 
@@ -90,7 +95,7 @@ g_pred = sk_cmean(g_down, pars, X=0)
 # print time elapsed in computation
 t_end = Sys.time()
 t_end - t_start
-#> Time difference of 0.5982912 secs
+#> Time difference of 0.6155901 secs
 ```
 
 ``` r

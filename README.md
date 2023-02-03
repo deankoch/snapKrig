@@ -27,11 +27,12 @@ magnitude compared to alternatives like
 [LatticeKrig](https://cran.r-project.org/package=LatticeKrig).
 
 Here are some benchmarking results for computation time to downscale a
-32 x 43 raster onto grids of increasing size by ordinary kriging (code
-and instructions to reproduce these results can be found
-[here](https://github.com/deankoch/snapKrig/tree/master/rjarticle/data)).
+32 x 43 raster onto grids of increasing size by ordinary kriging.
 
 <img src="man/figures/README-preview-1.png" width="100%" />
+
+code and instructions to reproduce these results can be found
+[here](https://github.com/deankoch/snapKrig/tree/master/rjarticle/data)
 
 ## Installation
 
@@ -95,7 +96,7 @@ g_pred = sk_cmean(g_down, pars, X=0)
 # print time elapsed in computation
 t_end = Sys.time()
 t_end - t_start
-#> Time difference of 0.6155901 secs
+#> Time difference of 0.6363001 secs
 ```
 
 ``` r

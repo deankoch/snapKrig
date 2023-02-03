@@ -283,7 +283,7 @@ The resulting likelihood surface is plotted below, and its maximum is circled.
 
 ```{r intro_LL_surface_plot, out.width='50%', fig.dim=c(5, 5), fig.align='center'}
 # plot the likelihood surface
-plot(g_test, asp=2, main='log-likelihood surface', ylab=names(p_nm)[1], xlab=names(p_nm)[2])
+plot(g_test, asp=2, main='log-likelihood surface', ylab=names(p_nm)[1], xlab=names(p_nm)[2], reset=FALSE)
 
 # highlight the MLE
 i_best = which.max(g_test[])
@@ -609,8 +609,8 @@ The mistake is in assuming that `E(f(X))` is the same as `f(E(X))` (for expected
 transformation `f`), which is only true if `f` is linear.
 
 In short, to get zinc concentration predictions on the original scale, we need a bias adjustment. We use a
-simplified version of the one given in Cressie (2015) - adding half the variance before exponentiating. The plot
-below shows the result, with the original observed point data overlaid.
+simplified version of the one given in Cressie (2015) - adding half the variance before exponentiating. The two plots
+below shows the result on its own, and again with the original observed point data overlaid.
 
 ```{r meuse_uk_orig_plot, out.width='100%', fig.dim=c(10,10), fig.align='center'}
 # prediction bias adjustment from log scale
@@ -619,9 +619,14 @@ g_uk_orig = exp(g_uk + g_uk_var/2)
 # points on original scale
 pts_orig = meuse_sf[['soils']]['zinc']
 
-# full plot
+
+# prediction plot
 zlim = range(exp(g), na.rm=TRUE)
-sk_plot(g_uk_orig, zlab='zinc (ppm)', main='[zinc] predictions and observations', cex=1.5, zlim=zlim)
+plot(g_uk_orig, zlab='zinc (ppm)', main='[zinc] predictions and observations', cex=1.5, zlim=zlim)
+plot(meuse_sf[['river_line']], add=TRUE)
+
+# full plot
+plot(g_uk_orig, zlab='zinc (ppm)', main='[zinc] predictions and observations', cex=1.5, zlim=zlim, reset=FALSE)
 plot(meuse_sf[['river_line']], add=TRUE)
 
 # overlay observation points

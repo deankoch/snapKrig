@@ -27,7 +27,7 @@ An R package for fast spatial analysis and kriging on grids
 
 snapKrig uses a computationally lean implementation of a 2-dimensional spatial correlation model for gridded data. By restricting to models with (separable) Kronecker covariance, the package can speed computations on certain likelihood and kriging problems by orders of magnitude compared to alternatives like [gstat](https://cran.r-project.org/package=gstat), [fields](https://cran.r-project.org/package=fields), [geoR](https://cran.r-project.org/package=geoR), [spatial](https://cran.r-project.org/package=spatial), and [LatticeKrig](https://cran.r-project.org/package=LatticeKrig).
 
-Here are some benchmarking results for computation time to downscale a 32 x 43 raster onto grids of increasing size by ordinary kriging (code and instructions to reproduce these results can be found [here](https://github.com/deankoch/snapKrig/tree/master/rjarticle/data)).
+Here are some benchmarking results for computation time to downscale a 32 x 43 raster onto grids of increasing size by ordinary kriging.
 
 ```{r preview, echo = FALSE, message = FALSE, warning = FALSE, fig.width=6, fig.height=2, dpi=300}
 library(here)
@@ -72,6 +72,7 @@ ggplot(results_plot) +
 ```
 
 
+code and instructions to reproduce these results can be found [here](https://github.com/deankoch/snapKrig/tree/master/rjarticle/data)
 
 ## Installation
 

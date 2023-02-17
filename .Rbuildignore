@@ -1,6 +1,7 @@
 .gitignore
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^vignettes/shiny_app_demo\.R$
 ^LICENSE\.md$
 ^README\.Rmd$
 ^pkg_update\.R$

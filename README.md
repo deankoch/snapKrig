@@ -1,5 +1,9 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
+<!-- #' # -->
+<!-- #' TODO: -->
+<!-- #' sk_plot_semi needs an explanation for getting vg -->
+<!-- #' sk.plot refers to graphics::... when it should be grDevices -->
 
 # snapKrig
 
@@ -11,7 +15,7 @@ An R package for fast spatial analysis and kriging on grids
 status](https://www.r-pkg.org/badges/version/snapKrig)](https://CRAN.R-project.org/package=snapKrig)
 [![Lifecycle:
 stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
-[![](https://cranlogs.r-pkg.org/badges/rasterbc)](https://cran.r-project.org/package=rasterbc)
+[![](https://cranlogs.r-pkg.org/badges/snapKrig)](https://cran.r-project.org/package=snapKrig)
 
 <!-- badges: end -->
 
@@ -96,7 +100,7 @@ g_pred = sk_cmean(g_down, pars, X=0)
 # print time elapsed in computation
 t_end = Sys.time()
 t_end - t_start
-#> Time difference of 0.6363001 secs
+#> Time difference of 0.678854 secs
 ```
 
 ``` r

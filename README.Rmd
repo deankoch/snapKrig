@@ -13,6 +13,11 @@ knitr::opts_chunk$set(
 )
 ```
 
+<!-- #' # -->
+<!-- #' TODO: -->
+<!-- #' sk_plot_semi needs an explanation for getting vg -->
+<!-- #' sk.plot refers to graphics::... when it should be grDevices -->
+
 # snapKrig
 
 An R package for fast spatial analysis and kriging on grids
@@ -21,7 +26,7 @@ An R package for fast spatial analysis and kriging on grids
 
 [![CRAN status](https://www.r-pkg.org/badges/version/snapKrig)](https://CRAN.R-project.org/package=snapKrig)
 [![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
-[![](https://cranlogs.r-pkg.org/badges/rasterbc)](https://cran.r-project.org/package=rasterbc)
+[![](https://cranlogs.r-pkg.org/badges/snapKrig)](https://cran.r-project.org/package=snapKrig)
 
 <!-- badges: end -->
 

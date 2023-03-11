@@ -180,7 +180,7 @@ summary(g_sim)
 ```
 
 However, snapKrig functionality is more focused on spatial modeling and kriging. Outside of that context we
-recommend managing raster data with other packages (`terra` and `sk` in particular). `sk` will accept single
+recommend managing raster data with other packages (`terra` and `sf` in particular). `sk` will accept single
 and multi-layer rasters from the `terra` and `raster` packages, reshaping them as sk grid objects;
 and sk grids can be converted to SpatRaster or RasterLayer using `sk_export`.
 
@@ -287,7 +287,7 @@ plot(g_test, asp=2, main='log-likelihood surface', ylab=names(p_nm)[1], xlab=nam
 
 # highlight the MLE
 i_best = which.max(g_test[])
-points(p_all[i_best,'x'], p_all[i_best,'y'], cex=2)
+points(p_all[i_best,'x'], p_all[i_best,'y'], col='white', cex=1.5, lwd=1.5)
 ```
 
 This should approximately match the true scale parameter values that were used to generate the data
@@ -413,7 +413,7 @@ plot(st_geometry(pts), pch=1, add=TRUE)
 ### Snapping point data
 
 snapKrig works with a regular grid representation of the data, so the first step is to define such a grid
-and snap the Meuse points to it using `sk_snap`. The extent and resolution can be selected automatically, as in
+and snap the Meuse points to it using `sk_snap`. The extent and resolution can be selected automatically, as in...
 
 ```{r meuse_snap_default}
 # snap points with default settings
@@ -421,7 +421,7 @@ g = sk_snap(pts)
 print(g)
 ```
 
-Or they can be set manually, for example by supplying a template grid with the same CRS as `pts`,
+...or they can be set manually, for example by supplying a template grid with the same CRS as `pts`,
 or by specifying some of the grid properties expected by `sk`. Here we will request a
 smaller grid by specifying a resolution of 50m by 50m
 
@@ -618,7 +618,6 @@ g_uk_orig = exp(g_uk + g_uk_var/2)
 
 # points on original scale
 pts_orig = meuse_sf[['soils']]['zinc']
-
 
 # prediction plot
 zlim = range(exp(g), na.rm=TRUE)

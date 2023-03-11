@@ -1,11 +1,17 @@
-
-#
-# TODO:
-# sk_plot_semi needs an explanation for getting vg
-# sk.plot refers to graphics::... when it should be grDevices
-#
-
 # demo showing kriging-based interpolation to downscale a raster
+
+# INSTRUCTIONS:
+#
+# Make sure you have the required packages installed. They are
+# listed below in the "library(...)" calls. You will also need
+# the "raster" package, which is where the Rlogo.png image comes
+# from. eg:
+#
+# install.packages('raster')
+#
+# Then do the same for the following: ('shiny', 'terra' etc).
+# Then run the whole script in your console, or click the
+# "Run App" button in Rstudio
 
 library(shiny)
 library(terra)

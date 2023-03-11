@@ -39,6 +39,10 @@
 #' If a single unnamed argument is supplied (and it is not a list) the function expects it to
 #' be either a numeric vector (`gdim`), a matrix, or a raster object.
 #'
+#' Alternatively, you can supply an `sk` object as (unnamed) first argument, followed by
+#' individual named arguments. This replaces the named elements in the `sk` object then does
+#' a validity check.
+#'
 #' Empty grids - with all data `NA` - can be initialized by setting `vals=FALSE`, in which case
 #' `gval` will be absent from the returned list). Otherwise `gval` is the
 #' column-vectorized grid data, either as a numeric vector (single layer case only) or as a
@@ -159,7 +163,18 @@
 sk = function(..., vals=TRUE)
 {
   # collapse the list when only one argument supplied to dots
-  if( (...length() == 1 ) & all(is.null(...names()) ) ) { g = ..1 } else { g = list(...) }
+  if( (...length() == 1 ) & all(is.null(...names()) ) ) { g = ..1 } else {
+
+    # collect loose arguments into a list
+    g = list(...)
+
+    # case when an sk object is passed first, then some named arguments
+    if( inherits(g[[1]], 'sk') & (length(g) > 1) ) {
+
+      # drop attributes from sk object then replace any named arguments
+      g = g[[1L]] |> c() |> modifyList(g[-1L])
+    }
+  }
 
   # handle terra and raster objects
   is_terra = inherits(g, 'SpatRaster')
@@ -461,14 +476,33 @@ sk_validate = function(g, res_tol=1e-6)
   n = as.integer(prod(g[['gdim']]))
   if( !any_gval ) { g[['is_obs']] = logical(n) } else {
 
-    # length of grid values vector
+    # recycle scalar gval to get vector (or matrix) of expected size
     n_grid = length(g[['gval']])
+    if(n_grid == 1) {
 
-    if(!is_indexed) { g[['is_obs']] = !is.na(g[['gval']]) } else {
+      g[['gval']] = rep(g[['gval']], n)
+      if(is_indexed) g[['gval']] = matrix(g[['gval']], ncol=1)
+      n_grid = n
+    }
+
+    # vector case without indexing vector
+    if(!is_indexed) {
+
+      g[['is_obs']] = !is.na(g[['gval']])
+
+    } else {
 
       # sparse representation
       n_grid = length(g[['idx_grid']])
       n_obs = nrow(g[['gval']])
+
+      # omit NAs specified in idx_grid if present
+      if(n_obs == n_grid) {
+
+        # trim to specified observed subset and recompute its size
+        g[['gval']][ g[['idx_grid']][ !is.na(g[['idx_grid']]) ] ]
+        n_obs = nrow(g[['gval']])
+      }
 
       # check for wrong number of NAs in indexing grid
       g[['is_obs']] = !is.na(g[['idx_grid']])

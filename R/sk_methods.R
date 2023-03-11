@@ -552,7 +552,7 @@ anyNA.sk = function(x, recursive)
 
   # check the pre-computed NAs index or tell the user to validate
   if(is.null(x[['is_obs']])) stop('invalid sk object. Pass it to sk_validate first')
-  return(all(x[['is_obs']]))
+  return(!all(x[['is_obs']]))
 }
 
 #' Calculate the mean value in a grid

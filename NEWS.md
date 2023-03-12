@@ -11,6 +11,8 @@
 
 * `sk` now accepts calls of the form `sk(g, ...)` where `g` is an existing `sk` object to modify with the named elements in `...`. For example `g = sk(g, gval=1))` is equivalent to `g[] = 1`
 
+* added some new example applications to the github repo
+
 ## 2022-12-19 Version 0.0.1
 
 New submission to CRAN

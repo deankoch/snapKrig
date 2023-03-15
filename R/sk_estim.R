@@ -823,7 +823,7 @@ sk_fit = function(g, pars=NULL, X=NA, iso=TRUE, n_max=1e3, quiet=FALSE,
   if( !is_sg & (n_obs > n_max) ) stop('number of observed points exceeded n_max')
 
   # parse character string arguments to pars
-  pars = ifelse(is.null(pars), 'gau', pars)
+  if(is.null(pars)) pars = 'gau'
   if( !is.list(pars) ) pars = sk_pars(g_obs, pars)
 
   ## set up bounds and initial values

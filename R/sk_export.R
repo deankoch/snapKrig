@@ -84,7 +84,8 @@ sk_export = function(g, template='terra')
 
     # reorder values then write to cells
     idx_reorder = t(matrix(seq_along(g), dim(g)))
-    r_out = terra::init(r_out, as.matrix(g)[idx_reorder])
+    if(!is_multi) return( terra::init(r_out, as.matrix(g)[idx_reorder]) )
+    for(i in seq(n_layer)) r_out[[i]][] = g[idx_reorder,i]
     return(r_out)
   }
 

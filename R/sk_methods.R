@@ -79,7 +79,11 @@
     if( inherits(i, 'sk') ) i = as.logical(i[])
 
     # handle empty gval
-    if( is.null(x[['gval']]) ) return( rep(NA_real_, length(i)) )
+    if( is.null(x[['gval']]) ) {
+
+      if( is.logical(i) ) return( rep(NA_real_, sum(i)) )
+      return( rep(NA_real_, length(i)) )
+    }
 
     # numeric indices are for the vectorized grid values
     if( !is_multi )

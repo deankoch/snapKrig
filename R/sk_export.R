@@ -522,7 +522,7 @@ sk_coords = function(g, out='matrix', corner=FALSE, na_omit=FALSE, quiet=FALSE)
   if( !quiet )
   {
     n_get = length(idx_get)
-    msg_get = ifelse(length(g) == n_get, 'all', paste(n_get, 'of'))
+    msg_get = ifelse(length(g) == n_get, '', paste(n_get, 'of'))
     cat(paste('processing', msg_get, length(g), 'grid points...\n'))
   }
 

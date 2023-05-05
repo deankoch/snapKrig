@@ -86,10 +86,10 @@ sk_export = function(g, template='terra')
     idx_reorder = t(matrix(seq_along(g), dim(g)))
     idx_write = seq_along(idx_reorder)
     if(!is_multi) return( terra::init(r_out, as.matrix(g)[idx_reorder]) )
-    for(i in seq(n_layer)) set.values(r_out,
-                                      cells = idx_write,
-                                      values = g[c(idx_reorder),i],
-                                      layer = i)
+    for(i in seq(n_layer)) terra::set.values(r_out,
+                                             cells = idx_write,
+                                             values = g[c(idx_reorder),i],
+                                             layer = i)
     return(r_out)
   }
 

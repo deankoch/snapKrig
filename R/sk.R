@@ -172,7 +172,7 @@ sk = function(..., vals=TRUE)
     if( inherits(g[[1]], 'sk') & (length(g) > 1) ) {
 
       # drop attributes from sk object then replace any named arguments
-      g = g[[1L]] |> c() |> modifyList(g[-1L])
+      g = g[[1L]] |> c() |> utils::modifyList(g[-1L])
     }
   }
 

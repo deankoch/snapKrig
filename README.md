@@ -48,7 +48,7 @@ install.packages('snapKrig')
 ```
 
 Check out the [introduction
-vignette](https://cran.r-project.org/web/packages/snapKrig/vignettes/snapKrig_introduction.html)
+vignette](https://CRAN.R-project.org/package=snapKrig/vignettes/snapKrig_introduction.html)
 for a worked example with the Meuse soils data, or try the code below to
 get started right away. Some other code examples be found
 [here](https://github.com/deankoch/snapKrig/tree/master/examples). We
@@ -102,7 +102,7 @@ g_pred = sk_cmean(g_down, pars, X=0)
 # print time elapsed in computation
 t_end = Sys.time()
 t_end - t_start
-#> Time difference of 0.6779931 secs
+#> Time difference of 0.6796241 secs
 ```
 
 ``` r

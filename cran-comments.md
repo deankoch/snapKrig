@@ -1,14 +1,3 @@
-## Resubmission
-
-Thank you for the kind feedback on my last submission. I have implement the suggested changes:
-
-* DESCRIPTION is cleaned up and now references a methods paper.
-* `on.exit()` is now used to restore user parameters wherever they are modified (such as in R/sk_plot.R).
-* `\dontrun{}` is no longer used in the package.
-* `\donttest{}` is used sparingly (usually to limit execution time, based on rhub check results) with comments.
-
-While all of the examples complete in <5s on my PC, I have used `\donttest{}` in several places where rhub results flagged examples running much longer than 5s (11-30s). Please let me know if it would be better to disregard the rhub results and remove the usage of `\donttest{}` altogether.
-
 ## R CMD check results
 
 0 errors | 0 warnings | 4 notes

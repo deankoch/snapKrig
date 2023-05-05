@@ -52,6 +52,10 @@ For convenience, arguments can also be supplied together in a named list passed 
 If a single unnamed argument is supplied (and it is not a list) the function expects it to
 be either a numeric vector (\code{gdim}), a matrix, or a raster object.
 
+Alternatively, you can supply an \code{sk} object as (unnamed) first argument, followed by
+individual named arguments. This replaces the named elements in the \code{sk} object then does
+a validity check.
+
 Empty grids - with all data \code{NA} - can be initialized by setting \code{vals=FALSE}, in which case
 \code{gval} will be absent from the returned list). Otherwise \code{gval} is the
 column-vectorized grid data, either as a numeric vector (single layer case only) or as a

@@ -105,8 +105,7 @@ Setting to '' omits both the label and its margin space}
 omits all annotation (unless otherwise specified by \code{axes} and/or \code{leg}) and removes
 all margin space (unless otherwise specified by \code{leg_w} and/or \code{mar_w})}
 
-\item{pal}{character (vector): one of \code{graphics::hcl.pals} (default 'Spectral') or a
-vector of colors}
+\item{pal}{character (vector): one of \code{grDevices::hcl.pals()} (default 'Spectral')}
 
 \item{pxmax}{integer: the maximum number of pixels to draw along each dimension
 (default 2000). If either x or y dimension exceeds this limit, the grid is up-scaled

@@ -155,7 +155,7 @@ include:
 
 # History
 
-An earlier incarnation of snapKrig was called [pkern](https://github.com/deankoch/pkern). snapKrig
+An earlier implementation of snapKrig was called [pkern](https://github.com/deankoch/pkern). snapKrig
 is a redesigned version that uses a more user-friendly S3 grid object class. 
 
 pkern was an R implementation of some methods I developed in [my thesis](https://doi.org/10.7939/r3-91zn-v276)

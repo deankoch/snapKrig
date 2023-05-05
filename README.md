@@ -102,7 +102,7 @@ g_pred = sk_cmean(g_down, pars, X=0)
 # print time elapsed in computation
 t_end = Sys.time()
 t_end - t_start
-#> Time difference of 0.6796241 secs
+#> Time difference of 0.7114189 secs
 ```
 
 ``` r
@@ -150,7 +150,7 @@ features include:
 
 # History
 
-An earlier incarnation of snapKrig was called
+An earlier implementation of snapKrig was called
 [pkern](https://github.com/deankoch/pkern). snapKrig is a redesigned
 version that uses a more user-friendly S3 grid object class.
 

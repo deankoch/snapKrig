@@ -6,8 +6,6 @@
 
 * `devtools::check()` with Windows 10 Pro (build 19045), R-release
 
-* `devtools::check_mac_release()` Mac OS X 11.5.2, R-release
-
 * `devtools::check_win_devel()` Windows Server 2022 x64 (build 20348), R Under development
 
 * `rhub::check_for_cran()` Ubuntu Linux 20.04.1 LTS, R-release

@@ -6,11 +6,11 @@
 
 * `anyNA` now reports the correct result instead of its negation
 
-* single-bracket extract with logical index now returns NA vector of correct length 
+* single-bracket extract with logical index now returns `NA` vector of correct length 
 
-* fixed issue with multi-layer input to sk_export losing all but first layer
+* fixed issue with multi-layer input to `sk_export` losing all but first layer
 
-* fixed issue with pars argument to sk_fit not accepting lists
+* fixed issue with pars argument to `sk_fit` not accepting lists
 
 * The log-likelihood plot in the vignette now uses `reset=FALSE` so the circle is visible
 

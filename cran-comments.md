@@ -1,3 +1,7 @@
+## Overview of Version 0.0.2
+
+This update corrects some minor bugs and introduces some new syntax for `sk` calls and sk objects
+
 ## R CMD check results
 
 0 errors | 0 warnings | 0 notes

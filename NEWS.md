@@ -1,3 +1,5 @@
+# snapKrig 0.0.2
+
 ## 2022-05-05 Version 0.0.2
 
 ### bug fixes

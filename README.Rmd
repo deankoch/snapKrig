@@ -93,7 +93,9 @@ or use `devtools` to install the latest development version
 devtools::install_github('deankoch/snapKrig')
 ```
 
-Check out the [introduction vignette](https://CRAN.R-project.org/package=snapKrig/vignettes/snapKrig_introduction.html) for a worked example with the Meuse soils data, or try the code below to get started right away. Some other code examples be found [here](https://github.com/deankoch/snapKrig/tree/master/examples).  We plan to publish a more detailed tutorial and benchmarking study in an [upcoming paper](https://github.com/deankoch/snapKrig/tree/master/rjarticle). 
+Check out the [introduction vignette](https://CRAN.R-project.org/package=snapKrig/vignettes/snapKrig_introduction.html) for a worked example with the Meuse soils data, or try the code below to get started right away. 
+
+Some other code examples be found [here](https://github.com/deankoch/snapKrig/tree/master/examples).  We plan to publish a more detailed tutorial and benchmarking study in an [upcoming paper](https://github.com/deankoch/snapKrig/tree/master/rjarticle). 
 
 ## Example
 
@@ -146,9 +148,7 @@ summary(g_pred)
 # Technical Features
 
 snapKrig's computational efficiency makes it useful in situations where interpolation or
-down-scaling would pose a problem due to long computation times and/or high memory demands.
-Such problems are common when working with geo-referenced data in earth sciences. snapKrig's features
-include:
+down-scaling would pose a problem due to long computation times and/or high memory demands. Features include:
 
 * anisotropic Gaussian processes on 2-dimensional regular grids for a choice of covariance kernels
 * optimized computation of the likelihood function, generalized least squares, and kriging predictor/variance
@@ -156,7 +156,8 @@ include:
 * automated maximum likelihood model fitting and support for sample semi-variograms
 * user friendly helper functions for raster down-scaling and point interpolation
 
-`snapKrig` depends only on packages included by default in R (like `graphics` and `stats`), but supports raster and geometry classes from `sf` and `terra`. 
+Grid data can be supplied as vector, matrix, or RasterLayer/SpatRaster. snapKrig depends only on core packages
+that are included by default in R (like `graphics` and `stats`), but we suggest using it combination with `sf` and `terra`.
 
 
 # History

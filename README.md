@@ -56,7 +56,9 @@ devtools::install_github('deankoch/snapKrig')
 Check out the [introduction
 vignette](https://CRAN.R-project.org/package=snapKrig/vignettes/snapKrig_introduction.html)
 for a worked example with the Meuse soils data, or try the code below to
-get started right away. Some other code examples be found
+get started right away.
+
+Some other code examples be found
 [here](https://github.com/deankoch/snapKrig/tree/master/examples). We
 plan to publish a more detailed tutorial and benchmarking study in an
 [upcoming
@@ -108,7 +110,7 @@ g_pred = sk_cmean(g_down, pars, X=0)
 # print time elapsed in computation
 t_end = Sys.time()
 t_end - t_start
-#> Time difference of 0.7008011 secs
+#> Time difference of 0.6783729 secs
 ```
 
 ``` r
@@ -135,9 +137,7 @@ summary(g_pred)
 
 snapKrig’s computational efficiency makes it useful in situations where
 interpolation or down-scaling would pose a problem due to long
-computation times and/or high memory demands. Such problems are common
-when working with geo-referenced data in earth sciences. snapKrig’s
-features include:
+computation times and/or high memory demands. Features include:
 
 - anisotropic Gaussian processes on 2-dimensional regular grids for a
   choice of covariance kernels
@@ -150,8 +150,9 @@ features include:
 - user friendly helper functions for raster down-scaling and point
   interpolation
 
-`snapKrig` depends only on packages included by default in R (like
-`graphics` and `stats`), but supports raster and geometry classes from
+Grid data can be supplied as vector, matrix, or RasterLayer/SpatRaster.
+snapKrig depends only on core packages that are included by default in R
+(like `graphics` and `stats`), but we suggest using it combination with
 `sf` and `terra`.
 
 # History

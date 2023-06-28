@@ -20,7 +20,7 @@
 #' if( requireNamespace('raster') ) {
 #'
 #' # open example file as RasterLayer
-#' r_path = system.file('external/rlogo.grd', package='raster')
+#' r_path = system.file('ex/logo.tif', package='terra')
 #' r = raster::raster(r_path, band=1)
 #' g = sk(r)
 #'

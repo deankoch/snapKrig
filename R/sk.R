@@ -124,12 +124,12 @@
 #' # vals=FALSE drops multi-layer information
 #' sk(gdim=gdim, gval=mat_multi, vals=FALSE)
 #'
-#' # raster import examples skipped to keep CMD check time < 5s on slower machines
+#' # terra import examples skipped to keep CMD check time < 5s on slower machines
 #' \donttest{
-#' if( requireNamespace('raster') ) {
+#' if( requireNamespace('terra') ) {
 #'
 #' # open example file as RasterLayer
-#' r_path = system.file('external/rlogo.grd', package='raster')
+#' r_path = system.file('ex/logo.tif', package='terra')
 #' r = raster::raster(r_path)
 #'
 #' # convert to sk (notice only first layer was loaded by raster)

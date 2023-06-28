@@ -27,7 +27,7 @@ has_shape = sapply(nm_var, \(x) length(sk_kp(x)) > 1)
 js_shape = paste0("['", paste(nm_var[has_shape], collapse="', '"), "']")
 
 # open example image
-r_path = system.file('external/rlogo.grd', package='raster')
+r_path = system.file('ex/logo.tif', package='terra')
 g = rast(r_path, lyrs=1) |> scale() |> sk()
 
 # upscale it to make the demo more interesting

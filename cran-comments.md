@@ -1,6 +1,11 @@
-## Overview of Version 0.0.2
+## Overview of Version 0.0.3
 
-This update corrects some minor bugs and introduces some new syntax for `sk` calls and sk objects
+This update adds tests (using the testthat package)
+
+TODO: randomize the rest of the tests
+TODO: check why crs is absent by default but set to NULL by sk_rescale
+TODO: in sk_sub_idx, allow vector ij
+TODO: sk_sub - edge removal example error when removing single grid lines
 
 ## R CMD check results
 

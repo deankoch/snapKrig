@@ -20,8 +20,8 @@ stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://
 <!-- badges: end -->
 
 snapKrig uses a computationally lean implementation of a 2-dimensional
-spatial correlation model for gridded data. By restricting to models
-with (separable) Kronecker covariance, the package can speed
+spatial correlation model for gridded (raster) data. By restricting to
+models with separable Kronecker covariance, the package can speed
 computations on certain likelihood and kriging problems by orders of
 magnitude compared to alternatives like
 [gstat](https://cran.r-project.org/package=gstat),
@@ -30,13 +30,31 @@ magnitude compared to alternatives like
 [spatial](https://cran.r-project.org/package=spatial), and
 [LatticeKrig](https://cran.r-project.org/package=LatticeKrig).
 
-Here are some benchmarking results for computation time to downscale a
-32 x 43 raster onto grids of increasing size by ordinary kriging.
+Here are some benchmarking results (*circa* 2023-2024) for computation
+time to downscale a 32 x 43 raster onto grids of increasing size by
+ordinary kriging.
 
 <img src="man/figures/README-preview-1.png" width="100%" />
 
 code and instructions to reproduce these results can be found
 [here](https://github.com/deankoch/snapKrig/tree/master/rjarticle/data)
+
+## Literature
+
+I developed snapKrig to interpolate weather data, but the underlying
+computational tricks are useful more broadly in statistics. Here are
+some links to my research on product kernels with co-authors Mark Lewis
+and Subhash Lele:
+
+- fitting a covariance model ([Journal of the Royal Society Interface -
+  2020](https://doi.org/10.1098/rsif.2020.0434))
+
+- estimating the direction of anisotropy ([Environmental Ecological
+  Statistics - 2020](https://doi.org/10.1007/s10651-020-00456-2), [U of
+  A preprint](https://doi.org/10.7939/r3-g6qb-bq70))
+
+- calculating dispersal kernel convolutions ([Bulletin of Mathematical
+  Biology - 2021](https://doi.org/10.1007/s11538-021-00899-z))
 
 ## Installation
 
@@ -56,13 +74,8 @@ devtools::install_github('deankoch/snapKrig')
 Check out the [introduction
 vignette](https://CRAN.R-project.org/package=snapKrig/vignettes/snapKrig_introduction.html)
 for a worked example with the Meuse soils data, or try the code below to
-get started right away.
-
-Some other code examples be found
-[here](https://github.com/deankoch/snapKrig/tree/master/examples). We
-plan to publish a more detailed tutorial and benchmarking study in an
-[upcoming
-paper](https://github.com/deankoch/snapKrig/tree/master/rjarticle).
+get started right away. Other code examples be found
+[here](https://github.com/deankoch/snapKrig/tree/master/examples).
 
 ## Example
 
@@ -110,7 +123,7 @@ g_pred = sk_cmean(g_down, pars, X=0)
 # print time elapsed in computation
 t_end = Sys.time()
 t_end - t_start
-#> Time difference of 0.6783729 secs
+#> Time difference of 0.5637186 secs
 ```
 
 ``` r
@@ -157,6 +170,13 @@ snapKrig depends only on core packages that are included by default in R
 
 # History
 
+My co-authors and I intended publish a more detailed tutorial and
+benchmarking study in an R Journal paper ([see the draft
+here](https://github.com/deankoch/snapKrig/tree/master/rjarticle)). This
+plan was put on hiatus because I developed tendonitis and had to stop
+coding/writing in my free time. I hope to pick up the project again at
+some point in the future.
+
 An earlier implementation of snapKrig was called
 [pkern](https://github.com/deankoch/pkern). snapKrig is a redesigned
 version that uses a more user-friendly S3 grid object class.
@@ -169,12 +189,3 @@ central idea is to model spatial dependence using a separable
 (1-dimensional) univariate covariance kernels. This introduces special
 symmetries and structure in the covariance matrix, which are exploited
 in this package for fast and memory-efficient computations.
-
-I developed snapKrig to support a project to interpolate weather data,
-but the methods underlying snapKrig are applicable more generally. See
-also \[[1](https://doi.org/10.7939/r3-g6qb-bq70)\], where I use product
-kernels to study directions of anisotropy in a non-stationary random
-fields, and \[[2](https://doi.org/10.1007/s11538-021-00899-z),
-[3](https://doi.org/10.1098/rsif.2020.0434)\], where I apply it to fit a
-covariance structure, and to speed up calculations of dispersal kernel
-convolutions.

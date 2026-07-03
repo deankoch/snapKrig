@@ -399,7 +399,7 @@ example, in the plot below, we overlay a polygon representing the location of th
 respect to the points. If this polygon had a different CRS (it doesn't), we would have first needed to
 align it using `sf::st_transform`.
 
-```{r meuse_source_plot, out.width='50%', fig.dim=c(5,5), fig.align='center'}
+```{r meuse_source_plot, out.width='50%', fig.dim=c(5,5), fig.align='center', results='hide'}
 # set up a common color palette (this is the default in snapKrig)
 .pal = function(n) { hcl.colors(n, 'Spectral', rev=TRUE) }
 
@@ -407,6 +407,9 @@ align it using `sf::st_transform`.
 plot(pts, pch=16, reset=FALSE, pal=.pal, key.pos=1, main='Meuse log[zinc]')
 plot(meuse_sf[['river_poly']], col='lightblue', border=NA, add=TRUE)
 plot(st_geometry(pts), pch=1, add=TRUE)
+
+# reset the plot device for next time
+dev.off()
 ```
 
 
@@ -436,14 +439,11 @@ The units of argument 'gres', and of the snapping distance reported by `sk_snap`
 the units of the CRS. This is often meters (as it is with Meuse), but if you aren't sure you should
 have a look at `sf::st_crs(pts)` for your `pts`.
 
-Call `plot` on the output of `sk_snap` to see how these points look after snapping to the grid. As
-with `sk` object plots, you can overlay additional spatial vector layers using the `add` argument.
+Call `plot` on the output of `sk_snap` to see how these points look after snapping to the grid. 
 
-```{r meuse_snapped_plot, out.width='100%', fig.dim=c(5,5), fig.align='center'}
+```{r meuse_snapped_plot, out.width='50%', fig.dim=c(5,5), fig.align='center'}
 # plot gridded version using the snapKrig package
-plot(g, zlab='log(ppb)', main='snapped Meuse log[zinc] data')
-plot(meuse_sf[['river_poly']], col='lightblue', border=NA, add=TRUE)
-
+plot(g, zlab='log(ppb)', main='snapped Meuse log[zinc] data', reset = FALSE)
 ```
 
 Here we've set a fairly coarse grid resolution to keep the package build time short. The
@@ -489,10 +489,12 @@ summary(X)
 ```
 
 The result is plotted below, along with the center line of the river channel in black.
+As with `sk` object plots, you can overlay additional spatial vector layers using
+the `reset = FALSE` and `add = TRUE` arguments.
 
 ```{r meuse_make_x_plot, out.width='50%', fig.dim=c(5,5), fig.align='center'}
 # plot the result
-plot(X, zlab='distance\n(scaled)', main='distance to river covariate')
+plot(X, zlab='distance\n(scaled)', main='distance to river covariate', reset=FALSE)
 plot(meuse_sf[['river_line']], add=TRUE)
 ```
 
@@ -550,7 +552,6 @@ ones) have been replaced by predictions using the model defined in `fit_result_u
 
 ```{r meuse_pred_uk_plot, out.width='50%', fig.dim=c(5,5), fig.align='center'}
 plot(g_uk, zlab='log[zinc]', main='universal kriging predictions')
-plot(meuse_sf[['river_line']], add=TRUE)
 ```
 We can think of this as being two images superimposed - one is the linear combination
 of covariates (*ie* the trend) and the other is the random spatial component, which is interpolated from the observed points.
@@ -579,7 +580,7 @@ As before the function returns a complete grid, this time with kriging variance 
 square roots yields the standard error of prediction
 
 ```{r meuse_var_uk_plot, out.width='100%', fig.dim=c(10,10), fig.align='center'}
-plot(sqrt(g_uk_var), zlab='log[zinc]', main='universal kriging standard error')
+plot(sqrt(g_uk_var), reset=FALSE, zlab='log[zinc]', main='universal kriging standard error')
 plot(meuse_sf[['river_line']], add=TRUE)
 plot(st_geometry(pts), pch=1, add=TRUE)
 ```
@@ -619,13 +620,9 @@ g_uk_orig = exp(g_uk + g_uk_var/2)
 # points on original scale
 pts_orig = meuse_sf[['soils']]['zinc']
 
-# prediction plot
+# plot predictions
 zlim = range(exp(g), na.rm=TRUE)
-plot(g_uk_orig, zlab='zinc (ppm)', main='[zinc] predictions and observations', cex=1.5, zlim=zlim)
-plot(meuse_sf[['river_line']], add=TRUE)
-
-# full plot
-plot(g_uk_orig, zlab='zinc (ppm)', main='[zinc] predictions and observations', cex=1.5, zlim=zlim, reset=FALSE)
+plot(g_uk_orig, reset=FALSE, zlab='zinc (ppm)', main='[zinc] predictions and observations', cex=1.5, zlim=zlim)
 plot(meuse_sf[['river_line']], add=TRUE)
 
 # overlay observation points

@@ -9,11 +9,11 @@
 #'
 #' `pars$k` must be one of the following kernel names:
 #'
-#' * 'exp': exponential (special case of 'gex' with shape p=1)
-#' * 'gau': gaussian/stable (special case of 'gex' with shape p=2)
-#' * 'sph': spherical (AKA stable/Gaussian for p=2)
+#' * 'exp': exponential (special case of 'gex' with shape \eqn{p=1})
+#' * 'gau': gaussian/stable (special case of 'gex' with shape \eqn{p=2})
+#' * 'sph': spherical (AKA stable/Gaussian for \eqn{p=2})
 #'
-#' * 'gex': gamma-exponential (with shape p)
+#' * 'gex': gamma-exponential (with shape \eqn{p})
 #' * 'mat': Whittle-Matern (Handcock and Wallis parameterization, with shape kap)
 #'
 #' where the first three kernels have only a range parameters, and the last two have both a
@@ -227,7 +227,7 @@ sk_corr_mat = function(pars, n, gres=1, i=seq(n), j=seq(n))
 #' in sk grid `g`, given the model parameters list `pars`
 #'
 #' By default the output matrix is V. Alternatively, if `X` is supplied, the function
-#' returns the quadratic form X^T V^{-1} X.
+#' returns the quadratic form \eqn{X^T V^{-1} X}.
 #'
 #' When `fac_method=='eigen'` the function instead returns the eigen-decomposition of the
 #' output matrix, and when `fac_method=='chol'` its lower triangular Cholesky factor is
@@ -260,7 +260,7 @@ sk_corr_mat = function(pars, n, gres=1, i=seq(n), j=seq(n))
 #' @param fac matrix or list of matrices, the variance factorization (only used with X)
 #' @param sep logical, indicating to return correlation components instead of full covariance matrix
 #'
-#' @return either matrix `V`, or X^T V^{-1} X, or a factorization ('chol' or 'eigen')
+#' @return either matrix `V`, or \eqn{X^T V^{-1} X}, or a factorization ('chol' or 'eigen')
 #' @export
 #'
 #' @family variance-related functions
@@ -491,9 +491,9 @@ sk_var = function(g, pars=NULL, scaled=FALSE, fac_method='none', X=NULL, fac=NUL
 #' @param g a sk grid object or (if fac supplied) numeric vector or matrix of non-NA data
 #' @param pars list of form returned by `sk_pars` (with entries 'y', 'x', 'eps', 'psill')
 #' @param fac_method either 'eigen' (the default) or 'chol'
-#' @param fac factorization of scaled covariance matrix of z (V divided by psill)
+#' @param fac factorization of scaled covariance matrix of z (\eqn{V} divided by psill)
 #' @param quad logical, if TRUE the function returns the quadratic form `t(z) %*% V_inv %*% z`
-#' @param p numeric, the matrix power of V^p to multiply (ignored when `method=='chol'`)
+#' @param p numeric, the matrix power of \eqn{V^p} to multiply (ignored when `method=='chol'`)
 #'
 #' @return numeric matrix
 #' @export
@@ -745,7 +745,7 @@ sk_var_mult = function(g, pars, fac_method='eigen', fac=NULL, quad=FALSE, p=-1)
 #' @param x numeric matrix or vector, the symmetric Toeplitz matrix x or its first row
 #' @param idx_obs integer vector, indices of the observed grid points
 #'
-#' @return numeric matrix, the product of yzx or yz (if x is NULL)
+#' @return numeric matrix, the product \eqn{yzx} or \eqn{yz} (if `x` is NULL)
 #' @export
 #'
 #' @keywords internal

@@ -13,11 +13,11 @@ sk_var_mult(g, pars, fac_method = "eigen", fac = NULL, quad = FALSE, p = -1)
 
 \item{fac_method}{either 'eigen' (the default) or 'chol'}
 
-\item{fac}{factorization of scaled covariance matrix of z (V divided by psill)}
+\item{fac}{factorization of scaled covariance matrix of z (\eqn{V} divided by psill)}
 
 \item{quad}{logical, if TRUE the function returns the quadratic form \code{t(z) \%*\% V_inv \%*\% z}}
 
-\item{p}{numeric, the matrix power of V^p to multiply (ignored when \code{method=='chol'})}
+\item{p}{numeric, the matrix power of \eqn{V^p} to multiply (ignored when \code{method=='chol'})}
 }
 \value{
 numeric matrix

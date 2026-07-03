@@ -16,7 +16,7 @@ sk_toep_mult(y, z = NULL, x = NULL, idx_obs = NULL, gdim = NULL)
 \item{idx_obs}{integer vector, indices of the observed grid points}
 }
 \value{
-numeric matrix, the product of yzx or yz (if x is NULL)
+numeric matrix, the product \eqn{yzx} or \eqn{yz} (if \code{x} is NULL)
 }
 \description{
 Computes the product \code{y \%*\% z} or \code{y \%*\% z \%*\% x} for symmetric Toeplitz matrices

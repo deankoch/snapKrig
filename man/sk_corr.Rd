@@ -21,10 +21,10 @@ distances in \code{d}. Parameter list entry \code{pars$kp} supplies the kernel p
 \details{
 \code{pars$k} must be one of the following kernel names:
 \itemize{
-\item 'exp': exponential (special case of 'gex' with shape p=1)
-\item 'gau': gaussian/stable (special case of 'gex' with shape p=2)
-\item 'sph': spherical (AKA stable/Gaussian for p=2)
-\item 'gex': gamma-exponential (with shape p)
+\item 'exp': exponential (special case of 'gex' with shape \eqn{p=1})
+\item 'gau': gaussian/stable (special case of 'gex' with shape \eqn{p=2})
+\item 'sph': spherical (AKA stable/Gaussian for \eqn{p=2})
+\item 'gex': gamma-exponential (with shape \eqn{p})
 \item 'mat': Whittle-Matern (Handcock and Wallis parameterization, with shape kap)
 }
 

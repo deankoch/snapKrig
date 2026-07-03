@@ -33,9 +33,10 @@ The function evaluates:
 
 \code{-log( 2 * pi ) - ( 1/2 ) * ( log_det + quad_form )},
 
-where \code{log_det} is the logarithm of the determinant of covariance matrix V, and
-\code{quad_form} is z^T V^{-1} z, for the observed response vector z, which is constructed
-by subtracting the trend specified in \code{X} (if any) from the non-NA values in \code{g}.
+where \code{log_det} is the logarithm of the determinant of covariance matrix
+\eqn{V}, and \code{quad_form} is \eqn{z^T V^{-1} z}, for the observed response
+vector \code{z}, which is constructed by subtracting the trend specified in
+\code{X} (if any) from the non-NA values in \code{g}.
 
 If the trend spatially uniform and known, it can be supplied in argument \code{X} as a
 numeric scalar. The default is zero-mean model \code{X=0}, which assumes users has

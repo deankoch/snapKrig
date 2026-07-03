@@ -11,9 +11,10 @@
 #'
 #' `-log( 2 * pi ) - ( 1/2 ) * ( log_det + quad_form )`,
 #'
-#' where `log_det` is the logarithm of the determinant of covariance matrix V, and
-#' `quad_form` is z^T V^{-1} z, for the observed response vector z, which is constructed
-#' by subtracting the trend specified in `X` (if any) from the non-NA values in `g`.
+#' where `log_det` is the logarithm of the determinant of covariance matrix
+#' \eqn{V}, and `quad_form` is \eqn{z^T V^{-1} z}, for the observed response
+#' vector `z`, which is constructed by subtracting the trend specified in
+#' `X` (if any) from the non-NA values in `g`.
 #'
 #' If the trend spatially uniform and known, it can be supplied in argument `X` as a
 #' numeric scalar. The default is zero-mean model `X=0`, which assumes users has

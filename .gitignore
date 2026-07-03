@@ -17,3 +17,4 @@ rjarticle/rjarticle_complete.zip
 *.html
 inst/doc
 *.tar.gz
+snapKrig.Rcheck/*

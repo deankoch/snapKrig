@@ -11,3 +11,4 @@
 ^CRAN-SUBMISSION$
 ^examples
 ^dev/*
+^snapKrig.Rcheck/*

@@ -578,7 +578,7 @@ g_uk_var = sk_cmean(g, fit_result_uk, X, what='v', quiet=TRUE)
 As before the function returns a complete grid, this time with kriging variance values. Taking
 square roots yields the standard error of prediction
 
-```{r meuse_var_uk_plot, out.width='50%', fig.dim=c(5,5), fig.align='center'}
+```{r meuse_var_uk_plot, out.width='100%', fig.dim=c(10,10), fig.align='center'}
 plot(sqrt(g_uk_var), zlab='log[zinc]', main='universal kriging standard error')
 plot(meuse_sf[['river_line']], add=TRUE)
 plot(st_geometry(pts), pch=1, add=TRUE)

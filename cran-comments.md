@@ -1,11 +1,10 @@
 ## Overview of Version 0.0.3
 
-This update adds tests (using the testthat package)
+This update changes the following:
 
-TODO: randomize the rest of the tests
-TODO: check why crs is absent by default but set to NULL by sk_rescale
-TODO: in sk_sub_idx, allow vector ij
-TODO: sk_sub - edge removal example error when removing single grid lines
+* updated maintainer email address
+* minor edits to documentation to address notes from R CMD check 
+* added some tests (using the testthat package)
 
 ## R CMD check results
 
@@ -13,7 +12,7 @@ TODO: sk_sub - edge removal example error when removing single grid lines
 
 ## Test environments
 
-* `devtools::check()` with Windows 10 Pro (build 19045), R-release
+* `devtools::check()` with Ubuntu 24.04.4 LTS, R-release
 
 * `devtools::check_win_devel()` Windows Server 2022 x64 (build 20348), R Under development
 

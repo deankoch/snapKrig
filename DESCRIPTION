@@ -21,6 +21,8 @@ Imports:
     methods,
     stats,
     utils
+Depends: 
+    R (>= 4.1.0)
 Suggests: 
     knitr,
     rmarkdown,
@@ -36,5 +38,5 @@ Encoding: UTF-8
 Language: en-US
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
 Config/testthat/edition: 3
+Config/roxygen2/version: 8.0.0

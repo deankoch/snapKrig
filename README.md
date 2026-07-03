@@ -1,8 +1,12 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
+
 <!-- #' # -->
+
 <!-- #' TODO: -->
+
 <!-- #' sk_plot_semi needs an explanation for getting vg -->
+
 <!-- #' sk.plot refers to graphics::... when it should be grDevices -->
 
 # snapKrig
@@ -34,7 +38,7 @@ Here are some benchmarking results (*circa* 2023-2024) for computation
 time to downscale a 32 x 43 raster onto grids of increasing size by
 ordinary kriging.
 
-<img src="man/figures/README-preview-1.png" width="100%" />
+<img src="man/figures/README-preview-1.png" alt="" width="100%" />
 
 code and instructions to reproduce these results can be found
 [here](https://github.com/deankoch/snapKrig/tree/master/rjarticle/data)
@@ -104,7 +108,7 @@ g_sim = sk_sim(g_empty, pars)
 plot(g_sim, main='snapKrig simulation')
 ```
 
-<img src="man/figures/README-intro_sim-1.png" width="75%" style="display: block; margin: auto;" />
+<img src="man/figures/README-intro_sim-1.png" alt="" width="75%" style="display: block; margin: auto;" />
 
 ``` r
 g_sim
@@ -123,7 +127,7 @@ g_pred = sk_cmean(g_down, pars, X=0)
 # print time elapsed in computation
 t_end = Sys.time()
 t_end - t_start
-#> Time difference of 0.5637186 secs
+#> Time difference of 0.7079518 secs
 ```
 
 ``` r
@@ -131,7 +135,7 @@ t_end - t_start
 plot(g_pred, main='snapKrig prediction at 10X resolution')
 ```
 
-<img src="man/figures/README-intro_down_plot-1.png" width="75%" style="display: block; margin: auto;" />
+<img src="man/figures/README-intro_down_plot-1.png" alt="" width="75%" style="display: block; margin: auto;" />
 
 ``` r
 

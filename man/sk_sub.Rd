@@ -79,10 +79,10 @@ plot(g_sub)
 
 }
 \seealso{
-Other sk constructors: 
-\code{\link{sk_rescale}()},
-\code{\link{sk_snap}()},
-\code{\link{sk}()}
+Other sk constructors:
+\code{\link[=sk]{sk()}},
+\code{\link[=sk_rescale]{sk_rescale()}},
+\code{\link[=sk_snap]{sk_snap()}}
 }
 \concept{sk constructors}
 \keyword{internal}

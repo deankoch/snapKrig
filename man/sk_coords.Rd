@@ -76,7 +76,7 @@ plot(sf_coords, pch=16, cex=2, add=TRUE)
 \seealso{
 sk sk_snap base::expand.grid
 
-Other exporting functions: 
-\code{\link{sk_export}()}
+Other exporting functions:
+\code{\link[=sk_export]{sk_export()}}
 }
 \concept{exporting functions}

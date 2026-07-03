@@ -150,9 +150,9 @@ plot(eg_sfc, add=TRUE)
 \seealso{
 sk sk_coords
 
-Other sk constructors: 
-\code{\link{sk_rescale}()},
-\code{\link{sk_sub}()},
-\code{\link{sk}()}
+Other sk constructors:
+\code{\link[=sk]{sk()}},
+\code{\link[=sk_rescale]{sk_rescale()}},
+\code{\link[=sk_sub]{sk_sub()}}
 }
 \concept{sk constructors}

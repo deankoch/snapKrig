@@ -129,10 +129,10 @@ max( rel_err(sk_var_mult(g_miss_sqrt, pars, p=1/2), out_reference) )
 \seealso{
 sk base::eigen base::chol
 
-Other internal variance-related functions: 
-\code{\link{sk_corr_mat}()},
-\code{\link{sk_corr}()},
-\code{\link{sk_toep_mult}()}
+Other internal variance-related functions:
+\code{\link[=sk_corr]{sk_corr()}},
+\code{\link[=sk_corr_mat]{sk_corr_mat()}},
+\code{\link[=sk_toep_mult]{sk_toep_mult()}}
 }
 \concept{internal variance-related functions}
 \keyword{internal}

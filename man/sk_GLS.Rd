@@ -20,49 +20,53 @@ sk_GLS(g, pars, X = NA, out = "s", fac_method = "eigen", fac = NULL)
 \item{fac}{matrix or list, (optional) pre-computed covariance matrix factorization}
 }
 \value{
-linear predictor Xb as an sk grid, or numeric vector, or coefficients (see details)
+linear predictor \eqn{Xb} as an sk grid, or numeric vector, or
+coefficients (see details)
 }
 \description{
-Computes coefficients b of the linear model E(Z) = Xb using the GLS equation
-for sk grid \code{g} and covariance model \code{pars}. By default the function returns the
-linear predictor as an sk object
+Computes coefficients b of the linear model \eqn{E(Z) = Xb} using the GLS
+equation for sk grid \code{g} and covariance model \code{pars}. By default the function
+returns the linear predictor as an sk object
 }
 \details{
-This is the maximum likelihood estimator for the linear trend Xb if we
+This is the maximum likelihood estimator for the linear trend \eqn{Xb} if we
 assume the covariance parameters (in \code{pars}) are specified correctly.
 
-The GLS solution is: b = ( X^T V^{-1} X )^{-1} X^T V^{-1} z,
+The GLS solution is: \eqn{b = ( X^T V^{-1} X )^{-1} X^T V^{-1} z},
 
-where V is the covariance matrix for data vector z (which is \code{g[!is.na(g)]}), and X
-is a matrix of covariates. V is generated from the covariance model \code{pars} with grid
-layout \code{g}.
+where \eqn{V} is the covariance matrix for data vector \eqn{z} (which is
+\code{g[!is.na(g)]}), and \eqn{X} is a matrix of covariates. \eqn{V} is generated
+from the covariance model \code{pars} with grid layout \code{g}.
 
-Operations with V^{-1} are computed using the factorization \code{fac} (see \code{sk_var}), or
-else as specified in \code{fac_method}.
+Operations with \eqn{V^{-1}} are computed using the factorization \code{fac}
+(see \code{sk_var}), or else as specified in \code{fac_method}.
 
-Argument \code{X} can be an sk grid (matching \code{g}) with covariates in layers; or it can be
-a matrix of covariates. DO NOT include an intercept layer (all 1's) in argument \code{X} or
-you will get collinearity errors. Matrix \code{X} should have independent columns, and its
-rows should match the order of \code{g[]} or \code{g[!is.na(g)]}.
+Argument \code{X} can be an sk grid (matching \code{g}) with covariates in layers; or
+it can be a matrix of covariates. DO NOT include an intercept layer (all 1's)
+in argument \code{X} or you will get collinearity errors. Matrix \code{X} should have
+independent columns, and its rows should match the order of \code{g[]} or
+\code{g[!is.na(g)]}.
 
-Use \code{X=NA} to specify an intercept-only model; ie to fit a spatially constant mean. This
-replaces X in the GLS equation by a vector of 1's.
+Use \code{X=NA} to specify an intercept-only model; ie to fit a spatially constant
+mean. This replaces \eqn{X} in the GLS equation by a vector of 1's.
 
-By default \code{out='s'} returns the linear predictor in an sk grid object. Change this to
-\code{'z'} to return it as a vector, or \code{'b'} to get the GLS coefficients only. Set it to \code{'a'}
-to get the second two return types (in a list) along with matrix \code{X} and its factorization.
+By default \code{out='s'} returns the linear predictor in an sk grid object.
+Change this to \code{'z'} to return it as a vector, or \code{'b'} to get the GLS
+coefficients only. Set it to \code{'a'} to get the second two return types (in a
+list) along with matrix \code{X} and its factorization.
 
-The length of the vector output for \code{out='z'} will match the number of rows in \code{X}.
-This means that if \code{NA} grid points are excluded from \code{X}, they will not appear in
-the output (and vice versa). In the \code{X=NA} case, the length is equal to the number of
-non-\code{NA} points in \code{g}. Note that if a point is observed in \code{g}, the function will expect
-its covariates to be included \code{X} (ie \code{X} should have no \code{NA}s corresponding to non-\code{NA}
-points in \code{g}).
+The length of the vector output for \code{out='z'} will match the number of rows
+in \code{X}. This means that if \code{NA} grid points are excluded from \code{X}, they will
+not appear in the output (and vice versa). In the \code{X=NA} case, the length is
+equal to the number of non-\code{NA} points in \code{g}. Note that if a point is
+observed in \code{g}, the function will expect its covariates to be included \code{X}
+(\emph{ie} \code{X} should have no \code{NA}s corresponding to non-\code{NA} points in \code{g}).
 
-If \code{g[]} is a matrix (a multi-layer grid), the covariates in \code{X} are recycled
-for each layer. Layers are assumed mutually independent and the GLS equation is evaluated
-using the corresponding block-diagonal V. This is equivalent to (but faster than) calling
-\code{sk_GLS} separately on each layer with the same \code{X} and averaging the resulting b estimates.
+If \code{g[]} is a matrix (a multi-layer grid), the covariates in \code{X} are
+recycled for each layer. Layers are assumed mutually independent and the
+GLS equation is evaluated using the corresponding block-diagonal \eqn{V}.
+This is equivalent to (but faster than) calling \code{sk_GLS} separately on
+each layer with the same \code{X} and averaging the resulting \eqn{b} estimates.
 }
 \examples{
 # set up example grid and covariance parameters
@@ -178,15 +182,15 @@ summary(sk_GLS(g_multi, pars, X_obs))
 \seealso{
 sk
 
-Other estimators: 
-\code{\link{sk_cmean}()}
+Other estimators:
+\code{\link[=sk_cmean]{sk_cmean()}}
 
-Other variance-related functions: 
-\code{\link{sk_LL}()},
-\code{\link{sk_cmean}()},
-\code{\link{sk_nLL}()},
-\code{\link{sk_sim}()},
-\code{\link{sk_var}()}
+Other variance-related functions:
+\code{\link[=sk_LL]{sk_LL()}},
+\code{\link[=sk_cmean]{sk_cmean()}},
+\code{\link[=sk_nLL]{sk_nLL()}},
+\code{\link[=sk_sim]{sk_sim()}},
+\code{\link[=sk_var]{sk_var()}}
 }
 \concept{estimators}
 \concept{variance-related functions}

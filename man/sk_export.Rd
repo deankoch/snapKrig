@@ -55,7 +55,7 @@ all.equal(r_from_g, r)
 \seealso{
 sk
 
-Other exporting functions: 
-\code{\link{sk_coords}()}
+Other exporting functions:
+\code{\link[=sk_coords]{sk_coords()}}
 }
 \concept{exporting functions}

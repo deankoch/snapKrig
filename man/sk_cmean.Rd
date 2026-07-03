@@ -36,47 +36,54 @@ sk_cmean(
 numeric matrix, the predicted values (or their variance)
 }
 \description{
-Evaluates the kriging prediction equations to find the expected value (mean) of
-the spatial process for \code{g} at all grid points, including unobserved ones.
+Evaluates the kriging prediction equations to find the expected value (mean)
+of the spatial process for \code{g} at all grid points, including unobserved ones.
 }
 \details{
-This predicts a noiseless version of the random process from which grid \code{g} was
-sampled, conditional on the observed data, and possibly a set of covariates. It is
-optimal in the sense of minimizing mean squared prediction error under the covariance
-model specified by \code{pars}, and assuming the predictions are a linear combination of
-the observed data.
+This predicts a noiseless version of the random process from which grid \code{g}
+was sampled, conditional on the observed data, and possibly a set of
+covariates. It is optimal in the sense of minimizing mean squared prediction
+error under the covariance model specified by \code{pars}, and assuming the
+predictions are a linear combination of the observed data.
 
-The estimation method is determined by \code{X}. Set this to \code{0} and supply a de-trended
-\code{g} to do simple kriging. Set it to \code{NA} to estimate a spatially uniform mean (ordinary
-kriging). Or pass covariates to \code{X}, either as multi-layer sk grid or matrix, to do
-universal kriging. See \code{sk_GLS} for details on specifying \code{X} in this case.
+The estimation method is determined by \code{X}. Set this to \code{0} and supply a
+de-trended \code{g} to do simple kriging. Set it to \code{NA} to estimate a spatially
+uniform mean (ordinary kriging). Or pass covariates to \code{X}, either as
+multi-layer sk grid or matrix, to do universal kriging. See \code{sk_GLS} for
+details on specifying \code{X} in this case.
 
-Set \code{what='v'} to return the point-wise kriging variance. This usually takes much
-longer to evaluate than the prediction, but the computer memory demands are similar.
-A progress bar will be printed to console in this case unless \code{quiet=TRUE}.
+Set \code{what='v'} to return the point-wise kriging variance. This usually takes
+much longer to evaluate than the prediction, but the computer memory demands
+are similar. A progress bar will be printed to console in this case unless
+\code{quiet=TRUE}.
 
 Technical notes
 
-All calculations returned by \code{sk_cmean} are exact. Our implementation is based on the
-variance decomposition suggested in section 3.4 (p. 153-155) of Cressie (1993), and uses a
-loop over eigen-vectors (for observed locations) to compute variance iteratively.
+All calculations returned by \code{sk_cmean} are exact. Our implementation is
+based on the variance decomposition suggested in section 3.4 (p. 153-155) of
+Cressie (1993), and uses a loop over eigen-vectors (for observed locations)
+to compute variance iteratively.
 
-In technical terms, \code{sk_cmean} estimates the mean of the signal process behind the data.
-The nugget effect (\code{eps}) is therefore added to the diagonals of the covariance matrix for
-the observed points, but NOT to the corresponding entries of the cross-covariance matrix.
-This has the effect of smoothing (de-noising) predictions at observed locations, which means
-\code{sk_cmean} is not an exact interpolator (except in the limit \code{eps} -> \code{0}). Rather it makes
-a correction to the observed data to make it consistent with the surrounding signal.
+In technical terms, \code{sk_cmean} estimates the mean of the signal process
+behind the data. The nugget effect (\code{eps}) is therefore added to the
+diagonals of the covariance matrix for the observed points, but NOT to the
+corresponding entries of the cross-covariance matrix.
+This has the effect of smoothing (de-noising) predictions at observed
+locations, which means \code{sk_cmean} is not an exact interpolator (except in
+the limit \code{eps} -> \code{0}). Rather it makes a correction to the observed data
+to make it consistent with the surrounding signal.
 
-This is a good thing - real spatial datasets are almost always noisy, and we are typically
-interested in the signal, not some distorted version of it. For more on this see section 3
-of Cressie (1993), and in particular the discussion in 3.2.1 on the nugget effect.
+This is a good thing - real spatial datasets are almost always noisy, and we
+are typically interested in the signal, not some distorted version of it.
+For more on this see section 3 of Cressie (1993), and in particular the
+discussion in 3.2.1 on the nugget effect.
 
-The covariance factorization \code{fac} can be pre-computed using \code{sk_var} with arguments
-\code{scaled=TRUE} (and, if computing variance, \code{fac_method='eigen'}). This will speed up
-subsequent calls where only the observed data values have changed (same covariance structure
-\code{pars}, and same \code{NA} structure in the data). The kriging variance does not change
-in this case and only needs to be computed once.
+The covariance factorization \code{fac} can be pre-computed using \code{sk_var} with
+arguments \code{scaled=TRUE} (and, if computing variance, \code{fac_method='eigen'}).
+This will speed up subsequent calls where only the observed data values have
+changed (same covariance structure \code{pars}, and same \code{NA} structure in the
+data). The kriging variance does not change in this case and only needs to
+be computed once.
 
 reference: "Statistics for Spatial Data" by Noel Cressie (1993)
 }
@@ -237,15 +244,15 @@ max(abs(z_var_uk - g_super_uk_v))
 \seealso{
 sk sk_pars
 
-Other estimators: 
-\code{\link{sk_GLS}()}
+Other estimators:
+\code{\link[=sk_GLS]{sk_GLS()}}
 
-Other variance-related functions: 
-\code{\link{sk_GLS}()},
-\code{\link{sk_LL}()},
-\code{\link{sk_nLL}()},
-\code{\link{sk_sim}()},
-\code{\link{sk_var}()}
+Other variance-related functions:
+\code{\link[=sk_GLS]{sk_GLS()}},
+\code{\link[=sk_LL]{sk_LL()}},
+\code{\link[=sk_nLL]{sk_nLL()}},
+\code{\link[=sk_sim]{sk_sim()}},
+\code{\link[=sk_var]{sk_var()}}
 }
 \concept{estimators}
 \concept{variance-related functions}

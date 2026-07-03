@@ -4,45 +4,48 @@
 
 #' Generalized least squares (GLS) with Kronecker covariances for sk grids
 #'
-#' Computes coefficients b of the linear model E(Z) = Xb using the GLS equation
-#' for sk grid `g` and covariance model `pars`. By default the function returns the
-#' linear predictor as an sk object
+#' Computes coefficients b of the linear model \eqn{E(Z) = Xb} using the GLS
+#' equation for sk grid `g` and covariance model `pars`. By default the function
+#' returns the linear predictor as an sk object
 #'
-#' This is the maximum likelihood estimator for the linear trend Xb if we
+#' This is the maximum likelihood estimator for the linear trend \eqn{Xb} if we
 #' assume the covariance parameters (in `pars`) are specified correctly.
 #'
-#' The GLS solution is: b = ( X^T V^{-1} X )^{-1} X^T V^{-1} z,
+#' The GLS solution is: \eqn{b = ( X^T V^{-1} X )^{-1} X^T V^{-1} z},
 #'
-#' where V is the covariance matrix for data vector z (which is `g[!is.na(g)]`), and X
-#' is a matrix of covariates. V is generated from the covariance model `pars` with grid
-#' layout `g`.
+#' where \eqn{V} is the covariance matrix for data vector \eqn{z} (which is
+#' `g[!is.na(g)]`), and \eqn{X} is a matrix of covariates. \eqn{V} is generated
+#' from the covariance model `pars` with grid layout `g`.
 #'
-#' Operations with V^{-1} are computed using the factorization `fac` (see `sk_var`), or
-#' else as specified in `fac_method`.
+#' Operations with \eqn{V^{-1}} are computed using the factorization `fac`
+#' (see `sk_var`), or else as specified in `fac_method`.
 #'
-#' Argument `X` can be an sk grid (matching `g`) with covariates in layers; or it can be
-#' a matrix of covariates. DO NOT include an intercept layer (all 1's) in argument `X` or
-#' you will get collinearity errors. Matrix `X` should have independent columns, and its
-#' rows should match the order of `g[]` or `g[!is.na(g)]`.
+#' Argument `X` can be an sk grid (matching `g`) with covariates in layers; or
+#' it can be a matrix of covariates. DO NOT include an intercept layer (all 1's)
+#' in argument `X` or you will get collinearity errors. Matrix `X` should have
+#' independent columns, and its rows should match the order of `g[]` or
+#' `g[!is.na(g)]`.
 #'
-#' Use `X=NA` to specify an intercept-only model; ie to fit a spatially constant mean. This
-#' replaces X in the GLS equation by a vector of 1's.
+#' Use `X=NA` to specify an intercept-only model; ie to fit a spatially constant
+#' mean. This replaces \eqn{X} in the GLS equation by a vector of 1's.
 #'
-#' By default `out='s'` returns the linear predictor in an sk grid object. Change this to
-#' `'z'` to return it as a vector, or `'b'` to get the GLS coefficients only. Set it to `'a'`
-#' to get the second two return types (in a list) along with matrix `X` and its factorization.
+#' By default `out='s'` returns the linear predictor in an sk grid object.
+#' Change this to `'z'` to return it as a vector, or `'b'` to get the GLS
+#' coefficients only. Set it to `'a'` to get the second two return types (in a
+#' list) along with matrix `X` and its factorization.
 #'
-#' The length of the vector output for `out='z'` will match the number of rows in `X`.
-#' This means that if `NA` grid points are excluded from `X`, they will not appear in
-#' the output (and vice versa). In the `X=NA` case, the length is equal to the number of
-#' non-`NA` points in `g`. Note that if a point is observed in `g`, the function will expect
-#' its covariates to be included `X` (ie `X` should have no `NA`s corresponding to non-`NA`
-#' points in `g`).
+#' The length of the vector output for `out='z'` will match the number of rows
+#' in `X`. This means that if `NA` grid points are excluded from `X`, they will
+#' not appear in the output (and vice versa). In the `X=NA` case, the length is
+#' equal to the number of non-`NA` points in `g`. Note that if a point is
+#' observed in `g`, the function will expect its covariates to be included `X`
+#' (*ie* `X` should have no `NA`s corresponding to non-`NA` points in `g`).
 #'
-#' If `g[]` is a matrix (a multi-layer grid), the covariates in `X` are recycled
-#' for each layer. Layers are assumed mutually independent and the GLS equation is evaluated
-#' using the corresponding block-diagonal V. This is equivalent to (but faster than) calling
-#' `sk_GLS` separately on each layer with the same `X` and averaging the resulting b estimates.
+#' If `g[]` is a matrix (a multi-layer grid), the covariates in `X` are
+#' recycled for each layer. Layers are assumed mutually independent and the
+#' GLS equation is evaluated using the corresponding block-diagonal \eqn{V}.
+#' This is equivalent to (but faster than) calling `sk_GLS` separately on
+#' each layer with the same `X` and averaging the resulting \eqn{b} estimates.
 #'
 #'
 #' @param g a sk grid object (or list with entries 'gdim', 'gres', 'gval')
@@ -52,7 +55,8 @@
 #' @param fac_method character, factorization method: 'eigen' (default) or 'chol' (see `sk_var`)
 #' @param fac matrix or list, (optional) pre-computed covariance matrix factorization
 #'
-#' @return linear predictor Xb as an sk grid, or numeric vector, or coefficients (see details)
+#' @return linear predictor \eqn{Xb} as an sk grid, or numeric vector, or
+#' coefficients (see details)
 #'
 #' @export
 #' @seealso sk
@@ -267,47 +271,54 @@ sk_GLS = function(g, pars, X=NA, out='s', fac_method='eigen', fac=NULL)
 
 #' Compute kriging predictor (or variance) for an sk grid
 #'
-#' Evaluates the kriging prediction equations to find the expected value (mean) of
-#' the spatial process for `g` at all grid points, including unobserved ones.
+#' Evaluates the kriging prediction equations to find the expected value (mean)
+#' of the spatial process for `g` at all grid points, including unobserved ones.
 #'
-#' This predicts a noiseless version of the random process from which grid `g` was
-#' sampled, conditional on the observed data, and possibly a set of covariates. It is
-#' optimal in the sense of minimizing mean squared prediction error under the covariance
-#' model specified by `pars`, and assuming the predictions are a linear combination of
-#' the observed data.
+#' This predicts a noiseless version of the random process from which grid `g`
+#' was sampled, conditional on the observed data, and possibly a set of
+#' covariates. It is optimal in the sense of minimizing mean squared prediction
+#' error under the covariance model specified by `pars`, and assuming the
+#' predictions are a linear combination of the observed data.
 #'
-#' The estimation method is determined by `X`. Set this to `0` and supply a de-trended
-#' `g` to do simple kriging. Set it to `NA` to estimate a spatially uniform mean (ordinary
-#' kriging). Or pass covariates to `X`, either as multi-layer sk grid or matrix, to do
-#' universal kriging. See `sk_GLS` for details on specifying `X` in this case.
+#' The estimation method is determined by `X`. Set this to `0` and supply a
+#' de-trended `g` to do simple kriging. Set it to `NA` to estimate a spatially
+#' uniform mean (ordinary kriging). Or pass covariates to `X`, either as
+#' multi-layer sk grid or matrix, to do universal kriging. See `sk_GLS` for
+#' details on specifying `X` in this case.
 #'
-#' Set `what='v'` to return the point-wise kriging variance. This usually takes much
-#' longer to evaluate than the prediction, but the computer memory demands are similar.
-#' A progress bar will be printed to console in this case unless `quiet=TRUE`.
+#' Set `what='v'` to return the point-wise kriging variance. This usually takes
+#' much longer to evaluate than the prediction, but the computer memory demands
+#' are similar. A progress bar will be printed to console in this case unless
+#' `quiet=TRUE`.
 #'
 #'
 #' Technical notes
 #'
-#' All calculations returned by `sk_cmean` are exact. Our implementation is based on the
-#' variance decomposition suggested in section 3.4 (p. 153-155) of Cressie (1993), and uses a
-#' loop over eigen-vectors (for observed locations) to compute variance iteratively.
+#' All calculations returned by `sk_cmean` are exact. Our implementation is
+#' based on the variance decomposition suggested in section 3.4 (p. 153-155) of
+#' Cressie (1993), and uses a loop over eigen-vectors (for observed locations)
+#' to compute variance iteratively.
 #'
-#' In technical terms, `sk_cmean` estimates the mean of the signal process behind the data.
-#' The nugget effect (`eps`) is therefore added to the diagonals of the covariance matrix for
-#' the observed points, but NOT to the corresponding entries of the cross-covariance matrix.
-#' This has the effect of smoothing (de-noising) predictions at observed locations, which means
-#' `sk_cmean` is not an exact interpolator (except in the limit `eps` -> `0`). Rather it makes
-#' a correction to the observed data to make it consistent with the surrounding signal.
+#' In technical terms, `sk_cmean` estimates the mean of the signal process
+#' behind the data. The nugget effect (`eps`) is therefore added to the
+#' diagonals of the covariance matrix for the observed points, but NOT to the
+#' corresponding entries of the cross-covariance matrix.
+#' This has the effect of smoothing (de-noising) predictions at observed
+#' locations, which means `sk_cmean` is not an exact interpolator (except in
+#' the limit `eps` -> `0`). Rather it makes a correction to the observed data
+#' to make it consistent with the surrounding signal.
 #'
-#' This is a good thing - real spatial datasets are almost always noisy, and we are typically
-#' interested in the signal, not some distorted version of it. For more on this see section 3
-#' of Cressie (1993), and in particular the discussion in 3.2.1 on the nugget effect.
+#' This is a good thing - real spatial datasets are almost always noisy, and we
+#' are typically interested in the signal, not some distorted version of it.
+#' For more on this see section 3 of Cressie (1993), and in particular the
+#' discussion in 3.2.1 on the nugget effect.
 #'
-#' The covariance factorization `fac` can be pre-computed using `sk_var` with arguments
-#' `scaled=TRUE` (and, if computing variance, `fac_method='eigen'`). This will speed up
-#' subsequent calls where only the observed data values have changed (same covariance structure
-#' `pars`, and same `NA` structure in the data). The kriging variance does not change
-#' in this case and only needs to be computed once.
+#' The covariance factorization `fac` can be pre-computed using `sk_var` with
+#' arguments `scaled=TRUE` (and, if computing variance, `fac_method='eigen'`).
+#' This will speed up subsequent calls where only the observed data values have
+#' changed (same covariance structure `pars`, and same `NA` structure in the
+#' data). The kriging variance does not change in this case and only needs to
+#' be computed once.
 #'
 #' reference: "Statistics for Spatial Data" by Noel Cressie (1993)
 #'
@@ -696,34 +707,38 @@ sk_cmean = function(g, pars, X=NA, what='p', out='s', fac_method='chol', fac=NUL
 
 #' Fit a covariance model to an sk grid by maximum likelihood
 #'
-#' This uses `stats::optim` to minimize the log-likelihood function for a grid dataset
-#' `g` over the space of unknown parameters for the covariance function specified in `pars`.
-#' If only one parameter is unknown, the function instead uses `stats::optimize`.
+#' This uses `stats::optim` to minimize the log-likelihood function for a grid
+#' dataset `g` over the space of unknown parameters for the covariance function
+#' specified in `pars`. If only one parameter is unknown, the function instead
+#' uses `stats::optimize`.
 #'
 #' `NA` entries in `pars` are treated as unknown parameters and fitted by the
-#' function, whereas non-`NA` entries are treated as fixed parameters (and not fitted).
-#' If none of the parameters in `pars` are `NA`, the function copies everything as initial
-#' values, then treats all parameters as unknown. `pars` can also be a character vector
-#' defining a pair of correlograms (see `?sk_pars`) in which case all covariance parameters
-#' are treated as unknown.
+#' function, whereas non-`NA` entries are treated as fixed parameters (and not
+#' fitted). If none of the parameters in `pars` are `NA`, the function copies
+#' everything as initial values, then treats all parameters as unknown. `pars`
+#' can also be a character vector defining a pair of correlograms (see
+#' `?sk_pars`) in which case all covariance parameters are treated as unknown.
 #'
-#' Bounds and initial values are set automatically using `sk_bds`, unless they are otherwise
-#' specified in arguments `lower`, `initial`, `upper`. These should be vectors containing only
-#' the unknown parameters, *ie.* they must exclude fixed parameters. Call
-#' `sk_update_pars(pars, iso=iso)` to get a template with the expected names and order.
+#' Bounds and initial values are set automatically using `sk_bds`, unless they
+#' are otherwise specified in arguments `lower`, `initial`, `upper`. These
+#' should be vectors containing only the unknown parameters, *ie.* they must
+#' exclude fixed parameters. Call `sk_update_pars(pars, iso=iso)` to get a
+#' template with the expected names and order.
 #'
-#' All parameters in the covariance models supported by `snapKrig` are strictly positive.
-#' Optimization is (by default) done on the parameter log-scale, and users can select a
-#' non-constrained `method` if they wish (`?stats::optim`). As the default method 'L-BFGS-B'
-#' is the only one that accepts bounds (`lower`, `initial`, `upper` are otherwise ignored)
-#' `method` is ignored when `log_scale=FALSE`.
+#' All parameters in the covariance models supported by `snapKrig` are strictly
+#' positive. Optimization is (by default) done on the parameter log-scale, and
+#' users can select a non-constrained `method` if they wish (`?stats::optim`).
+#' As the default method 'L-BFGS-B' is the only one that accepts bounds
+#' (`lower`, `initial`, `upper` are otherwise ignored) and `method` is ignored
+#' when `log_scale=FALSE`.
 #'
-#' Note that the 'gxp' and 'mat' correlograms behave strangely with very small or very large
-#' shape parameters, so for them we recommended 'L-BFGS-B' only.
+#' Note that the 'gxp' and 'mat' correlograms behave strangely with very small
+#' or very large shape parameters, so for them we recommended 'L-BFGS-B' only.
 #'
-#' When there is only one unknown parameter, the function uses `stats::optimize` instead of
-#' `stats::optim`. In this case all entries of `control` with the exception of 'tol' are
-#' ignored, as are bounds and initial values, and arguments to `method`.
+#' When there is only one unknown parameter, the function uses `stats::optimize`
+#' instead of `stats::optim`. In this case all entries of `control` with the
+#' exception of 'tol' are ignored, as are bounds and initial values, and
+#' arguments to `method`.
 #'
 #' As a sanity check `n_max` sets a maximum for the number of observed grid points. This
 #' is to avoid accidental calls with very large datasets that would cause R to hang or crash.

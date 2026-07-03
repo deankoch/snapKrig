@@ -57,7 +57,7 @@ sk_plot_pars(pars, minimal=TRUE)
 \seealso{
 sk sk_pars
 
-Other plotting functions: 
-\code{\link{sk_plot}()}
+Other plotting functions:
+\code{\link[=sk_plot]{sk_plot()}}
 }
 \concept{plotting functions}

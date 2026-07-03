@@ -44,11 +44,11 @@ data.frame(k=result, gyx)
 
 }
 \seealso{
-Other indexing functions: 
-\code{\link{sk_rescale}()},
-\code{\link{sk_sub_find}()},
-\code{\link{sk_sub_idx}()},
-\code{\link{sk_vec2mat}()}
+Other indexing functions:
+\code{\link[=sk_rescale]{sk_rescale()}},
+\code{\link[=sk_sub_find]{sk_sub_find()}},
+\code{\link[=sk_sub_idx]{sk_sub_idx()}},
+\code{\link[=sk_vec2mat]{sk_vec2mat()}}
 }
 \concept{indexing functions}
 \keyword{internal}

@@ -149,11 +149,11 @@ max(abs( sk_var(g, pars, fac_method='eigen')$values - psill*vals_scaled ))
 \seealso{
 sk
 
-Other variance-related functions: 
-\code{\link{sk_GLS}()},
-\code{\link{sk_LL}()},
-\code{\link{sk_cmean}()},
-\code{\link{sk_nLL}()},
-\code{\link{sk_sim}()}
+Other variance-related functions:
+\code{\link[=sk_GLS]{sk_GLS()}},
+\code{\link[=sk_LL]{sk_LL()}},
+\code{\link[=sk_cmean]{sk_cmean()}},
+\code{\link[=sk_nLL]{sk_nLL()}},
+\code{\link[=sk_sim]{sk_sim()}}
 }
 \concept{variance-related functions}

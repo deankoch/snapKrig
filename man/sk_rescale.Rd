@@ -76,16 +76,16 @@ sk_plot(sk_rescale(g=g_multi, up=2), layer=3)
 \seealso{
 sk sk_cmean
 
-Other indexing functions: 
-\code{\link{sk_mat2vec}()},
-\code{\link{sk_sub_find}()},
-\code{\link{sk_sub_idx}()},
-\code{\link{sk_vec2mat}()}
+Other indexing functions:
+\code{\link[=sk_mat2vec]{sk_mat2vec()}},
+\code{\link[=sk_sub_find]{sk_sub_find()}},
+\code{\link[=sk_sub_idx]{sk_sub_idx()}},
+\code{\link[=sk_vec2mat]{sk_vec2mat()}}
 
-Other sk constructors: 
-\code{\link{sk_snap}()},
-\code{\link{sk_sub}()},
-\code{\link{sk}()}
+Other sk constructors:
+\code{\link[=sk]{sk()}},
+\code{\link[=sk_snap]{sk_snap()}},
+\code{\link[=sk_sub]{sk_sub()}}
 }
 \concept{indexing functions}
 \concept{sk constructors}

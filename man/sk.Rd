@@ -168,9 +168,9 @@ summary(g)
 }
 }
 \seealso{
-Other sk constructors: 
-\code{\link{sk_rescale}()},
-\code{\link{sk_snap}()},
-\code{\link{sk_sub}()}
+Other sk constructors:
+\code{\link[=sk_rescale]{sk_rescale()}},
+\code{\link[=sk_snap]{sk_snap()}},
+\code{\link[=sk_sub]{sk_sub()}}
 }
 \concept{sk constructors}

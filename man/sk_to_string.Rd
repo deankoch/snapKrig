@@ -46,13 +46,13 @@ sk_to_string(pars)
 \seealso{
 sk_plot_pars
 
-Other parameter managers: 
-\code{\link{sk_bds}()},
-\code{\link{sk_fit}()},
-\code{\link{sk_kp}()},
-\code{\link{sk_pars_make}()},
-\code{\link{sk_pars_update}()},
-\code{\link{sk_pars}()}
+Other parameter managers:
+\code{\link[=sk_bds]{sk_bds()}},
+\code{\link[=sk_fit]{sk_fit()}},
+\code{\link[=sk_kp]{sk_kp()}},
+\code{\link[=sk_pars]{sk_pars()}},
+\code{\link[=sk_pars_make]{sk_pars_make()}},
+\code{\link[=sk_pars_update]{sk_pars_update()}}
 }
 \concept{parameter managers}
 \keyword{internal}

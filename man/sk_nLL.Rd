@@ -82,15 +82,15 @@ pars_fit[['y']][['kp']] = p_fit[2]
 \seealso{
 sk sk_GLS sk_var sk_pars_update
 
-Other likelihood functions: 
-\code{\link{sk_LL}()}
+Other likelihood functions:
+\code{\link[=sk_LL]{sk_LL()}}
 
-Other variance-related functions: 
-\code{\link{sk_GLS}()},
-\code{\link{sk_LL}()},
-\code{\link{sk_cmean}()},
-\code{\link{sk_sim}()},
-\code{\link{sk_var}()}
+Other variance-related functions:
+\code{\link[=sk_GLS]{sk_GLS()}},
+\code{\link[=sk_LL]{sk_LL()}},
+\code{\link[=sk_cmean]{sk_cmean()}},
+\code{\link[=sk_sim]{sk_sim()}},
+\code{\link[=sk_var]{sk_var()}}
 }
 \concept{likelihood functions}
 \concept{variance-related functions}

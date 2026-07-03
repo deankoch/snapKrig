@@ -216,7 +216,7 @@ plot(g_sim, main='layer 3', layer=3, minimal=TRUE, col_box='black')
 \seealso{
 sk
 
-Other plotting functions: 
-\code{\link{sk_plot_pars}()}
+Other plotting functions:
+\code{\link[=sk_plot_pars]{sk_plot_pars()}}
 }
 \concept{plotting functions}

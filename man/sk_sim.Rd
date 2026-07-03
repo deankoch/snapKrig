@@ -65,11 +65,11 @@ plot(g_sim_multi, layer=3)
 \seealso{
 sk sk_pars base::rnorm
 
-Other variance-related functions: 
-\code{\link{sk_GLS}()},
-\code{\link{sk_LL}()},
-\code{\link{sk_cmean}()},
-\code{\link{sk_nLL}()},
-\code{\link{sk_var}()}
+Other variance-related functions:
+\code{\link[=sk_GLS]{sk_GLS()}},
+\code{\link[=sk_LL]{sk_LL()}},
+\code{\link[=sk_cmean]{sk_cmean()}},
+\code{\link[=sk_nLL]{sk_nLL()}},
+\code{\link[=sk_var]{sk_var()}}
 }
 \concept{variance-related functions}

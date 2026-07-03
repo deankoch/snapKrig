@@ -209,15 +209,15 @@ LL_result[['n_obs']] - n
 \seealso{
 sk sk_GLS sk_var stats::AIC
 
-Other likelihood functions: 
-\code{\link{sk_nLL}()}
+Other likelihood functions:
+\code{\link[=sk_nLL]{sk_nLL()}}
 
-Other variance-related functions: 
-\code{\link{sk_GLS}()},
-\code{\link{sk_cmean}()},
-\code{\link{sk_nLL}()},
-\code{\link{sk_sim}()},
-\code{\link{sk_var}()}
+Other variance-related functions:
+\code{\link[=sk_GLS]{sk_GLS()}},
+\code{\link[=sk_cmean]{sk_cmean()}},
+\code{\link[=sk_nLL]{sk_nLL()}},
+\code{\link[=sk_sim]{sk_sim()}},
+\code{\link[=sk_var]{sk_var()}}
 }
 \concept{likelihood functions}
 \concept{variance-related functions}

@@ -91,11 +91,11 @@ sk_plot(vec_order, gdim, col_grid='black', ij=TRUE, zlab='vector index')
 
 }
 \seealso{
-Other indexing functions: 
-\code{\link{sk_mat2vec}()},
-\code{\link{sk_rescale}()},
-\code{\link{sk_sub_find}()},
-\code{\link{sk_vec2mat}()}
+Other indexing functions:
+\code{\link[=sk_mat2vec]{sk_mat2vec()}},
+\code{\link[=sk_rescale]{sk_rescale()}},
+\code{\link[=sk_sub_find]{sk_sub_find()}},
+\code{\link[=sk_vec2mat]{sk_vec2mat()}}
 }
 \concept{indexing functions}
 \keyword{internal}

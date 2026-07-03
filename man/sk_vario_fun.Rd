@@ -67,8 +67,8 @@ lines(d_test, vario_lims[,2])
 \seealso{
 sk_pars
 
-Other variogram functions: 
-\code{\link{sk_add_bins}()}
+Other variogram functions:
+\code{\link[=sk_add_bins]{sk_add_bins()}}
 }
 \concept{variogram functions}
 \keyword{internal}

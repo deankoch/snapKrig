@@ -56,13 +56,13 @@ sk_bds('mat', g, var_mult=1)
 \seealso{
 sk
 
-Other parameter managers: 
-\code{\link{sk_fit}()},
-\code{\link{sk_kp}()},
-\code{\link{sk_pars_make}()},
-\code{\link{sk_pars_update}()},
-\code{\link{sk_pars}()},
-\code{\link{sk_to_string}()}
+Other parameter managers:
+\code{\link[=sk_fit]{sk_fit()}},
+\code{\link[=sk_kp]{sk_kp()}},
+\code{\link[=sk_pars]{sk_pars()}},
+\code{\link[=sk_pars_make]{sk_pars_make()}},
+\code{\link[=sk_pars_update]{sk_pars_update()}},
+\code{\link[=sk_to_string]{sk_to_string()}}
 }
 \concept{parameter managers}
 \keyword{internal}

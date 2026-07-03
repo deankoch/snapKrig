@@ -50,35 +50,39 @@ fitted parameters. The data-frame of bounds and initial values is also included 
 attribute 'bds'
 }
 \description{
-This uses \code{stats::optim} to minimize the log-likelihood function for a grid dataset
-\code{g} over the space of unknown parameters for the covariance function specified in \code{pars}.
-If only one parameter is unknown, the function instead uses \code{stats::optimize}.
+This uses \code{stats::optim} to minimize the log-likelihood function for a grid
+dataset \code{g} over the space of unknown parameters for the covariance function
+specified in \code{pars}. If only one parameter is unknown, the function instead
+uses \code{stats::optimize}.
 }
 \details{
 \code{NA} entries in \code{pars} are treated as unknown parameters and fitted by the
-function, whereas non-\code{NA} entries are treated as fixed parameters (and not fitted).
-If none of the parameters in \code{pars} are \code{NA}, the function copies everything as initial
-values, then treats all parameters as unknown. \code{pars} can also be a character vector
-defining a pair of correlograms (see \code{?sk_pars}) in which case all covariance parameters
-are treated as unknown.
+function, whereas non-\code{NA} entries are treated as fixed parameters (and not
+fitted). If none of the parameters in \code{pars} are \code{NA}, the function copies
+everything as initial values, then treats all parameters as unknown. \code{pars}
+can also be a character vector defining a pair of correlograms (see
+\code{?sk_pars}) in which case all covariance parameters are treated as unknown.
 
-Bounds and initial values are set automatically using \code{sk_bds}, unless they are otherwise
-specified in arguments \code{lower}, \code{initial}, \code{upper}. These should be vectors containing only
-the unknown parameters, \emph{ie.} they must exclude fixed parameters. Call
-\code{sk_update_pars(pars, iso=iso)} to get a template with the expected names and order.
+Bounds and initial values are set automatically using \code{sk_bds}, unless they
+are otherwise specified in arguments \code{lower}, \code{initial}, \code{upper}. These
+should be vectors containing only the unknown parameters, \emph{ie.} they must
+exclude fixed parameters. Call \code{sk_update_pars(pars, iso=iso)} to get a
+template with the expected names and order.
 
-All parameters in the covariance models supported by \code{snapKrig} are strictly positive.
-Optimization is (by default) done on the parameter log-scale, and users can select a
-non-constrained \code{method} if they wish (\code{?stats::optim}). As the default method 'L-BFGS-B'
-is the only one that accepts bounds (\code{lower}, \code{initial}, \code{upper} are otherwise ignored)
-\code{method} is ignored when \code{log_scale=FALSE}.
+All parameters in the covariance models supported by \code{snapKrig} are strictly
+positive. Optimization is (by default) done on the parameter log-scale, and
+users can select a non-constrained \code{method} if they wish (\code{?stats::optim}).
+As the default method 'L-BFGS-B' is the only one that accepts bounds
+(\code{lower}, \code{initial}, \code{upper} are otherwise ignored) and \code{method} is ignored
+when \code{log_scale=FALSE}.
 
-Note that the 'gxp' and 'mat' correlograms behave strangely with very small or very large
-shape parameters, so for them we recommended 'L-BFGS-B' only.
+Note that the 'gxp' and 'mat' correlograms behave strangely with very small
+or very large shape parameters, so for them we recommended 'L-BFGS-B' only.
 
-When there is only one unknown parameter, the function uses \code{stats::optimize} instead of
-\code{stats::optim}. In this case all entries of \code{control} with the exception of 'tol' are
-ignored, as are bounds and initial values, and arguments to \code{method}.
+When there is only one unknown parameter, the function uses \code{stats::optimize}
+instead of \code{stats::optim}. In this case all entries of \code{control} with the
+exception of 'tol' are ignored, as are bounds and initial values, and
+arguments to \code{method}.
 
 As a sanity check \code{n_max} sets a maximum for the number of observed grid points. This
 is to avoid accidental calls with very large datasets that would cause R to hang or crash.
@@ -136,12 +140,12 @@ rbind(true=sk_pars_update(pars_src), fitted=sk_pars_update(fit_result))
 \seealso{
 sk sk_LL sk_nLL stats::optim stats::optimize
 
-Other parameter managers: 
-\code{\link{sk_bds}()},
-\code{\link{sk_kp}()},
-\code{\link{sk_pars_make}()},
-\code{\link{sk_pars_update}()},
-\code{\link{sk_pars}()},
-\code{\link{sk_to_string}()}
+Other parameter managers:
+\code{\link[=sk_bds]{sk_bds()}},
+\code{\link[=sk_kp]{sk_kp()}},
+\code{\link[=sk_pars]{sk_pars()}},
+\code{\link[=sk_pars_make]{sk_pars_make()}},
+\code{\link[=sk_pars_update]{sk_pars_update()}},
+\code{\link[=sk_to_string]{sk_to_string()}}
 }
 \concept{parameter managers}

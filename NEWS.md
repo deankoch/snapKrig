@@ -4,6 +4,9 @@
 
 *2026-07-03*
 
+* removed documentation for group generic method `Summary.sk()` to avoid
+filename collision (of the .Rd files) in case-insensitive environments
+
 * add missing dependency on R >= 4.1.0 (for pipe)
 
 * update maintainer email contact address

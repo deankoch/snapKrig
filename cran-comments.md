@@ -12,8 +12,10 @@ This update changes the following:
 
 ## Test environments
 
-* `devtools::check()` with Ubuntu 24.04.4 LTS, R-release
+* `devtools::check()` running Ubuntu 24.04.4 LTS, R-release
 
-* `devtools::check_win_devel()` Windows Server 2022 x64 (build 20348), R Under development
+* `rhub::check()` on platforms: macos-arm64 (latest), windows (latest)
 
-* `rhub::check_for_cran()` Ubuntu Linux 20.04.1 LTS, R-release
+## Downstream dependencies
+
+There are currently no downstream dependencies for this package

@@ -439,7 +439,7 @@ have a look at `sf::st_crs(pts)` for your `pts`.
 Call `plot` on the output of `sk_snap` to see how these points look after snapping to the grid. As
 with `sk` object plots, you can overlay additional spatial vector layers using the `add` argument.
 
-```{r meuse_snapped_plot, out.width='50%', fig.dim=c(5,5), fig.align='center'}
+```{r meuse_snapped_plot, out.width='100%', fig.dim=c(5,5), fig.align='center'}
 # plot gridded version using the snapKrig package
 plot(g, zlab='log(ppb)', main='snapped Meuse log[zinc] data')
 plot(meuse_sf[['river_poly']], col='lightblue', border=NA, add=TRUE)

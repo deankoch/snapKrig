@@ -8,13 +8,18 @@ This update changes the following:
 
 ## R CMD check results
 
-0 errors | 0 warnings | 0 notes
+0 errors | 0 warnings | 1 notes
+
+* The only NOTE was for the new maintainer address
 
 ## Test environments
 
 * `devtools::check()` running Ubuntu 24.04.4 LTS, R-release
-
-* `rhub::check()` on platforms: macos-arm64 (latest), windows (latest)
+* `R CMD check --as-cran` running Ubuntu 24.04.4 LTS, R-release
+* `rhub::check()` on platforms:
+  * macos-arm64 (latest)
+  * windows (latest)
+  * gcc-asan/Fedora Linux 42 (R-devel 2026-06-21 r90185)
 
 ## Downstream dependencies
 

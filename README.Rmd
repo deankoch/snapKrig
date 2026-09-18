@@ -36,10 +36,9 @@ Here are some benchmarking results  (*circa* 2023-2024) for computation time to
 downscale a 32 x 43 raster onto grids of increasing size by ordinary kriging.
 
 ```{r preview, echo = FALSE, message = FALSE, warning = FALSE, fig.width=6, fig.height=2, dpi=300}
-library(here)
 library(ggplot2)
 
-path_bench_result = here('rjarticle/data/bench_results.csv')
+path_bench_result = 'rjarticle/data/bench_results.csv'
 
 results_df = read.csv(path_bench_result, row.names=NULL)
 results_df = results_df[results_df[['name']] == 'treed_1376',]

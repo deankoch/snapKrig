@@ -127,7 +127,7 @@ g_pred = sk_cmean(g_down, pars, X=0)
 # print time elapsed in computation
 t_end = Sys.time()
 t_end - t_start
-#> Time difference of 0.7079518 secs
+#> Time difference of 0.6761978 secs
 ```
 
 ``` r

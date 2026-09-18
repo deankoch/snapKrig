@@ -1,6 +1,6 @@
 Package: snapKrig
 Title: Fast Kriging and Geostatistics on Grids with Kronecker Covariance
-Version: 0.0.3
+Version: 0.0.4
 Authors@R: c(
     person("Dean", "Koch", , "deankoch@gmail.com", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0000-0002-8849-859X"))
@@ -40,4 +40,4 @@ Language: en-US
 LazyData: true
 Roxygen: list(markdown = TRUE)
 Config/testthat/edition: 3
-Config/roxygen2/version: 8.0.0
+Config/roxygen2/version: 8.1.0

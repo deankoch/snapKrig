@@ -1,5 +1,15 @@
 # snapKrig (development version)
 
+# snapKrig 0.0.4
+
+*2026-09-17*
+
+* update `sk_sub()` to return `NULL` instead of throwing an error when
+user parameters result in empty output (where one or both dimensions are 0) 
+
+* fixed a related bug in test suite (now avoids requesting empty outputs
+from `sk_sub`)
+
 # snapKrig 0.0.3
 
 *2026-07-03*

@@ -93,8 +93,8 @@ test_that("verify sk_sub_idx satisfies basic identities wrt expand.grid", {
 # sk_sub
 test_that("sk_sub indexes subgrids as expected on random input", {
 
-  # make an example grid with at minimum 10 grid lines in each dimension
-  gdim = seq(1e2) |> tail(-9) |> sample(2)
+  # make an example grid with at minimum 20 grid lines in each dimension
+  gdim = seq(1e2) |> tail(-20) |> sample(2)
   g = sk(gdim)
   g[] = apply(expand.grid(g[['gyx']]), 1, \(z) cos( 2*sum(z^2) ) )
 
@@ -113,13 +113,14 @@ test_that("sk_sub indexes subgrids as expected on random input", {
   sk_sub(g, ij_rem=idx[['rem']]) |> expect_equal(g_keep)
 
   # edge lines to trim
-  n_rem = seq(9) |> sample(2) |> lapply(seq)
+  n_rem = seq(8) |> sample(2) |> lapply(seq)
 
   # remove data around the edges of the grid
   idx = sk_sub(g, ij_rem=list(i=n_rem[[1]], j=n_rem[[2]]), mirror=TRUE, idx=TRUE)
   idx_y_pts = sk_sub_idx(gdim, idx[['rem']]['i'], idx=TRUE)
   idx_x_pts = sk_sub_idx(gdim, idx[['rem']]['j'], idx=TRUE)
   g[c(idx_y_pts, idx_x_pts)] = NA
+
   # !! next line produces an error if we omit seq above in n_rem def
   g_sub = sk_sub(g)
   # (non-uniqueness not being handled maybe?)

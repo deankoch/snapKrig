@@ -12,4 +12,5 @@
 ^examples
 ^dev/*
 ^snapKrig.Rcheck/*
+^snapKrig_[0-9]*/*
 ^.github$

@@ -18,3 +18,4 @@ rjarticle/rjarticle_complete.zip
 inst/doc
 *.tar.gz
 snapKrig.Rcheck/*
+snapKrig_[0-9]*

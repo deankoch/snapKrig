@@ -379,6 +379,7 @@ sk_sub_idx = function(gdim, ij=NULL, idx=FALSE, nosort=FALSE)
 #'
 #' One of `idx_keep` or `idx_rem` (but not both) can be specified, and the grid line numbers
 #' (not intercepts) should be supplied in ascending order in list entries named "i" and "j".
+#' If your selection results in an empty grid, the function returns `NULL`
 #'
 #' If `idx_rem` is specified, `mirror=TRUE` will cause the selection in `idx_rem` to be
 #' reflected about the central grid line (useful for specifying outer grid lines). `mirror`
@@ -482,8 +483,8 @@ sk_sub = function(g, ij_keep=NULL, ij_rem=NULL, idx=FALSE, mirror=FALSE)
     ij_keep = Map(function(d, i) seq(d)[!(seq(d) %in% i)], d=gdim, i=ij_rem)
     gdim_new = sapply(ij_keep, length)
 
-    # another validity check
-    if( any( gdim_new < 1 ) ) stop('request resulted in an empty sub-grid')
+    # another validity check with soft landing
+    if( any( gdim_new < 1 ) ) return(NULL)
 
     # assign names lost in the `Map` calls and sort the removed grid lines
     names(ij_keep) = ij_nm

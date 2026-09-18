@@ -27,6 +27,7 @@ grid lines to remove can be specified in \code{idx_rem}.
 \details{
 One of \code{idx_keep} or \code{idx_rem} (but not both) can be specified, and the grid line numbers
 (not intercepts) should be supplied in ascending order in list entries named "i" and "j".
+If your selection results in an empty grid, the function returns \code{NULL}
 
 If \code{idx_rem} is specified, \code{mirror=TRUE} will cause the selection in \code{idx_rem} to be
 reflected about the central grid line (useful for specifying outer grid lines). \code{mirror}

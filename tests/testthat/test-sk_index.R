@@ -4,7 +4,7 @@
 test_that("invert sk_rescale (going down then up) and check factor 1 case", {
 
   # example data
-  gdim = seq(1e2) |> sample(2)
+  gdim = seq(100) |> tail(-2) |> sample(2)
   pars = utils::modifyList(sk_pars(gdim), list(eps=1e-2))
   g = sk_sim(gdim, pars)
 
@@ -24,7 +24,7 @@ test_that("invert sk_rescale (going down then up) and check factor 1 case", {
 test_that("verify sk_mat2vec computes vectorized index wrt expand.grid", {
 
   # pick a random size grid and random index
-  gdim = seq(1e3) |> sample(2)
+  gdim = seq(1e3) |> tail(-2) |> sample(2)
   ij = c(i=sample(seq(gdim[1]), 1), j=sample(seq(gdim[2]), 1))
 
   # matrix indices in column-vectorized order
@@ -38,7 +38,7 @@ test_that("verify sk_mat2vec computes vectorized index wrt expand.grid", {
 test_that("verify round trip with sk_vec2mat -> sk_mat2vec", {
 
   # pick a random size grid and random index
-  gdim = seq(1e3) |> sample(2)
+  gdim = seq(1e3) |> tail(-2) |> sample(2)
   idx = prod(gdim) |> seq() |> sample(1)
   sk_vec2mat(idx, gdim) |> sk_mat2vec(gdim) |> expect_equal(idx)
 })

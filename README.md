@@ -127,7 +127,7 @@ g_pred = sk_cmean(g_down, pars, X=0)
 # print time elapsed in computation
 t_end = Sys.time()
 t_end - t_start
-#> Time difference of 0.6761978 secs
+#> Time difference of 0.6859431 secs
 ```
 
 ``` r
@@ -193,3 +193,9 @@ central idea is to model spatial dependence using a separable
 (1-dimensional) univariate covariance kernels. This introduces special
 symmetries and structure in the covariance matrix, which are exploited
 in this package for fast and memory-efficient computations.
+
+# Links
+
+- [R Packages (2e) by Wickham and
+  Bryan](https://r-pkgs.org/release.html) - my main reference for
+  package development

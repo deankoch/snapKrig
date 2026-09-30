@@ -186,3 +186,8 @@ for speeding up geostatistical computations involving large covariance matrices.
 spatial dependence using a separable 2-dimensional covariance kernel, defined as the product of two (1-dimensional)
 univariate covariance kernels. This introduces special symmetries and structure in the covariance matrix, which are
 exploited in this package for fast and memory-efficient computations.
+
+# Links
+
+* [R Packages (2e) by Wickham and Bryan](https://r-pkgs.org/release.html) - my
+main reference for package development

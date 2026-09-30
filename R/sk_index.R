@@ -599,8 +599,8 @@ sk_sub = function(g, ij_keep=NULL, ij_rem=NULL, idx=FALSE, mirror=FALSE)
 #' plot(g_big)
 #' print(sk_sub_find(g_big))
 #'
-#' # define a smaller sub-grid at random
-#' spacing = sapply(floor(gdim/10), function(x) 1 + sample.int(x, 1))
+#' # define a smaller sub-grid
+#' spacing = c(5, 4)
 #' gdim_sg = sapply(floor( (gdim - 1) / spacing), function(x) sample.int(x, 1))
 #' ij_first = sapply(gdim - ( spacing * gdim_sg ), function(x) sample.int(x, 1))
 #'

@@ -2,7 +2,6 @@
 
 # sk_rescale
 test_that("invert sk_rescale (going down then up) and check factor 1 case", {
-
   # example data
   gdim = seq(100) |> tail(-2) |> sample(2)
   pars = utils::modifyList(sk_pars(gdim), list(eps=1e-2))
@@ -22,7 +21,6 @@ test_that("invert sk_rescale (going down then up) and check factor 1 case", {
 
 # sk_mat2vec
 test_that("verify sk_mat2vec computes vectorized index wrt expand.grid", {
-
   # pick a random size grid and random index
   gdim = seq(1e3) |> tail(-2) |> sample(2)
   ij = c(i=sample(seq(gdim[1]), 1), j=sample(seq(gdim[2]), 1))
@@ -147,9 +145,9 @@ test_that("sk_sub_find finds randomly selected regular sub-grids", {
   g_big = sk_rescale(g, down=3)
   sk_sub_find(g_big) |> is.null() |> expect_false()
 
-  # define a smaller sub-grid at random
+  # define a smaller sub-grid at random (and make sure it has dims > 1)
   spacing = sapply(floor(gdim/10), function(x) 1 + sample.int(x, 1))
-  gdim_sg = sapply(floor( (gdim - 1) / spacing), function(x) sample.int(x, 1))
+  gdim_sg = sapply(floor((gdim - 1) / spacing), function(x) 1 + sample.int(x - 1, 1))
   ij_first = sapply(gdim - ( spacing * gdim_sg ), function(x) sample.int(x, 1))
 
   # find index of sub-grid lines and vectorized index of points

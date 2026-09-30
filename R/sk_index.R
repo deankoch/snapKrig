@@ -559,7 +559,11 @@ sk_sub = function(g, ij_keep=NULL, ij_rem=NULL, idx=FALSE, mirror=FALSE)
 #' A sub-grid is only eligible if it contains ALL of the non-`NA` points in `g` and none
 #' of the `NA`s. For example if a single point missing from the sub-grid, or a single non-`NA`
 #' point lies outside the sub-grid, the function will fail to detect any sub-grids and return
-#' `NULL`. If no points are `NA`, the function returns indices for the full grid.
+#' `NULL`.
+#'
+#' If no points in `g` are `NA`, the function returns indices for the full grid.
+#' If `g` has <= 1 non-`NA` points, the function returns `NULL` (1x1 subgrids
+#' are not supported.)
 #'
 #' The returned list contains the following named elements:
 #'
@@ -652,6 +656,9 @@ sk_sub_find = function(g, gdim=NULL)
   # need this to get indices of first, second, and last elements in sub-grid
   idx_obs = which(g)
   n_obs = sum(g)
+
+  # 1x1 subgrids not supported
+  if (n_obs == 1) return(NULL)
 
   # find the dimensions of the smallest sub-grid enclosing all observed points
   ij_bbox = sk_vec2mat(c(idx_obs[1], idx_obs[n_obs]), gdim)

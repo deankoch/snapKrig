@@ -2,13 +2,17 @@
 
 # snapKrig 0.0.4
 
-*2026-09-17*
+*2026-09-30*
 
 * update `sk_sub()` to return `NULL` instead of throwing an error when
-user parameters result in empty output (where one or both dimensions are 0) 
+ one or both output dimensions are 0
 
-* fixed a related bug in test suite (now avoids requesting empty outputs
-from `sk_sub`)
+* update `sk_sub_find()` to return `NULL` instead of throwing an error when
+input has only a single non-`NA` point (degenerate 1x1 case).
+
+* fixed some related bugs in test suite, where randomized arguments are now
+chosen more carefully to avoid unsupported edge cases (empty or 1x1) from
+`sk_sub` and `sk_sub_find()`
 
 # snapKrig 0.0.3
 
